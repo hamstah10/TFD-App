@@ -212,6 +212,93 @@ export default function ConfiguratorScreen() {
     setStages([]);
   };
 
+  // Handle AI suggestion from chat
+  const handleVehicleSuggestion = async (suggestion: {
+    type_id?: string;
+    manufacturer_id?: string;
+    model_id?: string;
+    built_id?: string;
+    engine_id?: string;
+  }) => {
+    try {
+      resetConfigurator();
+      setLoading(true);
+      
+      // Load types first
+      const typesResponse = await getVehicleTypes();
+      const allTypes = typesResponse.data || [];
+      setTypes(allTypes);
+      
+      if (suggestion.type_id) {
+        const selectedTypeItem = allTypes.find((t: SelectOption) => t.id === suggestion.type_id);
+        if (selectedTypeItem) {
+          setSelectedType(selectedTypeItem);
+          setCurrentStep(1);
+          
+          // Load manufacturers
+          const manuResponse = await getManufacturers(suggestion.type_id);
+          const allManus = manuResponse.data || [];
+          setManufacturers(allManus);
+          
+          if (suggestion.manufacturer_id) {
+            const selectedManu = allManus.find((m: SelectOption) => m.id === suggestion.manufacturer_id);
+            if (selectedManu) {
+              setSelectedManufacturer(selectedManu);
+              setCurrentStep(2);
+              
+              // Load models
+              const modelsResponse = await getModels(suggestion.manufacturer_id);
+              const allModels = modelsResponse.data || [];
+              setModels(allModels);
+              
+              if (suggestion.model_id) {
+                const selectedModelItem = allModels.find((m: SelectOption) => m.id === suggestion.model_id);
+                if (selectedModelItem) {
+                  setSelectedModel(selectedModelItem);
+                  setCurrentStep(3);
+                  
+                  // Load builts
+                  const builtsResponse = await getBuilts(suggestion.model_id);
+                  const allBuilts = builtsResponse.data || [];
+                  setBuilts(allBuilts);
+                  
+                  if (suggestion.built_id) {
+                    const selectedBuiltItem = allBuilts.find((b: SelectOption) => b.id === suggestion.built_id);
+                    if (selectedBuiltItem) {
+                      setSelectedBuilt(selectedBuiltItem);
+                      setCurrentStep(4);
+                      
+                      // Load engines
+                      const enginesResponse = await getEngines(suggestion.built_id);
+                      const allEngines = enginesResponse.data || [];
+                      setEngines(allEngines);
+                      
+                      if (suggestion.engine_id) {
+                        const selectedEngineItem = allEngines.find((e: SelectOption) => e.id === suggestion.engine_id);
+                        if (selectedEngineItem) {
+                          setSelectedEngine(selectedEngineItem);
+                          setCurrentStep(5);
+                          
+                          // Load stages
+                          const stagesResponse = await getStages(suggestion.engine_id);
+                          setStages(stagesResponse.data || []);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to apply vehicle suggestion:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getStepTitle = () => {
     switch (STEPS[currentStep]) {
       case 'type': return t('vehicleType');
