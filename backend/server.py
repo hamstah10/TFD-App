@@ -22,6 +22,7 @@ db = client[os.environ['DB_NAME']]
 # External Chiptuning API configuration
 CHIPTUNING_API_BASE = "https://portal.tuningfiles-download.com/api/v1"
 CHIPTUNING_API_KEY = "AWi1R04bkF0yi1v1p2HYk1lpADlUfmKOJyxdAol7txn8HblyYulAurFCdKO271cH"
+USE_MOCK_DATA = True  # Set to False when API IP is whitelisted
 
 # Create the main app without a prefix
 app = FastAPI()
@@ -35,6 +36,233 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# ============== MOCK DATA ==============
+
+MOCK_VEHICLE_TYPES = [
+    {"id": "type_pkw", "name": "PKW"},
+    {"id": "type_lkw", "name": "LKW"},
+    {"id": "type_agrar", "name": "Agrar"},
+    {"id": "type_motorrad", "name": "Motorrad"},
+    {"id": "type_jetski", "name": "JetSki"},
+    {"id": "type_andere", "name": "Andere"}
+]
+
+MOCK_MANUFACTURERS = {
+    "type_pkw": [
+        {"id": "manu_audi", "name": "Audi"},
+        {"id": "manu_bmw", "name": "BMW"},
+        {"id": "manu_mercedes", "name": "Mercedes-Benz"},
+        {"id": "manu_vw", "name": "Volkswagen"},
+        {"id": "manu_porsche", "name": "Porsche"},
+        {"id": "manu_ford", "name": "Ford"},
+        {"id": "manu_opel", "name": "Opel"}
+    ],
+    "type_lkw": [
+        {"id": "manu_man", "name": "MAN"},
+        {"id": "manu_scania", "name": "Scania"},
+        {"id": "manu_volvo", "name": "Volvo"},
+        {"id": "manu_daf", "name": "DAF"}
+    ],
+    "type_agrar": [
+        {"id": "manu_johndeere", "name": "John Deere"},
+        {"id": "manu_fendt", "name": "Fendt"},
+        {"id": "manu_claas", "name": "Claas"}
+    ],
+    "type_motorrad": [
+        {"id": "manu_honda", "name": "Honda"},
+        {"id": "manu_yamaha", "name": "Yamaha"},
+        {"id": "manu_kawasaki", "name": "Kawasaki"},
+        {"id": "manu_ducati", "name": "Ducati"}
+    ],
+    "type_jetski": [
+        {"id": "manu_seadoo", "name": "Sea-Doo"},
+        {"id": "manu_yamahawc", "name": "Yamaha WaveRunner"}
+    ],
+    "type_andere": [
+        {"id": "manu_other", "name": "Sonstige"}
+    ]
+}
+
+MOCK_MODELS = {
+    "manu_audi": [
+        {"id": "model_a3", "name": "A3"},
+        {"id": "model_a4", "name": "A4"},
+        {"id": "model_a6", "name": "A6"},
+        {"id": "model_q5", "name": "Q5"},
+        {"id": "model_q7", "name": "Q7"},
+        {"id": "model_rs6", "name": "RS6"}
+    ],
+    "manu_bmw": [
+        {"id": "model_3er", "name": "3er Serie"},
+        {"id": "model_5er", "name": "5er Serie"},
+        {"id": "model_x3", "name": "X3"},
+        {"id": "model_x5", "name": "X5"},
+        {"id": "model_m3", "name": "M3"}
+    ],
+    "manu_mercedes": [
+        {"id": "model_cclass", "name": "C-Klasse"},
+        {"id": "model_eclass", "name": "E-Klasse"},
+        {"id": "model_sclass", "name": "S-Klasse"},
+        {"id": "model_glc", "name": "GLC"},
+        {"id": "model_amggt", "name": "AMG GT"}
+    ],
+    "manu_vw": [
+        {"id": "model_golf", "name": "Golf"},
+        {"id": "model_passat", "name": "Passat"},
+        {"id": "model_tiguan", "name": "Tiguan"},
+        {"id": "model_arteon", "name": "Arteon"}
+    ],
+    "manu_porsche": [
+        {"id": "model_911", "name": "911"},
+        {"id": "model_cayenne", "name": "Cayenne"},
+        {"id": "model_macan", "name": "Macan"},
+        {"id": "model_panamera", "name": "Panamera"}
+    ]
+}
+
+MOCK_BUILTS = {
+    "model_a4": [
+        {"id": "built_a4_2020", "name": "2020-2024 (B9 Facelift)"},
+        {"id": "built_a4_2016", "name": "2016-2019 (B9)"},
+        {"id": "built_a4_2012", "name": "2012-2015 (B8)"}
+    ],
+    "model_golf": [
+        {"id": "built_golf8", "name": "2020-2024 (Golf 8)"},
+        {"id": "built_golf7", "name": "2012-2019 (Golf 7)"},
+        {"id": "built_golf6", "name": "2008-2012 (Golf 6)"}
+    ],
+    "model_3er": [
+        {"id": "built_g20", "name": "2019-2024 (G20)"},
+        {"id": "built_f30", "name": "2012-2018 (F30)"}
+    ],
+    "model_cclass": [
+        {"id": "built_w206", "name": "2021-2024 (W206)"},
+        {"id": "built_w205", "name": "2014-2020 (W205)"}
+    ]
+}
+
+MOCK_ENGINES = {
+    "built_a4_2020": [
+        {"id": "eng_a4_20tdi", "name": "2.0 TDI 150 PS"},
+        {"id": "eng_a4_20tfsi", "name": "2.0 TFSI 190 PS"},
+        {"id": "eng_a4_35tfsi", "name": "35 TFSI 150 PS"},
+        {"id": "eng_a4_45tfsi", "name": "45 TFSI 245 PS"}
+    ],
+    "built_golf8": [
+        {"id": "eng_golf_10tsi", "name": "1.0 TSI 110 PS"},
+        {"id": "eng_golf_15tsi", "name": "1.5 TSI 150 PS"},
+        {"id": "eng_golf_20tdi", "name": "2.0 TDI 150 PS"},
+        {"id": "eng_golf_gti", "name": "GTI 2.0 TSI 245 PS"}
+    ],
+    "built_g20": [
+        {"id": "eng_320i", "name": "320i 184 PS"},
+        {"id": "eng_330i", "name": "330i 258 PS"},
+        {"id": "eng_320d", "name": "320d 190 PS"},
+        {"id": "eng_m340i", "name": "M340i 374 PS"}
+    ]
+}
+
+MOCK_STAGES = {
+    "eng_a4_20tfsi": [
+        {
+            "id": "stage_eco",
+            "name": "Eco Tuning",
+            "description_de": "Kraftstoffverbrauch optimieren",
+            "description_en": "Optimize fuel consumption",
+            "original_power": "190 PS",
+            "tuned_power": "190 PS",
+            "original_torque": "320 Nm",
+            "tuned_torque": "340 Nm",
+            "price": 299
+        },
+        {
+            "id": "stage_1",
+            "name": "Stage 1",
+            "description_de": "Leistungssteigerung ohne Hardwareänderungen",
+            "description_en": "Performance increase without hardware changes",
+            "original_power": "190 PS",
+            "tuned_power": "240 PS",
+            "original_torque": "320 Nm",
+            "tuned_torque": "400 Nm",
+            "price": 499
+        },
+        {
+            "id": "stage_2",
+            "name": "Stage 2",
+            "description_de": "Mit Sport-Luftfilter und Downpipe",
+            "description_en": "With sport air filter and downpipe",
+            "original_power": "190 PS",
+            "tuned_power": "280 PS",
+            "original_torque": "320 Nm",
+            "tuned_torque": "450 Nm",
+            "price": 699
+        }
+    ],
+    "eng_golf_gti": [
+        {
+            "id": "stage_1_gti",
+            "name": "Stage 1",
+            "description_de": "Software-Optimierung für mehr Leistung",
+            "description_en": "Software optimization for more power",
+            "original_power": "245 PS",
+            "tuned_power": "300 PS",
+            "original_torque": "370 Nm",
+            "tuned_torque": "440 Nm",
+            "price": 599
+        },
+        {
+            "id": "stage_2_gti",
+            "name": "Stage 2+",
+            "description_de": "Mit Turbo-Upgrade und Ladeluftkühler",
+            "description_en": "With turbo upgrade and intercooler",
+            "original_power": "245 PS",
+            "tuned_power": "350 PS",
+            "original_torque": "370 Nm",
+            "tuned_torque": "500 Nm",
+            "price": 899
+        }
+    ],
+    "eng_m340i": [
+        {
+            "id": "stage_1_m340",
+            "name": "Stage 1",
+            "description_de": "ECU Tuning für maximale Leistung",
+            "description_en": "ECU tuning for maximum performance",
+            "original_power": "374 PS",
+            "tuned_power": "420 PS",
+            "original_torque": "500 Nm",
+            "tuned_torque": "580 Nm",
+            "price": 799
+        }
+    ]
+}
+
+# Default stages for engines without specific data
+DEFAULT_STAGES = [
+    {
+        "id": "stage_eco_default",
+        "name": "Eco Tuning",
+        "description_de": "Kraftstoffverbrauch optimieren",
+        "description_en": "Optimize fuel consumption",
+        "original_power": "Standard",
+        "tuned_power": "Standard",
+        "original_torque": "Standard",
+        "tuned_torque": "+5%",
+        "price": 249
+    },
+    {
+        "id": "stage_1_default",
+        "name": "Stage 1",
+        "description_de": "Leistungssteigerung ohne Hardwareänderungen",
+        "description_en": "Performance increase without hardware changes",
+        "original_power": "Standard",
+        "tuned_power": "+15-25%",
+        "original_torque": "Standard",
+        "tuned_torque": "+20-30%",
+        "price": 449
+    }
+]
 
 # ============== MODELS ==============
 
@@ -121,9 +349,9 @@ async def fetch_chiptuning_api(endpoint: str) -> Any:
         "Accept": "application/json"
     }
     
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as http_client:
         try:
-            response = await client.get(url, headers=headers)
+            response = await http_client.get(url, headers=headers)
             response.raise_for_status()
             return response.json()
         except httpx.HTTPStatusError as e:
@@ -137,7 +365,7 @@ async def fetch_chiptuning_api(endpoint: str) -> Any:
 
 @api_router.get("/")
 async def root():
-    return {"message": "Chiptuning Database API", "version": "1.0.0"}
+    return {"message": "Chiptuning Database API", "version": "1.0.0", "mock_data": USE_MOCK_DATA}
 
 @api_router.post("/status", response_model=StatusCheck)
 async def create_status_check(input: StatusCheckCreate):
@@ -156,36 +384,53 @@ async def get_status_checks():
 @api_router.get("/chiptuning/types")
 async def get_vehicle_types():
     """Get all vehicle types"""
+    if USE_MOCK_DATA:
+        return {"status": True, "data": MOCK_VEHICLE_TYPES}
     data = await fetch_chiptuning_api("/ad/types")
     return data
 
 @api_router.get("/chiptuning/manufacturers/{type_id}")
 async def get_manufacturers(type_id: str):
     """Get manufacturers for a vehicle type"""
+    if USE_MOCK_DATA:
+        manufacturers = MOCK_MANUFACTURERS.get(type_id, [])
+        return {"status": True, "data": manufacturers}
     data = await fetch_chiptuning_api(f"/ad/{type_id}/manufacturers")
     return data
 
 @api_router.get("/chiptuning/models/{manufacturer_id}")
 async def get_models(manufacturer_id: str):
     """Get models for a manufacturer"""
+    if USE_MOCK_DATA:
+        models = MOCK_MODELS.get(manufacturer_id, [{"id": "model_default", "name": "Standard Model"}])
+        return {"status": True, "data": models}
     data = await fetch_chiptuning_api(f"/ad/{manufacturer_id}/models")
     return data
 
 @api_router.get("/chiptuning/builts/{model_id}")
 async def get_builts(model_id: str):
     """Get build versions for a model"""
+    if USE_MOCK_DATA:
+        builts = MOCK_BUILTS.get(model_id, [{"id": f"built_{model_id}_default", "name": "2020-2024"}])
+        return {"status": True, "data": builts}
     data = await fetch_chiptuning_api(f"/ad/{model_id}/builts")
     return data
 
 @api_router.get("/chiptuning/engines/{built_id}")
 async def get_engines(built_id: str):
     """Get engines for a build version"""
+    if USE_MOCK_DATA:
+        engines = MOCK_ENGINES.get(built_id, [{"id": f"eng_{built_id}_default", "name": "2.0 TDI 150 PS"}])
+        return {"status": True, "data": engines}
     data = await fetch_chiptuning_api(f"/ad/{built_id}/engines")
     return data
 
 @api_router.get("/chiptuning/stages/{engine_id}")
 async def get_stages(engine_id: str):
     """Get tuning stages for an engine"""
+    if USE_MOCK_DATA:
+        stages = MOCK_STAGES.get(engine_id, DEFAULT_STAGES)
+        return {"status": True, "data": stages}
     data = await fetch_chiptuning_api(f"/ad/{engine_id}/stages")
     return data
 
