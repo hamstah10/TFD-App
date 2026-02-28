@@ -551,6 +551,152 @@ async def get_company_info():
         "email": "info@tuningfiles-download.com"
     }
 
+# ============== CHAT ASSISTANT ROUTES ==============
+
+# Get available vehicle data for the AI assistant
+def get_vehicle_data_context():
+    """Build context about available vehicles for the AI"""
+    context = "Verfügbare Fahrzeuge in unserer Datenbank:\n\n"
+    
+    context += "FAHRZEUGTYPEN:\n"
+    for vtype in MOCK_VEHICLE_TYPES:
+        context += f"- {vtype['name']}\n"
+    
+    context += "\nPKW HERSTELLER:\n"
+    for manu in MOCK_MANUFACTURERS.get("type_pkw", []):
+        context += f"- {manu['name']}\n"
+    
+    context += "\nVerfügbare PKW Modelle:\n"
+    for manu_id, models in MOCK_MODELS.items():
+        manu_name = next((m['name'] for m in MOCK_MANUFACTURERS.get("type_pkw", []) if m['id'] == manu_id), manu_id)
+        context += f"\n{manu_name}:\n"
+        for model in models:
+            context += f"  - {model['name']}\n"
+    
+    context += "\nVerfügbare Baujahre/Versionen:\n"
+    for model_id, builts in MOCK_BUILTS.items():
+        model_name = None
+        for models in MOCK_MODELS.values():
+            for m in models:
+                if m['id'] == model_id:
+                    model_name = m['name']
+                    break
+        if model_name:
+            context += f"\n{model_name}:\n"
+            for built in builts:
+                context += f"  - {built['name']}\n"
+    
+    return context
+
+class ChatMessage(BaseModel):
+    message: str
+    session_id: Optional[str] = None
+    language: str = "de"
+
+class ChatResponse(BaseModel):
+    response: str
+    vehicle_suggestion: Optional[dict] = None
+    session_id: str
+
+@api_router.post("/chat", response_model=ChatResponse)
+async def chat_with_assistant(chat_input: ChatMessage):
+    """Chat with the AI assistant to find the right vehicle configuration"""
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    
+    session_id = chat_input.session_id or str(uuid.uuid4())
+    
+    # Get or create chat history from database
+    chat_history = await db.chat_sessions.find_one({"session_id": session_id})
+    
+    vehicle_context = get_vehicle_data_context()
+    
+    system_message = f"""Du bist ein freundlicher Chiptuning-Berater für TuningFiles-Download.com.
+Deine Aufgabe ist es, Kunden bei der Auswahl des richtigen Fahrzeugs und der passenden Tuning-Stufe zu helfen.
+
+{vehicle_context}
+
+TUNING-STUFEN:
+- Eco Tuning: Kraftstoffverbrauch optimieren, gleiche Leistung
+- Stage 1: Software-Optimierung ohne Hardware-Änderungen (+15-25% Leistung)
+- Stage 2: Mit Hardware-Upgrades wie Downpipe, Luftfilter (+25-40% Leistung)
+- Stage 2+: Maximale Leistung mit Turbo-Upgrade
+
+WICHTIGE REGELN:
+1. Frage nach dem Fahrzeug des Kunden (Marke, Modell, Baujahr, Motor)
+2. Wenn du genug Information hast, gib eine JSON-Empfehlung mit den IDs zurück
+3. Sei freundlich und hilfsbereit
+4. Antworte in der Sprache des Kunden ({chat_input.language})
+5. Wenn du eine Fahrzeugempfehlung hast, füge am Ende deiner Antwort einen JSON-Block ein:
+   [VEHICLE_SUGGESTION]
+   {{"type_id": "...", "manufacturer_id": "...", "model_id": "...", "built_id": "...", "engine_id": "..."}}
+   [/VEHICLE_SUGGESTION]
+
+Nur wenn du alle nötigen IDs hast, füge den JSON-Block ein. Sonst frage weiter nach Details."""
+
+    try:
+        api_key = os.environ.get('EMERGENT_LLM_KEY')
+        if not api_key:
+            raise HTTPException(status_code=500, detail="LLM API key not configured")
+        
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=session_id,
+            system_message=system_message
+        ).with_model("openai", "gpt-4o")
+        
+        # Load previous messages from database if exists
+        if chat_history and 'messages' in chat_history:
+            for msg in chat_history['messages']:
+                if msg['role'] == 'user':
+                    await chat.send_message(UserMessage(text=msg['content']))
+        
+        # Send new message
+        user_message = UserMessage(text=chat_input.message)
+        response_text = await chat.send_message(user_message)
+        
+        # Extract vehicle suggestion if present
+        vehicle_suggestion = None
+        if "[VEHICLE_SUGGESTION]" in response_text and "[/VEHICLE_SUGGESTION]" in response_text:
+            import json
+            start = response_text.find("[VEHICLE_SUGGESTION]") + len("[VEHICLE_SUGGESTION]")
+            end = response_text.find("[/VEHICLE_SUGGESTION]")
+            try:
+                suggestion_json = response_text[start:end].strip()
+                vehicle_suggestion = json.loads(suggestion_json)
+                # Remove the suggestion block from the response
+                response_text = response_text[:response_text.find("[VEHICLE_SUGGESTION]")].strip()
+            except json.JSONDecodeError:
+                pass
+        
+        # Save chat history to database
+        new_messages = []
+        if chat_history and 'messages' in chat_history:
+            new_messages = chat_history['messages']
+        new_messages.append({"role": "user", "content": chat_input.message})
+        new_messages.append({"role": "assistant", "content": response_text})
+        
+        await db.chat_sessions.update_one(
+            {"session_id": session_id},
+            {"$set": {"messages": new_messages, "updated_at": datetime.utcnow()}},
+            upsert=True
+        )
+        
+        return ChatResponse(
+            response=response_text,
+            vehicle_suggestion=vehicle_suggestion,
+            session_id=session_id
+        )
+        
+    except Exception as e:
+        logger.error(f"Chat error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Chat error: {str(e)}")
+
+@api_router.delete("/chat/{session_id}")
+async def clear_chat_session(session_id: str):
+    """Clear chat history for a session"""
+    await db.chat_sessions.delete_one({"session_id": session_id})
+    return {"message": "Chat session cleared"}
+
 # Include the router in the main app
 app.include_router(api_router)
 
