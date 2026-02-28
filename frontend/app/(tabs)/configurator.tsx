@@ -473,6 +473,21 @@ export default function ConfiguratorScreen() {
           {renderStages()}
         </View>
       </Animated.View>
+
+      {/* Chat FAB Button */}
+      <TouchableOpacity 
+        style={styles.chatFab}
+        onPress={() => setChatVisible(true)}
+      >
+        <Ionicons name="chatbubbles" size={28} color="#ffffff" />
+      </TouchableOpacity>
+
+      {/* Chat Assistant */}
+      <ChatAssistant
+        isVisible={chatVisible}
+        onClose={() => setChatVisible(false)}
+        onVehicleSuggestion={handleVehicleSuggestion}
+      />
     </View>
   );
 }
