@@ -216,7 +216,7 @@ export default function BlogEditorScreen() {
               <Switch
                 value={published}
                 onValueChange={setPublished}
-                trackColor={{ false: '#1a1a2e', true: '#bd1f22' }}
+                trackColor={{ false: '#1a1a1a', true: '#bd1f22' }}
                 thumbColor={published ? '#ffffff' : '#8b8b8b'}
               />
             </View>
@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#1a1a2e',
+    borderColor: '#1a1a1a',
   },
   textAreaSmall: {
     minHeight: 80,
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#1a1a1a',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',

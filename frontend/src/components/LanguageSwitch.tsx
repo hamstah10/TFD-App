@@ -26,7 +26,7 @@ export function LanguageSwitch() {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#1a1a1a',
     borderRadius: 8,
     padding: 2,
   },

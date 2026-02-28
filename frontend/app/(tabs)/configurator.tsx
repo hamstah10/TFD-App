@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#121212',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#1a1a2e',
+    borderColor: '#1a1a1a',
     overflow: 'hidden',
   },
   pickerDisabled: {
@@ -427,7 +427,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   stageDetails: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#1a1a1a',
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,

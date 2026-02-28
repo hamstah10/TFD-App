@@ -244,13 +244,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#1a1a1a',
     borderRadius: 12,
     padding: 14,
     color: '#ffffff',
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#2a2a4e',
+    borderColor: '#2a2a2a',
   },
   textArea: {
     minHeight: 120,

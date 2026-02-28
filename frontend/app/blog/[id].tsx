@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#1a1a1a',
     marginBottom: 20,
   },
   contentText: {
