@@ -118,27 +118,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 20,
   },
-  welcomeText: {
-    color: '#8b8b8b',
-    fontSize: 14,
-  },
-  companyName: {
-    color: '#ffffff',
-    fontSize: 24,
-    fontWeight: '700',
+  logo: {
+    width: 200,
+    height: 50,
   },
   heroSection: {
     alignItems: 'center',
     paddingVertical: 30,
-  },
-  heroIcon: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: '#121212',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
   },
   tagline: {
     color: '#a0a0a0',
