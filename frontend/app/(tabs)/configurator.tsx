@@ -50,6 +50,7 @@ export default function ConfiguratorScreen() {
   
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
+  const [chatVisible, setChatVisible] = useState<boolean>(false);
   
   // Data states
   const [types, setTypes] = useState<SelectOption[]>([]);
