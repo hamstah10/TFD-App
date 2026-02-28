@@ -384,7 +384,7 @@ export default function ConfiguratorScreen() {
           {renderStages()}
         </View>
       </Animated.View>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -393,12 +393,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#171717',
   },
-  header: {
+  stepHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 12,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -410,7 +410,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#ffffff',
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '700',
   },
   progressContainer: {
