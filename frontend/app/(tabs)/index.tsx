@@ -7,7 +7,7 @@ import { OpeningHoursCard } from '../../src/components/OpeningHoursCard';
 import { getCompanyInfo } from '../../src/services/api';
 
 export default function HomeScreen() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const router = useRouter();
   const [companyInfo, setCompanyInfo] = useState<any>(null);
 
@@ -30,9 +30,29 @@ export default function HomeScreen() {
     }
   };
 
+  const handleLogin = () => {
+    router.push('/customer/login');
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Customer Portal Button */}
+        <TouchableOpacity style={styles.portalButton} onPress={handleLogin}>
+          <View style={styles.portalIconContainer}>
+            <Ionicons name="person" size={24} color="#bd1f22" />
+          </View>
+          <View style={styles.portalTextContainer}>
+            <Text style={styles.portalTitle}>
+              {language === 'de' ? 'Kundenportal' : 'Customer Portal'}
+            </Text>
+            <Text style={styles.portalSubtitle}>
+              {language === 'de' ? 'Anmelden für Dashboard & Files' : 'Login for Dashboard & Files'}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={24} color="#bd1f22" />
+        </TouchableOpacity>
+
         {/* Hero Section */}
         <View style={styles.heroSection}>
           <Text style={styles.tagline}>{t('tagline')}</Text>
@@ -99,6 +119,38 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
     paddingHorizontal: 20,
+  },
+  portalButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#121212',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#bd1f22',
+  },
+  portalIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#1a1a1a',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  portalTextContainer: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  portalTitle: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  portalSubtitle: {
+    color: '#8b8b8b',
+    fontSize: 12,
+    marginTop: 2,
   },
   heroSection: {
     alignItems: 'center',
