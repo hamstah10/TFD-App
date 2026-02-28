@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Image } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useLanguage } from '../../src/contexts/LanguageContext';
-import { LanguageSwitch } from '../../src/components/LanguageSwitch';
 import { OpeningHoursCard } from '../../src/components/OpeningHoursCard';
 import { getCompanyInfo } from '../../src/services/api';
 
@@ -33,18 +31,8 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Image 
-            source={require('../../assets/images/logo.png')} 
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <LanguageSwitch />
-        </View>
-
         {/* Hero Section */}
         <View style={styles.heroSection}>
           <Text style={styles.tagline}>{t('tagline')}</Text>
@@ -99,7 +87,7 @@ export default function HomeScreen() {
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -111,16 +99,6 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
     paddingHorizontal: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 20,
-  },
-  logo: {
-    width: 200,
-    height: 50,
   },
   heroSection: {
     alignItems: 'center',
