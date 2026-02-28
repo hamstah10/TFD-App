@@ -9,11 +9,9 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../src/contexts/LanguageContext';
-import { LanguageSwitch } from '../../src/components/LanguageSwitch';
 import {
   getBlogPosts,
   deleteBlogPost,
@@ -143,7 +141,7 @@ export default function AdminScreen() {
   const unreadCount = messages.filter((m) => !m.read).length;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -155,11 +153,8 @@ export default function AdminScreen() {
           />
         }
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>{t('adminPanel')}</Text>
-          <LanguageSwitch />
-        </View>
+        {/* Title */}
+        <Text style={styles.pageTitle}>{t('adminPanel')}</Text>
 
         {/* Tabs */}
         <View style={styles.tabContainer}>
@@ -325,7 +320,7 @@ export default function AdminScreen() {
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -338,16 +333,11 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 20,
-  },
-  title: {
+  pageTitle: {
     color: '#ffffff',
     fontSize: 22,
     fontWeight: '700',
+    paddingVertical: 16,
   },
   tabContainer: {
     flexDirection: 'row',
