@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform, Image } from 'react-native';
-import { Slot, useRouter, usePathname } from 'expo-router';
+import { Slot, useRouter, usePathname, Redirect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
@@ -9,10 +9,15 @@ import { LanguageSwitch } from '../../src/components/LanguageSwitch';
 type MenuTab = 'dashboard' | 'files' | 'tickets';
 
 export default function CustomerLayout() {
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth();
   const { t } = useLanguage();
   const router = useRouter();
   const pathname = usePathname();
+
+  // Redirect to login if not authenticated
+  if (!isAuthenticated) {
+    return <Redirect href="/login" />;
+  }
   
   const getActiveTab = (): MenuTab => {
     if (pathname.includes('/files')) return 'files';
