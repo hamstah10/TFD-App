@@ -35,7 +35,7 @@ export default function RootLayout() {
             }} 
           />
           <Stack.Screen 
-            name="customer/login" 
+            name="login" 
             options={{ headerShown: false }} 
           />
           <Stack.Screen 
