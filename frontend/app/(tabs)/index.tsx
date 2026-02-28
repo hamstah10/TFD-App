@@ -37,18 +37,16 @@ export default function HomeScreen() {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <View>
-            <Text style={styles.welcomeText}>{t('welcome')}</Text>
-            <Text style={styles.companyName}>{t('companyName')}</Text>
-          </View>
+          <Image 
+            source={require('../../assets/images/logo.png')} 
+            style={styles.logo}
+            resizeMode="contain"
+          />
           <LanguageSwitch />
         </View>
 
         {/* Hero Section */}
         <View style={styles.heroSection}>
-          <View style={styles.heroIcon}>
-            <Ionicons name="speedometer" size={80} color="#bd1f22" />
-          </View>
           <Text style={styles.tagline}>{t('tagline')}</Text>
           <TouchableOpacity 
             style={styles.ctaButton}
