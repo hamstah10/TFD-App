@@ -74,7 +74,7 @@ export default function LoginScreen() {
           <Ionicons name="arrow-back" size={24} color="#ffffff" />
         </TouchableOpacity>
         <Image 
-          source={require('../../assets/images/logo.png')} 
+          source={require('../assets/images/logo.png')} 
           style={styles.logo}
           resizeMode="contain"
         />
