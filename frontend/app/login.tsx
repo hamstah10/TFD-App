@@ -13,9 +13,9 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../src/contexts/AuthContext';
-import { useLanguage } from '../../src/contexts/LanguageContext';
-import { LanguageSwitch } from '../../src/components/LanguageSwitch';
+import { useAuth } from '../src/contexts/AuthContext';
+import { useLanguage } from '../src/contexts/LanguageContext';
+import { LanguageSwitch } from '../src/components/LanguageSwitch';
 
 export default function LoginScreen() {
   const { login } = useAuth();
