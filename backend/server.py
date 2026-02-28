@@ -20,7 +20,7 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 # External Chiptuning API configuration
-CHIPTUNING_API_BASE = "http://portal.tuningfiles-download.com/api/v1"
+CHIPTUNING_API_BASE = "https://portal.tuningfiles-download.com/api/v1"
 CHIPTUNING_API_KEY = "AWi1R04bkF0yi1v1p2HYk1lpADlUfmKOJyxdAol7txn8HblyYulAurFCdKO271cH"
 
 # Create the main app without a prefix
