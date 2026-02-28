@@ -8,11 +8,9 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../src/contexts/LanguageContext';
-import { LanguageSwitch } from '../../src/components/LanguageSwitch';
 import { getBlogPosts } from '../../src/services/api';
 
 interface BlogPost {
@@ -65,16 +63,16 @@ export default function BlogScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.container}>
         <View style={styles.centerLoading}>
           <ActivityIndicator color="#bd1f22" size="large" />
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
@@ -86,11 +84,8 @@ export default function BlogScreen() {
           />
         }
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>{t('latestNews')}</Text>
-          <LanguageSwitch />
-        </View>
+        {/* Title */}
+        <Text style={styles.pageTitle}>{t('latestNews')}</Text>
 
         {/* Blog Posts */}
         {posts.length === 0 ? (
@@ -133,7 +128,7 @@ export default function BlogScreen() {
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -146,16 +141,11 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 20,
-  },
-  title: {
+  pageTitle: {
     color: '#ffffff',
     fontSize: 22,
     fontWeight: '700',
+    paddingVertical: 16,
   },
   centerLoading: {
     flex: 1,
