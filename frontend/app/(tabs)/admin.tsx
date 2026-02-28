@@ -151,7 +151,7 @@ export default function AdminScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#e94560"
+            tintColor="#bd1f22"
           />
         }
       >
@@ -208,7 +208,7 @@ export default function AdminScreen() {
 
         {loading ? (
           <View style={styles.centerLoading}>
-            <ActivityIndicator color="#e94560" size="large" />
+            <ActivityIndicator color="#bd1f22" size="large" />
           </View>
         ) : activeTab === 'blog' ? (
           <View style={styles.contentContainer}>
@@ -252,7 +252,7 @@ export default function AdminScreen() {
                       })
                     }
                   >
-                    <Ionicons name="pencil" size={20} color="#e94560" />
+                    <Ionicons name="pencil" size={20} color="#bd1f22" />
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.actionButton}
@@ -332,7 +332,7 @@ export default function AdminScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f0f23',
+    backgroundColor: '#171717',
   },
   scrollView: {
     flex: 1,
@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
   },
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: '#16213e',
+    backgroundColor: '#121212',
     borderRadius: 12,
     padding: 4,
     marginBottom: 20,
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   activeTab: {
-    backgroundColor: '#e94560',
+    backgroundColor: '#bd1f22',
   },
   tabIconContainer: {
     position: 'relative',
@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#e94560',
+    backgroundColor: '#bd1f22',
     borderRadius: 12,
     padding: 16,
     gap: 10,
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   itemCard: {
-    backgroundColor: '#16213e',
+    backgroundColor: '#121212',
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',
@@ -470,13 +470,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   messageCard: {
-    backgroundColor: '#16213e',
+    backgroundColor: '#121212',
     borderRadius: 12,
     padding: 16,
   },
   unreadCard: {
     borderLeftWidth: 4,
-    borderLeftColor: '#e94560',
+    borderLeftColor: '#bd1f22',
   },
   messageHeader: {
     flexDirection: 'row',
@@ -490,7 +490,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   unreadBadge: {
-    backgroundColor: '#e94560',
+    backgroundColor: '#bd1f22',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
@@ -506,7 +506,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   messageSubject: {
-    color: '#e94560',
+    color: '#bd1f22',
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 8,

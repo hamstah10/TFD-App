@@ -59,7 +59,7 @@ export default function BlogDetailScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['bottom']}>
         <View style={styles.centerLoading}>
-          <ActivityIndicator color="#e94560" size="large" />
+          <ActivityIndicator color="#bd1f22" size="large" />
         </View>
       </SafeAreaView>
     );
@@ -111,7 +111,7 @@ export default function BlogDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f0f23',
+    backgroundColor: '#171717',
   },
   scrollView: {
     flex: 1,

@@ -79,7 +79,7 @@ export function OpeningHoursCard() {
   if (loading) {
     return (
       <View style={styles.card}>
-        <ActivityIndicator color="#e94560" />
+        <ActivityIndicator color="#bd1f22" />
       </View>
     );
   }
@@ -87,7 +87,7 @@ export function OpeningHoursCard() {
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <Ionicons name="time-outline" size={24} color="#e94560" />
+        <Ionicons name="time-outline" size={24} color="#bd1f22" />
         <Text style={styles.title}>{t('openingHours')}</Text>
       </View>
       
@@ -115,7 +115,7 @@ export function OpeningHoursCard() {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#16213e',
+    backgroundColor: '#121212',
     borderRadius: 16,
     padding: 20,
     marginVertical: 10,
@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#00c853',
   },
   closedBadge: {
-    backgroundColor: '#e94560',
+    backgroundColor: '#bd1f22',
   },
   statusText: {
     color: '#ffffff',

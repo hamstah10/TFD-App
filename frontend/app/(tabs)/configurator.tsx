@@ -192,7 +192,7 @@ export default function ConfiguratorScreen() {
       <View style={[styles.pickerWrapper, disabled && styles.pickerDisabled]}>
         {loading === loadingKey ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator color="#e94560" size="small" />
+            <ActivityIndicator color="#bd1f22" size="small" />
             <Text style={styles.loadingText}>{t('loading')}</Text>
           </View>
         ) : (
@@ -201,7 +201,7 @@ export default function ConfiguratorScreen() {
             onValueChange={onChange}
             enabled={!disabled && options.length > 0}
             style={styles.picker}
-            dropdownIconColor="#e94560"
+            dropdownIconColor="#bd1f22"
           >
             <Picker.Item label={placeholder} value="" color="#8b8b8b" />
             {options.map((option) => (
@@ -287,7 +287,7 @@ export default function ConfiguratorScreen() {
             {stages.map((stage) => (
               <View key={stage.id} style={styles.stageCard}>
                 <View style={styles.stageHeader}>
-                  <Ionicons name="flash" size={24} color="#e94560" />
+                  <Ionicons name="flash" size={24} color="#bd1f22" />
                   <Text style={styles.stageName}>{stage.name}</Text>
                 </View>
                 
@@ -329,7 +329,7 @@ export default function ConfiguratorScreen() {
 
         {loading === 'stages' && (
           <View style={styles.centerLoading}>
-            <ActivityIndicator color="#e94560" size="large" />
+            <ActivityIndicator color="#bd1f22" size="large" />
           </View>
         )}
 
@@ -342,7 +342,7 @@ export default function ConfiguratorScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f0f23',
+    backgroundColor: '#171717',
   },
   scrollView: {
     flex: 1,
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   pickerWrapper: {
-    backgroundColor: '#16213e',
+    backgroundColor: '#121212',
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#1a1a2e',
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   stageCard: {
-    backgroundColor: '#16213e',
+    backgroundColor: '#121212',
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   tunedValue: {
-    color: '#e94560',
+    color: '#bd1f22',
     fontWeight: '700',
   },
   priceContainer: {
@@ -461,12 +461,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   priceValue: {
-    color: '#e94560',
+    color: '#bd1f22',
     fontSize: 28,
     fontWeight: '700',
   },
   quoteButton: {
-    backgroundColor: '#e94560',
+    backgroundColor: '#bd1f22',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',

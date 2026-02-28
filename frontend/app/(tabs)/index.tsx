@@ -47,7 +47,7 @@ export default function HomeScreen() {
         {/* Hero Section */}
         <View style={styles.heroSection}>
           <View style={styles.heroIcon}>
-            <Ionicons name="speedometer" size={80} color="#e94560" />
+            <Ionicons name="speedometer" size={80} color="#bd1f22" />
           </View>
           <Text style={styles.tagline}>{t('tagline')}</Text>
           <TouchableOpacity 
@@ -62,17 +62,17 @@ export default function HomeScreen() {
         {/* Features */}
         <View style={styles.featuresContainer}>
           <View style={styles.featureCard}>
-            <Ionicons name="flash" size={32} color="#e94560" />
+            <Ionicons name="flash" size={32} color="#bd1f22" />
             <Text style={styles.featureTitle}>Stage 1-3</Text>
             <Text style={styles.featureText}>ECU Tuning</Text>
           </View>
           <View style={styles.featureCard}>
-            <Ionicons name="shield-checkmark" size={32} color="#e94560" />
+            <Ionicons name="shield-checkmark" size={32} color="#bd1f22" />
             <Text style={styles.featureTitle}>Garantie</Text>
             <Text style={styles.featureText}>Warranty</Text>
           </View>
           <View style={styles.featureCard}>
-            <Ionicons name="leaf" size={32} color="#e94560" />
+            <Ionicons name="leaf" size={32} color="#bd1f22" />
             <Text style={styles.featureTitle}>Eco</Text>
             <Text style={styles.featureText}>Tuning</Text>
           </View>
@@ -85,7 +85,7 @@ export default function HomeScreen() {
         {companyInfo && (
           <View style={styles.contactCard}>
             <View style={styles.contactHeader}>
-              <Ionicons name="location" size={24} color="#e94560" />
+              <Ionicons name="location" size={24} color="#bd1f22" />
               <Text style={styles.contactTitle}>{t('address')}</Text>
             </View>
             <Text style={styles.addressText}>{companyInfo.address.street}</Text>
@@ -108,7 +108,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f0f23',
+    backgroundColor: '#171717',
   },
   scrollView: {
     flex: 1,
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
     width: 140,
     height: 140,
     borderRadius: 70,
-    backgroundColor: '#16213e',
+    backgroundColor: '#121212',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
   ctaButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#e94560',
+    backgroundColor: '#bd1f22',
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 30,
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   },
   featureCard: {
     flex: 1,
-    backgroundColor: '#16213e',
+    backgroundColor: '#121212',
     borderRadius: 16,
     padding: 16,
     alignItems: 'center',
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   contactCard: {
-    backgroundColor: '#16213e',
+    backgroundColor: '#121212',
     borderRadius: 16,
     padding: 20,
     marginVertical: 10,
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
   phoneButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#e94560',
+    backgroundColor: '#bd1f22',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,

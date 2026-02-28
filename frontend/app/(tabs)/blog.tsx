@@ -67,7 +67,7 @@ export default function BlogScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.centerLoading}>
-          <ActivityIndicator color="#e94560" size="large" />
+          <ActivityIndicator color="#bd1f22" size="large" />
         </View>
       </SafeAreaView>
     );
@@ -82,7 +82,7 @@ export default function BlogScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#e94560"
+            tintColor="#bd1f22"
           />
         }
       >
@@ -124,7 +124,7 @@ export default function BlogScreen() {
                 </View>
                 <View style={styles.readMoreContainer}>
                   <Text style={styles.readMoreText}>{t('readMore')}</Text>
-                  <Ionicons name="arrow-forward" size={16} color="#e94560" />
+                  <Ionicons name="arrow-forward" size={16} color="#bd1f22" />
                 </View>
               </View>
             </TouchableOpacity>
@@ -140,7 +140,7 @@ export default function BlogScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f0f23',
+    backgroundColor: '#171717',
   },
   scrollView: {
     flex: 1,
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   postCard: {
-    backgroundColor: '#16213e',
+    backgroundColor: '#121212',
     borderRadius: 16,
     marginBottom: 16,
     overflow: 'hidden',
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   readMoreText: {
-    color: '#e94560',
+    color: '#bd1f22',
     fontSize: 14,
     fontWeight: '600',
   },

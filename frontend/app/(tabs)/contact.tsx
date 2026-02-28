@@ -167,7 +167,7 @@ export default function ContactScreen() {
           {companyInfo && (
             <View style={styles.infoCard}>
               <View style={styles.infoRow}>
-                <Ionicons name="location" size={20} color="#e94560" />
+                <Ionicons name="location" size={20} color="#bd1f22" />
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>{t('address')}</Text>
                   <Text style={styles.infoText}>{companyInfo.address.street}</Text>
@@ -178,7 +178,7 @@ export default function ContactScreen() {
               </View>
 
               <View style={styles.infoRow}>
-                <Ionicons name="call" size={20} color="#e94560" />
+                <Ionicons name="call" size={20} color="#bd1f22" />
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>Telefon</Text>
                   <Text style={styles.infoText}>{companyInfo.phone}</Text>
@@ -186,7 +186,7 @@ export default function ContactScreen() {
               </View>
 
               <View style={styles.infoRow}>
-                <Ionicons name="mail" size={20} color="#e94560" />
+                <Ionicons name="mail" size={20} color="#bd1f22" />
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>E-Mail</Text>
                   <Text style={styles.infoText}>{companyInfo.email}</Text>
@@ -208,7 +208,7 @@ export default function ContactScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f0f23',
+    backgroundColor: '#171717',
   },
   keyboardView: {
     flex: 1,
@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   formContainer: {
-    backgroundColor: '#16213e',
+    backgroundColor: '#121212',
     borderRadius: 16,
     padding: 20,
     marginBottom: 20,
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     paddingTop: 14,
   },
   submitButton: {
-    backgroundColor: '#e94560',
+    backgroundColor: '#bd1f22',
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   infoCard: {
-    backgroundColor: '#16213e',
+    backgroundColor: '#121212',
     borderRadius: 16,
     padding: 20,
     marginBottom: 10,
