@@ -300,9 +300,9 @@ export default function ConfiguratorScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
+    <View style={styles.container}>
+      {/* Step Header */}
+      <View style={styles.stepHeader}>
         <View style={styles.headerLeft}>
           {currentStep > 0 && (
             <TouchableOpacity onPress={goBack} style={styles.backButton}>
@@ -311,7 +311,6 @@ export default function ConfiguratorScreen() {
           )}
           <Text style={styles.title}>{getStepTitle()}</Text>
         </View>
-        <LanguageSwitch />
       </View>
 
       {/* Progress Indicator */}
