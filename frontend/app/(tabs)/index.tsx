@@ -31,7 +31,7 @@ export default function HomeScreen() {
   };
 
   const handleLogin = () => {
-    router.push('/customer/login');
+    router.push('/login');
   };
 
   return (
