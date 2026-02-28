@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../src/contexts/LanguageContext';
+import { ChatAssistant } from '../../src/components/ChatAssistant';
 import {
   getVehicleTypes,
   getManufacturers,
