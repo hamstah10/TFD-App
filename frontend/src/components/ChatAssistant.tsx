@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import axios from 'axios';
 
-const API_BASE = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://tune-files-hub.preview.emergentagent.com';
+const API_BASE = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 interface Message {
   id: string;
