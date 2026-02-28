@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,13 +11,10 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../src/contexts/LanguageContext';
-import { LanguageSwitch } from '../../src/components/LanguageSwitch';
 import { OpeningHoursCard } from '../../src/components/OpeningHoursCard';
 import { submitContactMessage, getCompanyInfo } from '../../src/services/api';
-import { useEffect } from 'react';
 
 export default function ContactScreen() {
   const { t } = useLanguage();
@@ -72,17 +69,14 @@ export default function ContactScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.title}>{t('contactUs')}</Text>
-            <LanguageSwitch />
-          </View>
+          {/* Title */}
+          <Text style={styles.pageTitle}>{t('contactUs')}</Text>
 
           {/* Contact Form */}
           <View style={styles.formContainer}>
@@ -201,7 +195,7 @@ export default function ContactScreen() {
           <View style={styles.bottomSpacer} />
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -217,16 +211,11 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 20,
-  },
-  title: {
+  pageTitle: {
     color: '#ffffff',
     fontSize: 22,
     fontWeight: '700',
+    paddingVertical: 16,
   },
   formContainer: {
     backgroundColor: '#121212',
