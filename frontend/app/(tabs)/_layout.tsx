@@ -2,7 +2,21 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../src/contexts/LanguageContext';
-import { View, Platform } from 'react-native';
+import { View, Platform, Image, StyleSheet } from 'react-native';
+import { LanguageSwitch } from '../../src/components/LanguageSwitch';
+
+function CustomHeader() {
+  return (
+    <View style={styles.headerContainer}>
+      <Image 
+        source={require('../../assets/images/logo.png')} 
+        style={styles.logo}
+        resizeMode="contain"
+      />
+      <LanguageSwitch />
+    </View>
+  );
+}
 
 export default function TabLayout() {
   const { t } = useLanguage();
@@ -22,11 +36,13 @@ export default function TabLayout() {
         },
         headerStyle: {
           backgroundColor: '#121212',
+          height: 80,
         },
         headerTintColor: '#ffffff',
         headerTitleStyle: {
           fontWeight: '700',
         },
+        header: () => <CustomHeader />,
       }}
     >
       <Tabs.Screen
@@ -77,3 +93,21 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#121212',
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 50 : 20,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1a1a1a',
+  },
+  logo: {
+    width: 180,
+    height: 40,
+  },
+});
