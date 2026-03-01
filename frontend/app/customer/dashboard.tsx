@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     backgroundColor: '#121212',
-    borderRadius: 12,
+    borderRadius: 8,
     padding: 16,
     alignItems: 'center',
   },
@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
   },
   orderCard: {
     backgroundColor: '#121212',
-    borderRadius: 12,
+    borderRadius: 8,
     padding: 16,
     marginBottom: 12,
   },
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 8,
     gap: 4,
   },
   statusText: {

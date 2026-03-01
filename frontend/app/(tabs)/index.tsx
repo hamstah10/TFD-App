@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#121212',
-    borderRadius: 12,
+    borderRadius: 8,
     padding: 16,
     marginTop: 16,
     borderWidth: 1,
@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#bd1f22',
     paddingHorizontal: 24,
     paddingVertical: 14,
-    borderRadius: 30,
+    borderRadius: 8,
     gap: 10,
   },
   ctaButtonText: {
