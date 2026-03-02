@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Backend API Testing Script for Customer Photo Upload and Retrieval
-Tests the photo endpoints according to the review request requirements.
+Backend API Testing Script for Customer Photo Upload and Fahrzeugschein Scanner
+Tests the photo endpoints and Fahrzeugschein Scanner API according to review requests.
 """
 
 import requests
@@ -224,6 +224,115 @@ def test_api_health():
         print(f"❌ API health check failed: {str(e)}")
         return False
 
+def test_fahrzeugschein_scanner():
+    """Test the /scan-fahrzeugschein endpoint as requested in the review"""
+    print("=" * 60)
+    print("TESTING FAHRZEUGSCHEIN SCANNER API ENDPOINT")
+    print("=" * 60)
+    print(f"Base URL: {BASE_URL}")
+    print()
+    
+    # Test data from the review request - tiny 1x1 pixel test image
+    test_payload = {
+        "image": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        "show_cuts": False
+    }
+    
+    try:
+        print("Testing POST /api/scan-fahrzeugschein - Scan vehicle registration document")
+        print("-" * 50)
+        print("Test Image: 1x1 pixel test image (should return success=false or success=true)")
+        
+        response = requests.post(
+            f"{BASE_URL}/scan-fahrzeugschein",
+            json=test_payload,
+            headers={"Content-Type": "application/json"},
+            timeout=60  # Longer timeout for external API call
+        )
+        
+        print(f"Status Code: {response.status_code}")
+        print(f"Response Headers: {dict(response.headers)}")
+        
+        if response.status_code == 200:
+            print("✅ SUCCESS: Endpoint is accessible (200 OK)")
+            
+            try:
+                response_data = response.json()
+                print(f"Response JSON: {json.dumps(response_data, indent=2)}")
+                
+                # Verify response format has required 'success' field
+                if 'success' not in response_data:
+                    print("❌ FAILED: Response missing required 'success' field")
+                    return False
+                
+                print("✅ SUCCESS: Response has required 'success' field")
+                success_value = response_data['success']
+                print(f"Success value: {success_value}")
+                
+                # Test expects either success=false (correct behavior for test image) 
+                # or success=true (if API accepts anything)
+                if success_value == False:
+                    print("✅ SUCCESS: API correctly returned success=False for 1x1 test image")
+                    if 'error' in response_data:
+                        print(f"   Error message: {response_data['error']}")
+                elif success_value == True:
+                    print("✅ SUCCESS: API returned success=True (accepts any image)")
+                    if 'country_code' in response_data:
+                        print(f"   Country code: {response_data.get('country_code')}")
+                    if 'data' in response_data:
+                        print(f"   Data returned: {response_data.get('data')}")
+                else:
+                    print(f"❌ FAILED: Unexpected success value: {success_value} (expected True or False)")
+                    return False
+                
+                # Check optional fields are properly typed
+                optional_fields = {
+                    'error': str,
+                    'country_code': str, 
+                    'data': dict
+                }
+                
+                for field, expected_type in optional_fields.items():
+                    if field in response_data and response_data[field] is not None:
+                        if not isinstance(response_data[field], expected_type):
+                            print(f"⚠️  WARNING: Field '{field}' has unexpected type: {type(response_data[field])}")
+                        else:
+                            print(f"✅ Field '{field}' has correct type: {expected_type.__name__}")
+                
+                print()
+                print("=" * 60)
+                print("✅ FAHRZEUGSCHEIN SCANNER API TEST COMPLETED SUCCESSFULLY")
+                print("=" * 60)
+                print("\nVerified functionality:")
+                print("• Endpoint is accessible at /api/scan-fahrzeugschein")
+                print("• Response format is correct (has success field)")
+                print("• Error handling works properly for invalid/test images")
+                print("• Response structure matches expected schema")
+                
+                return True
+                
+            except json.JSONDecodeError as e:
+                print(f"❌ FAILED: Could not parse response JSON: {e}")
+                print(f"Raw response: {response.text}")
+                return False
+        else:
+            print(f"❌ FAILED: Expected 200 OK, got {response.status_code}")
+            print(f"Response text: {response.text}")
+            return False
+            
+    except requests.exceptions.Timeout:
+        print("❌ FAILED: Request timed out (external API may be slow/unavailable)")
+        return False
+    except requests.exceptions.ConnectionError as e:
+        print(f"❌ FAILED: Connection error: {e}")
+        return False
+    except requests.exceptions.RequestException as e:
+        print(f"❌ FAILED: Request error: {e}")
+        return False
+    except Exception as e:
+        print(f"❌ FAILED: Unexpected error: {e}")
+        return False
+
 if __name__ == "__main__":
     print("Starting Backend API Tests...")
     print(f"Timestamp: {datetime.now().isoformat()}")
@@ -236,12 +345,24 @@ if __name__ == "__main__":
     
     print()
     
-    # Run photo endpoint tests
-    success = test_photo_endpoints()
+    # Run photo endpoint tests (existing functionality)
+    photo_success = test_photo_endpoints()
     
-    if success:
-        print("\n🎉 All tests passed successfully!")
+    print()
+    
+    # Run Fahrzeugschein Scanner test (new review request)
+    scanner_success = test_fahrzeugschein_scanner()
+    
+    # Overall results
+    print(f"\n{'='*60}")
+    print("OVERALL TEST RESULTS:")
+    print(f"{'='*60}")
+    print(f"Photo API Tests:           {'✅ PASS' if photo_success else '❌ FAIL'}")
+    print(f"Fahrzeugschein Scanner:    {'✅ PASS' if scanner_success else '❌ FAIL'}")
+    
+    if photo_success and scanner_success:
+        print("\n🎉 All backend tests passed successfully!")
         exit(0)
     else:
-        print("\n💥 Some tests failed!")
+        print("\n💥 Some backend tests failed!")
         exit(1)

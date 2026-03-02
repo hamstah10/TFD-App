@@ -6,7 +6,7 @@ import { useAuth } from '../../src/contexts/AuthContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { LanguageSwitch } from '../../src/components/LanguageSwitch';
 
-type MenuTab = 'dashboard' | 'files' | 'photos' | 'tickets';
+type MenuTab = 'dashboard' | 'files' | 'photos' | 'fahrzeugschein' | 'tickets';
 
 export default function CustomerLayout() {
   const { user, logout, isAuthenticated } = useAuth();
@@ -22,6 +22,7 @@ export default function CustomerLayout() {
   const getActiveTab = (): MenuTab => {
     if (pathname.includes('/files')) return 'files';
     if (pathname.includes('/photos')) return 'photos';
+    if (pathname.includes('/fahrzeugschein')) return 'fahrzeugschein';
     if (pathname.includes('/tickets')) return 'tickets';
     return 'dashboard';
   };
@@ -41,6 +42,9 @@ export default function CustomerLayout() {
         break;
       case 'photos':
         router.push('/customer/photos');
+        break;
+      case 'fahrzeugschein':
+        router.push('/customer/fahrzeugschein');
         break;
       case 'tickets':
         router.push('/customer/tickets');
@@ -122,6 +126,20 @@ export default function CustomerLayout() {
           />
           <Text style={[styles.navTabText, getActiveTab() === 'photos' && styles.navTabTextActive]}>
             Fotos
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.navTab, getActiveTab() === 'fahrzeugschein' && styles.navTabActive]}
+          onPress={() => navigateTo('fahrzeugschein')}
+        >
+          <Ionicons 
+            name="car" 
+            size={20} 
+            color={getActiveTab() === 'fahrzeugschein' ? '#ffffff' : '#8b8b8b'} 
+          />
+          <Text style={[styles.navTabText, getActiveTab() === 'fahrzeugschein' && styles.navTabTextActive]}>
+            KFZ-Schein
           </Text>
         </TouchableOpacity>
 

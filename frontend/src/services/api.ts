@@ -126,4 +126,43 @@ export const deletePhoto = async (photoId: string) => {
   return response.data;
 };
 
+// Fahrzeugschein Scanner API
+export interface FahrzeugscheinData {
+  type?: string;
+  registrationNumber?: string;
+  vin?: string;
+  ez?: string;
+  ez_string?: string;
+  hsn?: string;
+  tsn?: string;
+  d1?: string;  // Marke
+  d3?: string;  // Handelsbezeichnung
+  name?: string;
+  firstname?: string;
+  address1?: string;
+  address2?: string;
+  p1?: string;  // Hubraum
+  p3?: string;  // Kraftstoff
+  field_14?: string;  // Emissionsklasse
+  g?: string;  // Leergewicht
+  f1?: string;  // Zulässige Gesamtmasse
+  j?: string;  // Fahrzeugklasse
+  [key: string]: any;
+}
+
+export interface FahrzeugscheinScanResult {
+  success: boolean;
+  country_code?: string;
+  data?: FahrzeugscheinData;
+  error?: string;
+}
+
+export const scanFahrzeugschein = async (base64Image: string): Promise<FahrzeugscheinScanResult> => {
+  const response = await api.post('/scan-fahrzeugschein', {
+    image: base64Image,
+    show_cuts: false,
+  });
+  return response.data;
+};
+
 export default api;

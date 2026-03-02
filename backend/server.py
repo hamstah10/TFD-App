@@ -24,6 +24,10 @@ CHIPTUNING_API_BASE = "https://portal.tuningfiles-download.com/api/v1"
 CHIPTUNING_API_KEY = "AWi1R04bkF0yi1v1p2HYk1lpADlUfmKOJyxdAol7txn8HblyYulAurFCdKO271cH"
 USE_MOCK_DATA = True  # Set to False when API IP is whitelisted
 
+# Fahrzeugschein Scanner API configuration
+FAHRZEUGSCHEIN_API_BASE = "https://api.fahrzeugschein-scanner.de"
+FAHRZEUGSCHEIN_ACCESS_KEY = "361dc9e0-2bb6-4471-a690-7f0d8b973a10"
+
 # Create the main app without a prefix
 app = FastAPI()
 
@@ -733,6 +737,68 @@ async def delete_photo(photo_id: str):
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Photo not found")
     return {"message": "Photo deleted successfully"}
+
+# ============== FAHRZEUGSCHEIN SCANNER ROUTES ==============
+
+class FahrzeugscheinScanRequest(BaseModel):
+    image: str  # Base64 encoded image
+    show_cuts: bool = False
+
+class FahrzeugscheinScanResponse(BaseModel):
+    success: bool
+    country_code: Optional[str] = None
+    data: Optional[dict] = None
+    error: Optional[str] = None
+
+@api_router.post("/scan-fahrzeugschein", response_model=FahrzeugscheinScanResponse)
+async def scan_fahrzeugschein(request: FahrzeugscheinScanRequest):
+    """Scan a vehicle registration document (Fahrzeugschein) and extract data"""
+    url = f"{FAHRZEUGSCHEIN_API_BASE}/generic-json"
+    headers = {
+        "Content-Type": "application/json",
+        "access_key": FAHRZEUGSCHEIN_ACCESS_KEY
+    }
+    
+    payload = {
+        "image": request.image,
+        "show_cuts": request.show_cuts
+    }
+    
+    async with httpx.AsyncClient(timeout=60.0) as http_client:
+        try:
+            response = await http_client.post(url, json=payload, headers=headers)
+            response.raise_for_status()
+            result = response.json()
+            
+            return FahrzeugscheinScanResponse(
+                success=True,
+                country_code=result.get("country_code"),
+                data=result.get("data")
+            )
+        except httpx.HTTPStatusError as e:
+            logger.error(f"Fahrzeugschein API HTTP error: {e.response.status_code} - {e.response.text}")
+            error_detail = "API Fehler"
+            try:
+                error_json = e.response.json()
+                error_detail = error_json.get("message", str(e.response.status_code))
+            except:
+                error_detail = f"HTTP {e.response.status_code}"
+            return FahrzeugscheinScanResponse(
+                success=False,
+                error=error_detail
+            )
+        except httpx.RequestError as e:
+            logger.error(f"Fahrzeugschein API request error: {str(e)}")
+            return FahrzeugscheinScanResponse(
+                success=False,
+                error=f"Verbindungsfehler: {str(e)}"
+            )
+        except Exception as e:
+            logger.error(f"Fahrzeugschein scan error: {str(e)}")
+            return FahrzeugscheinScanResponse(
+                success=False,
+                error=f"Unbekannter Fehler: {str(e)}"
+            )
 
 # Include the router in the main app
 app.include_router(api_router)
