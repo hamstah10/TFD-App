@@ -16,11 +16,13 @@ import { useAuth } from '../src/contexts/AuthContext';
 import { useLanguage } from '../src/contexts/LanguageContext';
 import { LanguageSwitch } from '../src/components/LanguageSwitch';
 import Logo from '../src/components/Logo';
+import useIsOpen from '../src/hooks/useIsOpen';
 
 export default function LoginScreen() {
   const { login } = useAuth();
   const { language } = useLanguage();
   const router = useRouter();
+  const isOpen = useIsOpen();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -73,7 +75,7 @@ export default function LoginScreen() {
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#ffffff" />
         </TouchableOpacity>
-        <Logo width={140} height={42} />
+        <Logo width={140} height={42} isOpen={isOpen} />
         <LanguageSwitch />
       </View>
 

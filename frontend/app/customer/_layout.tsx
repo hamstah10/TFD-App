@@ -6,6 +6,7 @@ import { useAuth } from '../../src/contexts/AuthContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { LanguageSwitch } from '../../src/components/LanguageSwitch';
 import Logo from '../../src/components/Logo';
+import useIsOpen from '../../src/hooks/useIsOpen';
 
 type MenuTab = 'dashboard' | 'files' | 'photos' | 'fahrzeugschein' | 'tickets';
 
@@ -57,7 +58,7 @@ export default function CustomerLayout() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Logo width={160} height={50} />
+        <Logo width={160} height={50} isOpen={useIsOpen()} />
         <View style={styles.headerRight}>
           <LanguageSwitch />
           <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>

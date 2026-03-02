@@ -5,11 +5,14 @@ import { useLanguage } from '../../src/contexts/LanguageContext';
 import { View, Platform, StyleSheet } from 'react-native';
 import { LanguageSwitch } from '../../src/components/LanguageSwitch';
 import Logo from '../../src/components/Logo';
+import useIsOpen from '../../src/hooks/useIsOpen';
 
 function CustomHeader() {
+  const isOpen = useIsOpen();
+  
   return (
     <View style={styles.headerContainer}>
-      <Logo width={180} height={55} />
+      <Logo width={180} height={55} isOpen={isOpen} />
       <LanguageSwitch />
     </View>
   );
