@@ -105,4 +105,25 @@ export const getCompanyInfo = async () => {
   return response.data;
 };
 
+// Customer Photos API
+export const savePhoto = async (userId: string, base64: string, filename?: string, description?: string) => {
+  const response = await api.post('/photos', {
+    user_id: userId,
+    base64,
+    filename,
+    description,
+  });
+  return response.data;
+};
+
+export const getUserPhotos = async (userId: string) => {
+  const response = await api.get(`/photos/${userId}`);
+  return response.data;
+};
+
+export const deletePhoto = async (photoId: string) => {
+  const response = await api.delete(`/photos/${photoId}`);
+  return response.data;
+};
+
 export default api;

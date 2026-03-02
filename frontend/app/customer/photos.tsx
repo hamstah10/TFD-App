@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,27 +10,60 @@ import {
   ActivityIndicator,
   Modal,
   Platform,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { useLanguage } from '../../src/contexts/LanguageContext';
+import { useAuth } from '../../src/contexts/AuthContext';
+import { savePhoto, getUserPhotos, deletePhoto as deletePhotoApi } from '../../src/services/api';
 
 interface CapturedPhoto {
   id: string;
-  uri: string;
+  user_id: string;
   base64: string;
-  timestamp: Date;
+  filename?: string;
+  description?: string;
+  created_at: string;
 }
 
 export default function PhotosScreen() {
   const { language } = useLanguage();
+  const { user } = useAuth();
   const [photos, setPhotos] = useState<CapturedPhoto[]>([]);
   const [cameraVisible, setCameraVisible] = useState(false);
   const [facing, setFacing] = useState<CameraType>('back');
   const [permission, requestPermission] = useCameraPermissions();
   const [capturing, setCapturing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [saving, setSaving] = useState(false);
   const cameraRef = useRef<CameraView>(null);
+
+  useEffect(() => {
+    if (user?.id) {
+      loadPhotos();
+    }
+  }, [user?.id]);
+
+  const loadPhotos = async () => {
+    if (!user?.id) return;
+    try {
+      const data = await getUserPhotos(user.id);
+      setPhotos(data);
+    } catch (error) {
+      console.error('Failed to load photos:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadPhotos();
+  };
 
   const openCamera = async () => {
     if (!permission?.granted) {
@@ -57,20 +90,38 @@ export default function PhotosScreen() {
       base64: true,
     });
 
-    if (!result.canceled && result.assets[0]) {
+    if (!result.canceled && result.assets[0] && user?.id) {
       const asset = result.assets[0];
-      const newPhoto: CapturedPhoto = {
-        id: Date.now().toString(),
-        uri: asset.uri,
-        base64: asset.base64 || '',
-        timestamp: new Date(),
-      };
+      if (asset.base64) {
+        await savePhotoToServer(asset.base64, 'gallery_image.jpg');
+      }
+    }
+  };
+
+  const savePhotoToServer = async (base64: string, filename: string) => {
+    if (!user?.id) return;
+    
+    setSaving(true);
+    try {
+      const newPhoto = await savePhoto(user.id, base64, filename);
       setPhotos(prev => [newPhoto, ...prev]);
+      Alert.alert(
+        language === 'de' ? 'Erfolg' : 'Success',
+        language === 'de' ? 'Foto wurde gespeichert!' : 'Photo saved successfully!'
+      );
+    } catch (error) {
+      console.error('Failed to save photo:', error);
+      Alert.alert(
+        language === 'de' ? 'Fehler' : 'Error',
+        language === 'de' ? 'Foto konnte nicht gespeichert werden.' : 'Failed to save photo.'
+      );
+    } finally {
+      setSaving(false);
     }
   };
 
   const takePicture = async () => {
-    if (cameraRef.current && !capturing) {
+    if (cameraRef.current && !capturing && user?.id) {
       setCapturing(true);
       try {
         const photo = await cameraRef.current.takePictureAsync({
@@ -78,15 +129,9 @@ export default function PhotosScreen() {
           quality: 0.8,
         });
         
-        if (photo) {
-          const newPhoto: CapturedPhoto = {
-            id: Date.now().toString(),
-            uri: photo.uri,
-            base64: photo.base64 || '',
-            timestamp: new Date(),
-          };
-          setPhotos(prev => [newPhoto, ...prev]);
+        if (photo && photo.base64) {
           setCameraVisible(false);
+          await savePhotoToServer(photo.base64, `photo_${Date.now()}.jpg`);
         }
       } catch (error) {
         console.error('Failed to take picture:', error);
@@ -104,7 +149,7 @@ export default function PhotosScreen() {
     setFacing(current => (current === 'back' ? 'front' : 'back'));
   };
 
-  const deletePhoto = (photoId: string) => {
+  const handleDeletePhoto = (photoId: string) => {
     Alert.alert(
       language === 'de' ? 'Foto löschen' : 'Delete Photo',
       language === 'de' ? 'Möchten Sie dieses Foto wirklich löschen?' : 'Are you sure you want to delete this photo?',
@@ -113,13 +158,25 @@ export default function PhotosScreen() {
         {
           text: language === 'de' ? 'Löschen' : 'Delete',
           style: 'destructive',
-          onPress: () => setPhotos(prev => prev.filter(p => p.id !== photoId)),
+          onPress: async () => {
+            try {
+              await deletePhotoApi(photoId);
+              setPhotos(prev => prev.filter(p => p.id !== photoId));
+            } catch (error) {
+              console.error('Failed to delete photo:', error);
+              Alert.alert(
+                language === 'de' ? 'Fehler' : 'Error',
+                language === 'de' ? 'Foto konnte nicht gelöscht werden.' : 'Failed to delete photo.'
+              );
+            }
+          },
         },
       ]
     );
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
     return date.toLocaleDateString(language === 'de' ? 'de-DE' : 'en-US', {
       day: '2-digit',
       month: '2-digit',
@@ -129,9 +186,27 @@ export default function PhotosScreen() {
     });
   };
 
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator color="#bd1f22" size="large" />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#bd1f22"
+          />
+        }
+      >
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>
@@ -141,7 +216,7 @@ export default function PhotosScreen() {
 
         {/* Action Buttons */}
         <View style={styles.actionsContainer}>
-          <TouchableOpacity style={styles.actionButton} onPress={openCamera}>
+          <TouchableOpacity style={styles.actionButton} onPress={openCamera} disabled={saving}>
             <View style={styles.actionIcon}>
               <Ionicons name="camera" size={28} color="#bd1f22" />
             </View>
@@ -150,7 +225,7 @@ export default function PhotosScreen() {
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionButton} onPress={pickImage}>
+          <TouchableOpacity style={styles.actionButton} onPress={pickImage} disabled={saving}>
             <View style={styles.actionIcon}>
               <Ionicons name="images" size={28} color="#bd1f22" />
             </View>
@@ -160,10 +235,20 @@ export default function PhotosScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Saving Indicator */}
+        {saving && (
+          <View style={styles.savingContainer}>
+            <ActivityIndicator color="#bd1f22" size="small" />
+            <Text style={styles.savingText}>
+              {language === 'de' ? 'Foto wird gespeichert...' : 'Saving photo...'}
+            </Text>
+          </View>
+        )}
+
         {/* Photos Grid */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            {language === 'de' ? 'Aufgenommene Fotos' : 'Captured Photos'} ({photos.length})
+            {language === 'de' ? 'Gespeicherte Fotos' : 'Saved Photos'} ({photos.length})
           </Text>
 
           {photos.length === 0 ? (
@@ -171,13 +256,13 @@ export default function PhotosScreen() {
               <Ionicons name="camera-outline" size={64} color="#8b8b8b" />
               <Text style={styles.emptyText}>
                 {language === 'de' 
-                  ? 'Noch keine Fotos aufgenommen' 
-                  : 'No photos captured yet'}
+                  ? 'Noch keine Fotos gespeichert' 
+                  : 'No photos saved yet'}
               </Text>
               <Text style={styles.emptySubtext}>
                 {language === 'de' 
-                  ? 'Tippen Sie auf "Foto aufnehmen" um zu beginnen' 
-                  : 'Tap "Take Photo" to get started'}
+                  ? 'Fotos werden in der Cloud gespeichert' 
+                  : 'Photos are saved to the cloud'}
               </Text>
             </View>
           ) : (
@@ -185,15 +270,15 @@ export default function PhotosScreen() {
               {photos.map((photo) => (
                 <View key={photo.id} style={styles.photoCard}>
                   <Image
-                    source={{ uri: photo.base64 ? `data:image/jpeg;base64,${photo.base64}` : photo.uri }}
+                    source={{ uri: `data:image/jpeg;base64,${photo.base64}` }}
                     style={styles.photoImage}
                     resizeMode="cover"
                   />
                   <View style={styles.photoInfo}>
-                    <Text style={styles.photoDate}>{formatDate(photo.timestamp)}</Text>
+                    <Text style={styles.photoDate}>{formatDate(photo.created_at)}</Text>
                     <TouchableOpacity
                       style={styles.deleteButton}
-                      onPress={() => deletePhoto(photo.id)}
+                      onPress={() => handleDeletePhoto(photo.id)}
                     >
                       <Ionicons name="trash" size={18} color="#ff4757" />
                     </TouchableOpacity>
@@ -264,6 +349,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#171717',
   },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#171717',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   scrollView: {
     flex: 1,
     paddingHorizontal: 20,
@@ -279,7 +370,7 @@ const styles = StyleSheet.create({
   actionsContainer: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 24,
+    marginBottom: 16,
   },
   actionButton: {
     flex: 1,
@@ -304,6 +395,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  savingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#121212',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    gap: 12,
+  },
+  savingText: {
+    color: '#bd1f22',
+    fontSize: 14,
+    fontWeight: '600',
   },
   section: {
     marginBottom: 24,

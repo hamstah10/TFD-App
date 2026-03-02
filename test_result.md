@@ -225,6 +225,18 @@ backend:
         agent: "main"
         comment: "GET /api/company-info returns company details"
 
+  - task: "Customer Photo Upload API"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Comprehensive testing completed successfully. POST /api/photos creates photos with all required fields (id, user_id, base64, created_at). GET /api/photos/{user_id} correctly filters and retrieves user photos. DELETE /api/photos/{photo_id} properly removes photos and handles non-existent IDs with 404. All data persists correctly in MongoDB. Error handling verified."
+
 frontend:
   - task: "Home Screen"
     implemented: true
@@ -326,3 +338,5 @@ test_plan:
 agent_communication:
   - agent: "main"
     message: "MVP completed with all requested features. Chiptuning API uses MOCK DATA because external API (portal.tuningfiles-download.com) IP whitelist is not working. All screens verified via screenshots."
+  - agent: "testing"
+    message: "Customer Photo Upload API tested successfully. All endpoints (POST /api/photos, GET /api/photos/{user_id}, DELETE /api/photos/{photo_id}) working correctly. MongoDB persistence verified. Error handling for non-existent photos confirmed with proper 404 responses."

@@ -697,6 +697,43 @@ async def clear_chat_session(session_id: str):
     await db.chat_sessions.delete_one({"session_id": session_id})
     return {"message": "Chat session cleared"}
 
+# ============== CUSTOMER PHOTOS ROUTES ==============
+
+class CustomerPhoto(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    base64: str
+    filename: Optional[str] = None
+    description: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class CustomerPhotoCreate(BaseModel):
+    user_id: str
+    base64: str
+    filename: Optional[str] = None
+    description: Optional[str] = None
+
+@api_router.post("/photos", response_model=CustomerPhoto)
+async def create_photo(photo: CustomerPhotoCreate):
+    """Save a customer photo"""
+    photo_obj = CustomerPhoto(**photo.model_dump())
+    await db.customer_photos.insert_one(photo_obj.model_dump())
+    return photo_obj
+
+@api_router.get("/photos/{user_id}", response_model=List[CustomerPhoto])
+async def get_user_photos(user_id: str):
+    """Get all photos for a user"""
+    photos = await db.customer_photos.find({"user_id": user_id}).sort("created_at", -1).to_list(100)
+    return [CustomerPhoto(**photo) for photo in photos]
+
+@api_router.delete("/photos/{photo_id}")
+async def delete_photo(photo_id: str):
+    """Delete a photo"""
+    result = await db.customer_photos.delete_one({"id": photo_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Photo not found")
+    return {"message": "Photo deleted successfully"}
+
 # Include the router in the main app
 app.include_router(api_router)
 
