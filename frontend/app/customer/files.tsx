@@ -346,8 +346,8 @@ export default function FilesScreen() {
             </Text>
             <Text style={styles.uploadHint}>
               {language === 'de' 
-                ? 'Unterstützte Formate: .bin, .ori, .mod' 
-                : 'Supported formats: .bin, .ori, .mod'}
+                ? 'Formate: .bin, .ori, .mod, .slave' 
+                : 'Formats: .bin, .ori, .mod, .slave'}
             </Text>
           </>
         )}
