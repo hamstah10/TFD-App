@@ -1030,12 +1030,6 @@ export default function FilesScreen() {
     </ScrollView>
   );
 }
-      )}
-
-      <View style={styles.bottomSpacer} />
-    </ScrollView>
-  );
-}
 
 const styles = StyleSheet.create({
   container: {
