@@ -46,6 +46,18 @@ export const getStages = async (engineId: string, mdtId?: string) => {
   return response.data;
 };
 
+export const getEcus = async (engineId: string, mdtId?: string) => {
+  const params = mdtId ? { mdt_id: mdtId } : {};
+  const response = await api.get(`/chiptuning/ecus/${engineId}`, { params });
+  return response.data;
+};
+
+export const getOptions = async (engineId: string, ecuId: string, mdtId?: string) => {
+  const params = mdtId ? { mdt_id: mdtId } : {};
+  const response = await api.get(`/chiptuning/options/${engineId}/${ecuId}`, { params });
+  return response.data;
+};
+
 // Blog API
 export const getBlogPosts = async (publishedOnly: boolean = true) => {
   const response = await api.get('/blog', { params: { published_only: publishedOnly } });

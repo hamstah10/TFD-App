@@ -19,6 +19,8 @@ import {
   getBuilts,
   getEngines,
   getStages,
+  getEcus,
+  getOptions,
 } from '../../src/services/api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -33,13 +35,27 @@ interface SelectOption {
 interface Stage {
   id: string;
   name: string;
-  description_de?: string;
-  description_en?: string;
-  original_power?: string;
-  tuned_power?: string;
-  original_torque?: string;
-  tuned_torque?: string;
+  org_hp: number;
+  org_tq: number;
+  tun_hp: number;
+  tun_tq: number;
+  delta_hp: number;
+  delta_tq: number;
+  delta_hp_percent: number;
+  delta_tq_percent: number;
   price?: number;
+}
+
+interface ECU {
+  id: string;
+  name: string;
+}
+
+interface VehicleOption {
+  id: number;
+  name: string;
+  image?: string;
+  tooltip?: string;
 }
 
 type Step = 'type' | 'manufacturer' | 'model' | 'built' | 'engine' | 'stages';
@@ -61,6 +77,11 @@ export default function ConfiguratorScreen() {
   const [builts, setBuilts] = useState<SelectOption[]>([]);
   const [engines, setEngines] = useState<SelectOption[]>([]);
   const [stages, setStages] = useState<Stage[]>([]);
+  const [ecus, setEcus] = useState<ECU[]>([]);
+  const [options, setOptions] = useState<VehicleOption[]>([]);
+  const [selectedEcu, setSelectedEcu] = useState<ECU | null>(null);
+  const [loadingEcus, setLoadingEcus] = useState<boolean>(false);
+  const [loadingOptions, setLoadingOptions] = useState<boolean>(false);
   
   // Selection states
   const [selectedType, setSelectedType] = useState<SelectOption | null>(null);
@@ -188,16 +209,40 @@ export default function ConfiguratorScreen() {
   const handleSelectEngine = async (item: SelectOption) => {
     setSelectedEngine(item);
     setStages([]);
+    setEcus([]);
+    setOptions([]);
+    setSelectedEcu(null);
     
     setLoading(true);
     try {
-      const response = await getStages(item.id, currentMdtId || undefined);
-      setStages(response.data || []);
+      // Load stages and ECUs in parallel
+      const [stagesResponse, ecusResponse] = await Promise.all([
+        getStages(item.id, currentMdtId || undefined),
+        getEcus(item.id, currentMdtId || undefined)
+      ]);
+      setStages(stagesResponse.data || []);
+      setEcus(ecusResponse.data || []);
       setCurrentStep(5);
     } catch (error) {
-      console.error('Failed to load stages:', error);
+      console.error('Failed to load stages/ecus:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSelectEcu = async (ecu: ECU) => {
+    if (!selectedEngine) return;
+    setSelectedEcu(ecu);
+    setOptions([]);
+    setLoadingOptions(true);
+    
+    try {
+      const response = await getOptions(selectedEngine.id, ecu.id, currentMdtId || undefined);
+      setOptions(response.data || []);
+    } catch (error) {
+      console.error('Failed to load options:', error);
+    } finally {
+      setLoadingOptions(false);
     }
   };
 
@@ -352,48 +397,115 @@ export default function ConfiguratorScreen() {
 
   const renderStageCard = (stage: Stage) => (
     <View key={stage.id} style={styles.stageCard}>
+      {/* Stage Name */}
       <View style={styles.stageHeader}>
         <Ionicons name="flash" size={24} color="#bd1f22" />
         <Text style={styles.stageName}>{stage.name}</Text>
       </View>
       
-      <Text style={styles.stageDescription}>
-        {language === 'de' ? stage.description_de : stage.description_en}
-      </Text>
-      
-      <View style={styles.stageDetails}>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>{t('originalPower')}</Text>
-          <Text style={styles.detailValue}>{stage.original_power}</Text>
+      {/* Power/Torque Table */}
+      <View style={styles.stageTable}>
+        {/* Table Header */}
+        <View style={styles.tableHeader}>
+          <Text style={styles.tableHeaderCell}></Text>
+          <Text style={styles.tableHeaderCell}>Original</Text>
+          <Text style={styles.tableHeaderCell}>{stage.name}</Text>
+          <View style={styles.tableHeaderIconCell}>
+            <Ionicons name="trending-up" size={18} color="#bd1f22" />
+          </View>
         </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>{t('tunedPower')}</Text>
-          <Text style={[styles.detailValue, styles.tunedValue]}>{stage.tuned_power}</Text>
+        
+        {/* HP Row */}
+        <View style={styles.tableRow}>
+          <Text style={styles.tableLabel}>PS</Text>
+          <Text style={styles.tableValue}>{stage.org_hp}</Text>
+          <Text style={[styles.tableValue, styles.tunedValue]}>{stage.tun_hp}</Text>
+          <Text style={styles.tableDelta}>+{stage.delta_hp}</Text>
         </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>{t('originalTorque')}</Text>
-          <Text style={styles.detailValue}>{stage.original_torque}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>{t('tunedTorque')}</Text>
-          <Text style={[styles.detailValue, styles.tunedValue]}>{stage.tuned_torque}</Text>
+        
+        {/* Torque Row */}
+        <View style={styles.tableRow}>
+          <Text style={styles.tableLabel}>Nm</Text>
+          <Text style={styles.tableValue}>{stage.org_tq}</Text>
+          <Text style={[styles.tableValue, styles.tunedValue]}>{stage.tun_tq}</Text>
+          <Text style={styles.tableDelta}>+{stage.delta_tq}</Text>
         </View>
       </View>
       
-      <View style={styles.priceContainer}>
-        <Text style={styles.priceLabel}>{t('price')}</Text>
-        <Text style={styles.priceValue}>€{stage.price}</Text>
-      </View>
-      
+      {/* Quote Button */}
       <TouchableOpacity style={styles.quoteButton}>
         <Text style={styles.quoteButtonText}>{t('requestQuote')}</Text>
       </TouchableOpacity>
     </View>
   );
 
+  const renderEcuSection = () => (
+    <View style={styles.ecuSection}>
+      <Text style={styles.sectionTitle}>ECUs</Text>
+      <View style={styles.ecuGrid}>
+        {ecus.map((ecu) => (
+          <TouchableOpacity
+            key={ecu.id}
+            style={[
+              styles.ecuButton,
+              selectedEcu?.id === ecu.id && styles.ecuButtonActive,
+            ]}
+            onPress={() => handleSelectEcu(ecu)}
+          >
+            <Text
+              style={[
+                styles.ecuButtonText,
+                selectedEcu?.id === ecu.id && styles.ecuButtonTextActive,
+              ]}
+            >
+              {ecu.name}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
+
+  const renderOptionsSection = () => (
+    <View style={styles.optionsSection}>
+      <Text style={styles.sectionTitle}>
+        {language === 'de' ? 'Verfügbare Optionen' : 'Available Options'}
+      </Text>
+      {loadingOptions ? (
+        <ActivityIndicator color="#bd1f22" size="small" style={{ marginTop: 16 }} />
+      ) : options.length > 0 ? (
+        <View style={styles.optionsGrid}>
+          {options.map((option) => (
+            <View key={option.id} style={styles.optionItem}>
+              <Text style={styles.optionName}>{option.name}</Text>
+              {option.tooltip && (
+                <Text style={styles.optionTooltip} numberOfLines={2}>
+                  {option.tooltip}
+                </Text>
+              )}
+            </View>
+          ))}
+        </View>
+      ) : selectedEcu ? (
+        <Text style={styles.noOptionsText}>
+          {language === 'de' ? 'Keine Optionen verfügbar' : 'No options available'}
+        </Text>
+      ) : null}
+    </View>
+  );
+
   const renderStages = () => (
     <ScrollView style={styles.stagesContainer} showsVerticalScrollIndicator={false}>
+      {/* Stages Cards */}
       {stages.map(renderStageCard)}
+      
+      {/* ECUs Section */}
+      {ecus.length > 0 && renderEcuSection()}
+      
+      {/* Options Section (only show if ECU selected) */}
+      {selectedEcu && renderOptionsSection()}
+      
+      <View style={{ height: 30 }} />
     </ScrollView>
   );
 
@@ -640,49 +752,127 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginLeft: 10,
   },
-  stageDescription: {
-    color: '#a0a0a0',
-    fontSize: 14,
-    marginBottom: 16,
-  },
-  stageDetails: {
+  stageTable: {
     backgroundColor: '#1a1a1a',
     borderRadius: 12,
-    padding: 16,
+    overflow: 'hidden',
     marginBottom: 16,
   },
-  detailRow: {
+  tableHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 6,
+    backgroundColor: '#252525',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
   },
-  detailLabel: {
+  tableHeaderCell: {
+    flex: 1,
+    color: '#8b8b8b',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  tableHeaderIconCell: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tableRow: {
+    flexDirection: 'row',
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#252525',
+  },
+  tableLabel: {
+    flex: 1,
     color: '#8b8b8b',
     fontSize: 14,
+    fontWeight: '600',
   },
-  detailValue: {
+  tableValue: {
+    flex: 1,
     color: '#ffffff',
     fontSize: 14,
     fontWeight: '500',
+    textAlign: 'center',
+  },
+  tableDelta: {
+    flex: 1,
+    color: '#4caf50',
+    fontSize: 14,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   tunedValue: {
     color: '#bd1f22',
     fontWeight: '700',
   },
-  priceContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  ecuSection: {
+    backgroundColor: '#121212',
+    borderRadius: 16,
+    padding: 20,
     marginBottom: 16,
   },
-  priceLabel: {
-    color: '#8b8b8b',
-    fontSize: 16,
-  },
-  priceValue: {
-    color: '#bd1f22',
-    fontSize: 28,
+  sectionTitle: {
+    color: '#ffffff',
+    fontSize: 18,
     fontWeight: '700',
+    marginBottom: 16,
+  },
+  ecuGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  ecuButton: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+  },
+  ecuButtonActive: {
+    backgroundColor: '#bd1f22',
+    borderColor: '#bd1f22',
+  },
+  ecuButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  ecuButtonTextActive: {
+    color: '#ffffff',
+  },
+  optionsSection: {
+    backgroundColor: '#121212',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+  },
+  optionsGrid: {
+    gap: 12,
+  },
+  optionItem: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 10,
+    padding: 14,
+  },
+  optionName: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  optionTooltip: {
+    color: '#8b8b8b',
+    fontSize: 12,
+  },
+  noOptionsText: {
+    color: '#8b8b8b',
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 16,
   },
   quoteButton: {
     backgroundColor: '#bd1f22',

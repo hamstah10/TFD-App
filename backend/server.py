@@ -477,20 +477,23 @@ async def get_stages(engine_id: str, mdt_id: str = None):
         stages = MOCK_STAGES.get(engine_id, DEFAULT_STAGES)
         return {"status": True, "data": stages}
     result = await fetch_chiptuning_api(f"/ad/{engine_id}/stages", mdt_id=mdt_id)
-    # Transform to unified format
+    # Transform to unified format with table_data
     if result.get("status") and result.get("stages"):
         data = []
         for s in result["stages"]:
+            table_data = s.get("table_data", {})
             data.append({
                 "id": s.get("ulid", s.get("id")),
                 "name": s.get("name"),
-                "description_de": s.get("description_de", s.get("description", "")),
-                "description_en": s.get("description_en", s.get("description", "")),
-                "original_power": s.get("original_power", ""),
-                "tuned_power": s.get("tuned_power", ""),
-                "original_torque": s.get("original_torque", ""),
-                "tuned_torque": s.get("tuned_torque", ""),
-                "price": s.get("price", 0)
+                "org_hp": table_data.get("org_hp", s.get("org_hp", 0)),
+                "org_tq": table_data.get("org_tq", s.get("org_tq", 0)),
+                "tun_hp": table_data.get("tun_hp", 0),
+                "tun_tq": table_data.get("tun_tq", 0),
+                "delta_hp": table_data.get("delta_hp_abs", 0),
+                "delta_tq": table_data.get("delta_tq_abs", 0),
+                "delta_hp_percent": table_data.get("delta_hp_per", 0),
+                "delta_tq_percent": table_data.get("delta_tq_per", 0),
+                "price": table_data.get("price", s.get("price", 0))
             })
         return {"status": True, "data": data}
     return result
