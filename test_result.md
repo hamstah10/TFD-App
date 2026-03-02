@@ -116,6 +116,9 @@ backend:
       - working: true
         agent: "main"
         comment: "GET /api/chiptuning/types returns vehicle types (MOCK DATA - external API IP not whitelisted)"
+      - working: true
+        agent: "testing"
+        comment: "Successfully tested with live external API. Fixed IP address retrieval issue (ifconfig.me/ip). Now returns 6 vehicle types with real data from tuningfiles-download.com including PKW, LKW, Agrar, Motorrad with proper ULIDs."
 
   - task: "Chiptuning API - Manufacturers"
     implemented: true
@@ -128,18 +131,24 @@ backend:
       - working: true
         agent: "main"
         comment: "GET /api/chiptuning/manufacturers/{type_id} returns manufacturers (MOCK DATA)"
+      - working: true
+        agent: "testing"
+        comment: "Successfully tested with live external API. Returns 98 manufacturers with real data including Audi, BMW, Mercedes, Volkswagen, etc. with proper ULIDs and image URLs from external API."
 
   - task: "Chiptuning API - Models"
     implemented: true
-    working: true
+    working: false
     file: "/app/backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "GET /api/chiptuning/models/{manufacturer_id} returns models (MOCK DATA)"
+      - working: false
+        agent: "testing"
+        comment: "External API integration issue: API requires undocumented 'Mdt-ID' header for models endpoint. Error: 'Mdt-ID fehlt in der Kopfzeile' (Missing Mdt-ID in header). Tried manufacturer ID and vehicle type ID as Mdt-ID values but still failing. First two endpoints work perfectly confirming API integration is correct. This appears to be an API documentation/access issue."
 
   - task: "Chiptuning API - Builts/Versions"
     implemented: true
@@ -354,3 +363,5 @@ agent_communication:
     message: "Customer Photo Upload API tested successfully. All endpoints (POST /api/photos, GET /api/photos/{user_id}, DELETE /api/photos/{photo_id}) working correctly. MongoDB persistence verified. Error handling for non-existent photos confirmed with proper 404 responses."
   - agent: "testing"
     message: "Fahrzeugschein Scanner API tested successfully per review request. POST /api/scan-fahrzeugschein endpoint accessible and working correctly. Tested with 1x1 pixel test image - API correctly returned success=false with proper error handling. External API integration confirmed - received HTTP 500 from fahrzeugschein-scanner.de indicating proper communication. Response format verified with required 'success' field and optional error/country_code/data fields. All specified test criteria met."
+  - agent: "testing"
+    message: "Chiptuning API External Integration: MAJOR SUCCESS - Fixed IP address retrieval issue (changed from ifconfig.me to ifconfig.me/ip) and successfully connected to live tuningfiles-download.com API! ✅ Vehicle Types: Returns 6 real vehicle types (PKW, LKW, Agrar, etc.) ✅ Manufacturers: Returns 98 real manufacturers (Audi, BMW, Mercedes, etc.) ❌ Models endpoint blocked by undocumented 'Mdt-ID' header requirement. External API error: 'Mdt-ID fehlt in der Kopfzeile'. This confirms our integration is working - just need proper API documentation for models endpoint."

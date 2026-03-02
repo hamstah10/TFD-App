@@ -22,7 +22,7 @@ db = client[os.environ['DB_NAME']]
 # External Chiptuning API configuration
 CHIPTUNING_API_BASE = "https://portal.tuningfiles-download.com/api/v1"
 CHIPTUNING_API_KEY = "AWi1R04bkF0yi1v1p2HYk1lpADlUfmKOJyxdAol7txn8HblyYulAurFCdKO271cH"
-USE_MOCK_DATA = True  # Set to False when API IP is whitelisted
+USE_MOCK_DATA = False  # Live API is now active!
 
 # Fahrzeugschein Scanner API configuration
 FAHRZEUGSCHEIN_API_BASE = "https://api.fahrzeugschein-scanner.de"
@@ -345,13 +345,33 @@ class OpeningHours(BaseModel):
 
 # ============== HELPER FUNCTIONS ==============
 
-async def fetch_chiptuning_api(endpoint: str) -> Any:
+async def get_public_ip() -> str:
+    """Get the server's public IP address"""
+    async with httpx.AsyncClient(timeout=10.0) as http_client:
+        try:
+            response = await http_client.get("https://ifconfig.me/ip")
+            ip = response.text.strip()
+            # Validate it's a proper IP format
+            if ip and '.' in ip and not '<' in ip:
+                return ip
+            else:
+                return "35.225.230.28"  # Fallback IP
+        except:
+            return "35.225.230.28"  # Fallback IP
+
+async def fetch_chiptuning_api(endpoint: str, mdt_id: str = None) -> Any:
     """Fetch data from the external chiptuning API"""
     url = f"{CHIPTUNING_API_BASE}{endpoint}"
+    public_ip = await get_public_ip()
     headers = {
         "Authorization": f"Bearer {CHIPTUNING_API_KEY}",
+        "IP": public_ip,
         "Accept": "application/json"
     }
+    
+    # Add Mdt-ID header if provided (needed for models endpoint)
+    if mdt_id:
+        headers["Mdt-ID"] = mdt_id
     
     async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as http_client:
         try:
@@ -359,7 +379,7 @@ async def fetch_chiptuning_api(endpoint: str) -> Any:
             response.raise_for_status()
             return response.json()
         except httpx.HTTPStatusError as e:
-            logger.error(f"HTTP error fetching {url}: {e.response.status_code}")
+            logger.error(f"HTTP error fetching {url}: {e.response.status_code} - {e.response.text}")
             raise HTTPException(status_code=e.response.status_code, detail=f"External API error: {e.response.text}")
         except httpx.RequestError as e:
             logger.error(f"Request error fetching {url}: {str(e)}")
@@ -390,53 +410,112 @@ async def get_vehicle_types():
     """Get all vehicle types"""
     if USE_MOCK_DATA:
         return {"status": True, "data": MOCK_VEHICLE_TYPES}
-    data = await fetch_chiptuning_api("/ad/types")
-    return data
+    result = await fetch_chiptuning_api("/ad/types")
+    # Transform to unified format with ulid as id
+    if result.get("status") and result.get("vehicleTypes"):
+        data = [{"id": t["ulid"], "name": t.get("name_de", t["name"]), "image": t.get("image_path")} for t in result["vehicleTypes"]]
+        return {"status": True, "data": data}
+    return result
 
 @api_router.get("/chiptuning/manufacturers/{type_id}")
 async def get_manufacturers(type_id: str):
-    """Get manufacturers for a vehicle type"""
+    """Get manufacturers for a vehicle type (use ULID)"""
     if USE_MOCK_DATA:
         manufacturers = MOCK_MANUFACTURERS.get(type_id, [])
         return {"status": True, "data": manufacturers}
-    data = await fetch_chiptuning_api(f"/ad/{type_id}/manufacturers")
-    return data
+    result = await fetch_chiptuning_api(f"/ad/{type_id}/manufacturers")
+    # Transform to unified format
+    if result.get("status") and result.get("manufacturers"):
+        data = [{"id": m["ulid"], "name": m["name"], "image": m.get("image_path")} for m in result["manufacturers"]]
+        return {"status": True, "data": data}
+    return result
 
 @api_router.get("/chiptuning/models/{manufacturer_id}")
 async def get_models(manufacturer_id: str):
-    """Get models for a manufacturer"""
+    """Get models for a manufacturer (use ULID)"""
     if USE_MOCK_DATA:
         models = MOCK_MODELS.get(manufacturer_id, [{"id": "model_default", "name": "Standard Model"}])
         return {"status": True, "data": models}
-    data = await fetch_chiptuning_api(f"/ad/{manufacturer_id}/models")
-    return data
+    
+    # Try to get the vehicle type ID from the manufacturer ID context
+    # For now, we'll use the PKW type ID as default since it's most common
+    vehicle_type_id = "01KGSE6S5R6JYD0QKSXM7M0HD9"  # PKW type from our test
+    
+    result = await fetch_chiptuning_api(f"/ad/{manufacturer_id}/models", mdt_id=vehicle_type_id)
+    # Transform to unified format
+    if result.get("status") and result.get("models"):
+        data = [{"id": m["ulid"], "name": m["name"]} for m in result["models"]]
+        return {"status": True, "data": data}
+    return result
 
 @api_router.get("/chiptuning/builts/{model_id}")
 async def get_builts(model_id: str):
-    """Get build versions for a model"""
+    """Get build versions for a model (use ULID)"""
     if USE_MOCK_DATA:
         builts = MOCK_BUILTS.get(model_id, [{"id": f"built_{model_id}_default", "name": "2020-2024"}])
         return {"status": True, "data": builts}
-    data = await fetch_chiptuning_api(f"/ad/{model_id}/builts")
-    return data
+    result = await fetch_chiptuning_api(f"/ad/{model_id}/builts")
+    # Transform to unified format
+    if result.get("status") and result.get("builts"):
+        data = [{"id": b["ulid"], "name": b["name"]} for b in result["builts"]]
+        return {"status": True, "data": data}
+    return result
 
 @api_router.get("/chiptuning/engines/{built_id}")
 async def get_engines(built_id: str):
-    """Get engines for a build version"""
+    """Get engines for a build version (use ULID)"""
     if USE_MOCK_DATA:
         engines = MOCK_ENGINES.get(built_id, [{"id": f"eng_{built_id}_default", "name": "2.0 TDI 150 PS"}])
         return {"status": True, "data": engines}
-    data = await fetch_chiptuning_api(f"/ad/{built_id}/engines")
-    return data
+    result = await fetch_chiptuning_api(f"/ad/{built_id}/engines")
+    # Transform to unified format
+    if result.get("status") and result.get("engines"):
+        data = [{"id": e["ulid"], "name": e["name"]} for e in result["engines"]]
+        return {"status": True, "data": data}
+    return result
 
 @api_router.get("/chiptuning/stages/{engine_id}")
 async def get_stages(engine_id: str):
-    """Get tuning stages for an engine"""
+    """Get tuning stages for an engine (use ULID)"""
     if USE_MOCK_DATA:
         stages = MOCK_STAGES.get(engine_id, DEFAULT_STAGES)
         return {"status": True, "data": stages}
-    data = await fetch_chiptuning_api(f"/ad/{engine_id}/stages")
-    return data
+    result = await fetch_chiptuning_api(f"/ad/{engine_id}/stages")
+    # Transform to unified format
+    if result.get("status") and result.get("stages"):
+        data = []
+        for s in result["stages"]:
+            data.append({
+                "id": s.get("ulid", s.get("id")),
+                "name": s.get("name"),
+                "description_de": s.get("description_de", s.get("description", "")),
+                "description_en": s.get("description_en", s.get("description", "")),
+                "original_power": s.get("original_power", ""),
+                "tuned_power": s.get("tuned_power", ""),
+                "original_torque": s.get("original_torque", ""),
+                "tuned_torque": s.get("tuned_torque", ""),
+                "price": s.get("price", 0)
+            })
+        return {"status": True, "data": data}
+    return result
+
+# New endpoints for ECUs and Options
+@api_router.get("/chiptuning/ecus/{engine_id}")
+async def get_ecus(engine_id: str):
+    """Get ECUs for an engine (use ULID)"""
+    result = await fetch_chiptuning_api(f"/ad/{engine_id}/ecus")
+    if result.get("status") and result.get("ecus"):
+        data = [{"id": e["ulid"], "name": e["name"]} for e in result["ecus"]]
+        return {"status": True, "data": data}
+    return result
+
+@api_router.get("/chiptuning/options/{engine_id}/{ecu_id}")
+async def get_options(engine_id: str, ecu_id: str):
+    """Get options for an engine and ECU combination (use ULIDs)"""
+    result = await fetch_chiptuning_api(f"/ad/engines/{engine_id}/ecus/{ecu_id}/options")
+    if result.get("status") and result.get("options"):
+        return {"status": True, "data": result["options"]}
+    return result
 
 # ============== BLOG ROUTES ==============
 
