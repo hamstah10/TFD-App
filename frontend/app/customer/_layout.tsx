@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, Image, ScrollView } from 'react-native';
 import { Slot, useRouter, usePathname, Redirect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { LanguageSwitch } from '../../src/components/LanguageSwitch';
 
-type MenuTab = 'dashboard' | 'files' | 'tickets';
+type MenuTab = 'dashboard' | 'files' | 'photos' | 'tickets';
 
 export default function CustomerLayout() {
   const { user, logout, isAuthenticated } = useAuth();
@@ -21,6 +21,7 @@ export default function CustomerLayout() {
   
   const getActiveTab = (): MenuTab => {
     if (pathname.includes('/files')) return 'files';
+    if (pathname.includes('/photos')) return 'photos';
     if (pathname.includes('/tickets')) return 'tickets';
     return 'dashboard';
   };
@@ -37,6 +38,9 @@ export default function CustomerLayout() {
         break;
       case 'files':
         router.push('/customer/files');
+        break;
+      case 'photos':
+        router.push('/customer/photos');
         break;
       case 'tickets':
         router.push('/customer/tickets');
@@ -73,7 +77,12 @@ export default function CustomerLayout() {
       </View>
 
       {/* Navigation Tabs */}
-      <View style={styles.navContainer}>
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        style={styles.navScrollView}
+        contentContainerStyle={styles.navContainer}
+      >
         <TouchableOpacity
           style={[styles.navTab, getActiveTab() === 'dashboard' && styles.navTabActive]}
           onPress={() => navigateTo('dashboard')}
@@ -103,6 +112,20 @@ export default function CustomerLayout() {
         </TouchableOpacity>
 
         <TouchableOpacity
+          style={[styles.navTab, getActiveTab() === 'photos' && styles.navTabActive]}
+          onPress={() => navigateTo('photos')}
+        >
+          <Ionicons 
+            name="camera" 
+            size={20} 
+            color={getActiveTab() === 'photos' ? '#ffffff' : '#8b8b8b'} 
+          />
+          <Text style={[styles.navTabText, getActiveTab() === 'photos' && styles.navTabTextActive]}>
+            Fotos
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
           style={[styles.navTab, getActiveTab() === 'tickets' && styles.navTabActive]}
           onPress={() => navigateTo('tickets')}
         >
@@ -115,7 +138,7 @@ export default function CustomerLayout() {
             Tickets
           </Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
 
       {/* Content */}
       <View style={styles.content}>
@@ -178,15 +201,16 @@ const styles = StyleSheet.create({
     color: '#8b8b8b',
     fontSize: 12,
   },
+  navScrollView: {
+    backgroundColor: '#121212',
+  },
   navContainer: {
     flexDirection: 'row',
-    backgroundColor: '#121212',
     paddingHorizontal: 16,
     paddingVertical: 8,
     gap: 8,
   },
   navTab: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -195,6 +219,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     gap: 8,
     backgroundColor: '#1a1a1a',
+    minWidth: 100,
   },
   navTabActive: {
     backgroundColor: '#bd1f22',
