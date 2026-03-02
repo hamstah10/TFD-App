@@ -512,8 +512,18 @@ async def get_ecus(engine_id: str, mdt_id: str = None):
 async def get_options(engine_id: str, ecu_id: str, mdt_id: str = None):
     """Get options for an engine and ECU combination (use ULIDs)"""
     result = await fetch_chiptuning_api(f"/ad/engines/{engine_id}/ecus/{ecu_id}/options", mdt_id=mdt_id)
-    if result.get("status") and result.get("options"):
-        return {"status": True, "data": result["options"]}
+    # API returns 'vehicle_options' not 'options'
+    if result.get("status") and result.get("vehicle_options"):
+        data = []
+        for opt in result["vehicle_options"]:
+            data.append({
+                "id": opt.get("id"),
+                "name": opt.get("name"),
+                "image": opt.get("image"),
+                "tooltip": opt.get("tooltip"),
+                "description": opt.get("description")
+            })
+        return {"status": True, "data": data}
     return result
 
 # ============== BLOG ROUTES ==============
