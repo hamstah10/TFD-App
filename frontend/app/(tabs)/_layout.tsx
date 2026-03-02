@@ -2,17 +2,14 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../src/contexts/LanguageContext';
-import { View, Platform, Image, StyleSheet } from 'react-native';
+import { View, Platform, StyleSheet } from 'react-native';
 import { LanguageSwitch } from '../../src/components/LanguageSwitch';
+import Logo from '../../src/components/Logo';
 
 function CustomHeader() {
   return (
     <View style={styles.headerContainer}>
-      <Image 
-        source={require('../../assets/images/logo.png')} 
-        style={styles.logo}
-        resizeMode="contain"
-      />
+      <Logo width={180} height={55} />
       <LanguageSwitch />
     </View>
   );
@@ -105,9 +102,5 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#1a1a1a',
-  },
-  logo: {
-    width: 180,
-    height: 40,
   },
 });

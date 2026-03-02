@@ -9,13 +9,13 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
-  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../src/contexts/AuthContext';
 import { useLanguage } from '../src/contexts/LanguageContext';
 import { LanguageSwitch } from '../src/components/LanguageSwitch';
+import Logo from '../src/components/Logo';
 
 export default function LoginScreen() {
   const { login } = useAuth();
@@ -73,11 +73,7 @@ export default function LoginScreen() {
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#ffffff" />
         </TouchableOpacity>
-        <Image 
-          source={require('../assets/images/logo.png')} 
-          style={styles.logo}
-          resizeMode="contain"
-        />
+        <Logo width={140} height={42} />
         <LanguageSwitch />
       </View>
 
@@ -192,10 +188,6 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 4,
-  },
-  logo: {
-    width: 140,
-    height: 32,
   },
   keyboardView: {
     flex: 1,

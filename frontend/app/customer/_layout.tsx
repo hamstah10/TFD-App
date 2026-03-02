@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform, Image, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, ScrollView } from 'react-native';
 import { Slot, useRouter, usePathname, Redirect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { LanguageSwitch } from '../../src/components/LanguageSwitch';
+import Logo from '../../src/components/Logo';
 
 type MenuTab = 'dashboard' | 'files' | 'photos' | 'fahrzeugschein' | 'tickets';
 
@@ -56,11 +57,7 @@ export default function CustomerLayout() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Image 
-          source={require('../../assets/images/logo.png')} 
-          style={styles.logo}
-          resizeMode="contain"
-        />
+        <Logo width={160} height={50} />
         <View style={styles.headerRight}>
           <LanguageSwitch />
           <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
@@ -181,10 +178,6 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#1a1a1a',
-  },
-  logo: {
-    width: 160,
-    height: 36,
   },
   headerRight: {
     flexDirection: 'row',
