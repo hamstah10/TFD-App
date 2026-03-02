@@ -15,11 +15,7 @@ export default function CustomerLayout() {
   const { t } = useLanguage();
   const router = useRouter();
   const pathname = usePathname();
-
-  // Redirect to login if not authenticated
-  if (!isAuthenticated) {
-    return <Redirect href="/login" />;
-  }
+  const isOpen = useIsOpen();
   
   const getActiveTab = (): MenuTab => {
     if (pathname.includes('/files')) return 'files';
@@ -33,6 +29,11 @@ export default function CustomerLayout() {
     logout();
     router.replace('/(tabs)');
   };
+
+  // Redirect to login if not authenticated (after all hooks)
+  if (!isAuthenticated) {
+    return <Redirect href="/login" />;
+  }
 
   const navigateTo = (tab: MenuTab) => {
     switch (tab) {
@@ -58,7 +59,7 @@ export default function CustomerLayout() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Logo width={160} height={50} isOpen={useIsOpen()} />
+        <Logo width={160} height={50} isOpen={isOpen} />
         <View style={styles.headerRight}>
           <LanguageSwitch />
           <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
