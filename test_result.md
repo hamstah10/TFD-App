@@ -137,9 +137,9 @@ backend:
 
   - task: "Chiptuning API - Models"
     implemented: true
-    working: false
+    working: true
     file: "/app/backend/server.py"
-    stuck_count: 1
+    stuck_count: 0
     priority: "high"
     needs_retesting: false
     status_history:
@@ -149,6 +149,9 @@ backend:
       - working: false
         agent: "testing"
         comment: "External API integration issue: API requires undocumented 'Mdt-ID' header for models endpoint. Error: 'Mdt-ID fehlt in der Kopfzeile' (Missing Mdt-ID in header). Tried manufacturer ID and vehicle type ID as Mdt-ID values but still failing. First two endpoints work perfectly confirming API integration is correct. This appears to be an API documentation/access issue."
+      - working: true
+        agent: "testing"
+        comment: "COMPLETE CHIPTUNING API CHAIN SUCCESSFULLY TESTED! All 5 endpoints (types → manufacturers → models → builts → engines) are now working with live external API. The mdt_id parameter is correctly passed as query parameter throughout the chain. Successfully retrieved real data: 6 vehicle types, 98 manufacturers (Audi, BMW, etc.), 38 models for Audi A1, 3 builds, and 10 engines. External API integration fully functional."
 
   - task: "Chiptuning API - Builts/Versions"
     implemented: true
@@ -161,6 +164,9 @@ backend:
       - working: true
         agent: "main"
         comment: "GET /api/chiptuning/builts/{model_id} returns build versions (MOCK DATA)"
+      - working: true
+        agent: "testing"
+        comment: "Successfully tested with live external API as part of complete chain test. Returns 3 builds with real data from external API. mdt_id parameter passed correctly via query string."
 
   - task: "Chiptuning API - Engines"
     implemented: true
@@ -173,6 +179,9 @@ backend:
       - working: true
         agent: "main"
         comment: "GET /api/chiptuning/engines/{built_id} returns engines (MOCK DATA)"
+      - working: true
+        agent: "testing"
+        comment: "Successfully tested with live external API as part of complete chain test. Returns 10 engines with real data from external API. mdt_id parameter passed correctly via query string."
 
   - task: "Chiptuning API - Stages"
     implemented: true
@@ -365,3 +374,5 @@ agent_communication:
     message: "Fahrzeugschein Scanner API tested successfully per review request. POST /api/scan-fahrzeugschein endpoint accessible and working correctly. Tested with 1x1 pixel test image - API correctly returned success=false with proper error handling. External API integration confirmed - received HTTP 500 from fahrzeugschein-scanner.de indicating proper communication. Response format verified with required 'success' field and optional error/country_code/data fields. All specified test criteria met."
   - agent: "testing"
     message: "Chiptuning API External Integration: MAJOR SUCCESS - Fixed IP address retrieval issue (changed from ifconfig.me to ifconfig.me/ip) and successfully connected to live tuningfiles-download.com API! ✅ Vehicle Types: Returns 6 real vehicle types (PKW, LKW, Agrar, etc.) ✅ Manufacturers: Returns 98 real manufacturers (Audi, BMW, Mercedes, etc.) ❌ Models endpoint blocked by undocumented 'Mdt-ID' header requirement. External API error: 'Mdt-ID fehlt in der Kopfzeile'. This confirms our integration is working - just need proper API documentation for models endpoint."
+  - agent: "testing"
+    message: "COMPLETE CHIPTUNING API CHAIN TEST SUCCESSFUL! ✅ All 5 endpoints now working with live external API: Types (6 types) → Manufacturers (98 real manufacturers like Audi, BMW) → Models (38 Audi models) → Builts (3 build versions) → Engines (10 engine options). The mdt_id parameter from types endpoint is now correctly passed as query parameter throughout the entire chain. External API integration is fully functional with real vehicle data from tuningfiles-download.com."

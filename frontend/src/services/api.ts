@@ -16,28 +16,33 @@ export const getVehicleTypes = async () => {
   return response.data;
 };
 
-export const getManufacturers = async (typeId: string) => {
-  const response = await api.get(`/chiptuning/manufacturers/${typeId}`);
+export const getManufacturers = async (typeId: string, mdtId?: string) => {
+  const params = mdtId ? { mdt_id: mdtId } : {};
+  const response = await api.get(`/chiptuning/manufacturers/${typeId}`, { params });
   return response.data;
 };
 
-export const getModels = async (manufacturerId: string) => {
-  const response = await api.get(`/chiptuning/models/${manufacturerId}`);
+export const getModels = async (manufacturerId: string, mdtId?: string) => {
+  const params = mdtId ? { mdt_id: mdtId } : {};
+  const response = await api.get(`/chiptuning/models/${manufacturerId}`, { params });
   return response.data;
 };
 
-export const getBuilts = async (modelId: string) => {
-  const response = await api.get(`/chiptuning/builts/${modelId}`);
+export const getBuilts = async (modelId: string, mdtId?: string) => {
+  const params = mdtId ? { mdt_id: mdtId } : {};
+  const response = await api.get(`/chiptuning/builts/${modelId}`, { params });
   return response.data;
 };
 
-export const getEngines = async (builtId: string) => {
-  const response = await api.get(`/chiptuning/engines/${builtId}`);
+export const getEngines = async (builtId: string, mdtId?: string) => {
+  const params = mdtId ? { mdt_id: mdtId } : {};
+  const response = await api.get(`/chiptuning/engines/${builtId}`, { params });
   return response.data;
 };
 
-export const getStages = async (engineId: string) => {
-  const response = await api.get(`/chiptuning/stages/${engineId}`);
+export const getStages = async (engineId: string, mdtId?: string) => {
+  const params = mdtId ? { mdt_id: mdtId } : {};
+  const response = await api.get(`/chiptuning/stages/${engineId}`, { params });
   return response.data;
 };
 

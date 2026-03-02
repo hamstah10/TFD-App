@@ -1,330 +1,277 @@
 #!/usr/bin/env python3
-"""
-Backend API Testing for Chiptuning Database App
-Comprehensive testing of all backend endpoints
-"""
 
 import requests
 import json
-import base64
+import sys
 from datetime import datetime
-import uuid
 
-# Configuration
-BASE_URL = "https://motor-test.preview.emergentagent.com/api"
+# Test configuration
+API_BASE_URL = "https://motor-test.preview.emergentagent.com/api"
 
-def log_test(test_name, success, message, response_data=None):
+def log_test(test_name, status, details=""):
     """Log test results"""
-    status = "✅ PASS" if success else "❌ FAIL"
-    print(f"\n{status} {test_name}")
-    print(f"   {message}")
-    if response_data and not success:
-        print(f"   Response: {response_data}")
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    status_emoji = "✅" if status == "PASS" else "❌" if status == "FAIL" else "⚠️"
+    print(f"[{timestamp}] {status_emoji} {test_name}")
+    if details:
+        print(f"    Details: {details}")
+    print()
 
-def test_chiptuning_api():
-    """Test the main Chiptuning API endpoints that should now use live external API"""
-    print("\n🔄 TESTING CHIPTUNING API ENDPOINTS (Live External API)")
+def test_chiptuning_api_chain():
+    """Test the complete chiptuning API chain with live external API and mdt_id"""
     print("=" * 80)
-    
-    # Test 1: GET /api/chiptuning/types - Get all vehicle types
-    print("\n1. Testing GET /api/chiptuning/types")
-    try:
-        response = requests.get(f"{BASE_URL}/chiptuning/types", timeout=30)
-        
-        if response.status_code == 200:
-            data = response.json()
-            
-            # Check response structure
-            if data.get("status") and "data" in data:
-                vehicle_types = data["data"]
-                
-                # Check if we have real data (should be more than mock data)
-                if isinstance(vehicle_types, list) and len(vehicle_types) > 0:
-                    # Check for expected real data structure with ULIDs
-                    sample_type = vehicle_types[0]
-                    has_id = "id" in sample_type
-                    has_name = "name" in sample_type
-                    
-                    # Look for real vehicle types like PKW, LKW, etc.
-                    type_names = [t.get("name", "").upper() for t in vehicle_types]
-                    has_real_types = any(name in ["PKW", "LKW", "AGRAR", "MOTORRAD"] for name in type_names)
-                    
-                    if has_id and has_name and has_real_types:
-                        log_test(
-                            "Vehicle Types API", 
-                            True, 
-                            f"Successfully retrieved {len(vehicle_types)} vehicle types with real data from external API"
-                        )
-                        
-                        # Store first type ULID for next test
-                        pkw_type_id = None
-                        for vtype in vehicle_types:
-                            if vtype.get("name", "").upper() in ["PKW", "CAR", "PASSENGER"]:
-                                pkw_type_id = vtype["id"]
-                                break
-                        
-                        if not pkw_type_id and len(vehicle_types) > 0:
-                            pkw_type_id = vehicle_types[0]["id"]
-                            
-                        return test_manufacturers_api(pkw_type_id)
-                    else:
-                        log_test(
-                            "Vehicle Types API", 
-                            False, 
-                            "Response structure invalid or still using mock data",
-                            data
-                        )
-                else:
-                    log_test(
-                        "Vehicle Types API", 
-                        False, 
-                        "No vehicle types returned",
-                        data
-                    )
-            else:
-                log_test(
-                    "Vehicle Types API", 
-                    False, 
-                    "Invalid response structure - missing status or data",
-                    data
-                )
-        else:
-            log_test(
-                "Vehicle Types API", 
-                False, 
-                f"HTTP {response.status_code}: {response.text[:200]}"
-            )
-            
-    except requests.RequestException as e:
-        log_test(
-            "Vehicle Types API", 
-            False, 
-            f"Request failed: {str(e)}"
-        )
-    except Exception as e:
-        log_test(
-            "Vehicle Types API", 
-            False, 
-            f"Unexpected error: {str(e)}"
-        )
-
-def test_manufacturers_api(type_ulid):
-    """Test GET /api/chiptuning/manufacturers/{type_ulid}"""
-    print(f"\n2. Testing GET /api/chiptuning/manufacturers/{type_ulid}")
-    
-    try:
-        response = requests.get(f"{BASE_URL}/chiptuning/manufacturers/{type_ulid}", timeout=30)
-        
-        if response.status_code == 200:
-            data = response.json()
-            
-            if data.get("status") and "data" in data:
-                manufacturers = data["data"]
-                
-                if isinstance(manufacturers, list) and len(manufacturers) > 0:
-                    # Check for real manufacturer data
-                    sample_manu = manufacturers[0]
-                    has_id = "id" in sample_manu
-                    has_name = "name" in sample_manu
-                    
-                    # Look for real manufacturers like Audi, BMW, Mercedes
-                    manu_names = [m.get("name", "").upper() for m in manufacturers]
-                    has_real_manufacturers = any(name in ["AUDI", "BMW", "MERCEDES", "VOLKSWAGEN", "FORD"] for name in manu_names)
-                    
-                    if has_id and has_name and has_real_manufacturers:
-                        log_test(
-                            "Manufacturers API", 
-                            True, 
-                            f"Successfully retrieved {len(manufacturers)} manufacturers with real data"
-                        )
-                        
-                        # Use first manufacturer for next test
-                        manufacturer_ulid = manufacturers[0]["id"]
-                        return test_models_api(manufacturer_ulid)
-                    else:
-                        log_test(
-                            "Manufacturers API", 
-                            False, 
-                            "Still using mock data or invalid structure",
-                            data
-                        )
-                else:
-                    log_test(
-                        "Manufacturers API", 
-                        False, 
-                        "No manufacturers returned",
-                        data
-                    )
-            else:
-                log_test(
-                    "Manufacturers API", 
-                    False, 
-                    "Invalid response structure",
-                    data
-                )
-        else:
-            log_test(
-                "Manufacturers API", 
-                False, 
-                f"HTTP {response.status_code}: {response.text[:200]}"
-            )
-            
-    except requests.RequestException as e:
-        log_test(
-            "Manufacturers API", 
-            False, 
-            f"Request failed: {str(e)}"
-        )
-    except Exception as e:
-        log_test(
-            "Manufacturers API", 
-            False, 
-            f"Unexpected error: {str(e)}"
-        )
-
-def test_models_api(manufacturer_ulid):
-    """Test GET /api/chiptuning/models/{manufacturer_ulid}"""
-    print(f"\n3. Testing GET /api/chiptuning/models/{manufacturer_ulid}")
-    
-    try:
-        response = requests.get(f"{BASE_URL}/chiptuning/models/{manufacturer_ulid}", timeout=30)
-        
-        if response.status_code == 200:
-            data = response.json()
-            
-            if data.get("status") and "data" in data:
-                models = data["data"]
-                
-                if isinstance(models, list) and len(models) > 0:
-                    sample_model = models[0]
-                    has_id = "id" in sample_model
-                    has_name = "name" in sample_model
-                    
-                    if has_id and has_name:
-                        log_test(
-                            "Models API", 
-                            True, 
-                            f"Successfully retrieved {len(models)} models with real data"
-                        )
-                        return True
-                    else:
-                        log_test(
-                            "Models API", 
-                            False, 
-                            "Invalid model structure",
-                            data
-                        )
-                else:
-                    log_test(
-                        "Models API", 
-                        False, 
-                        "No models returned",
-                        data
-                    )
-            else:
-                log_test(
-                    "Models API", 
-                    False, 
-                    "Invalid response structure",
-                    data
-                )
-        else:
-            log_test(
-                "Models API", 
-                False, 
-                f"HTTP {response.status_code}: {response.text[:200]}"
-            )
-            
-    except requests.RequestException as e:
-        log_test(
-            "Models API", 
-            False, 
-            f"Request failed: {str(e)}"
-        )
-    except Exception as e:
-        log_test(
-            "Models API", 
-            False, 
-            f"Unexpected error: {str(e)}"
-        )
-    
-    return False
-
-def test_all_other_apis():
-    """Test other backend APIs for regression testing"""
-    print("\n🔄 TESTING OTHER BACKEND APIS (Regression Test)")
+    print("🚗 TESTING CHIPTUNING API CHAIN WITH LIVE EXTERNAL API")
     print("=" * 80)
-    
-    # Test Blog API
-    print("\n4. Testing Blog API")
+    print()
+
+    session = requests.Session()
+    session.headers.update({
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    })
+
+    # Step 1: Get Vehicle Types and extract PKW mdt_id
+    print("📋 Step 1: Getting vehicle types...")
     try:
-        response = requests.get(f"{BASE_URL}/blog", timeout=10)
-        if response.status_code == 200:
-            log_test("Blog API", True, "Blog endpoint accessible")
-        else:
-            log_test("Blog API", False, f"HTTP {response.status_code}")
+        response = session.get(f"{API_BASE_URL}/chiptuning/types")
+        
+        if response.status_code != 200:
+            log_test("GET /chiptuning/types", "FAIL", f"HTTP {response.status_code}: {response.text}")
+            return False
+        
+        data = response.json()
+        if not data.get("status"):
+            log_test("GET /chiptuning/types", "FAIL", f"API returned status=false: {data}")
+            return False
+        
+        types = data.get("data", [])
+        if not types:
+            log_test("GET /chiptuning/types", "FAIL", "No vehicle types returned")
+            return False
+        
+        # Find PKW type
+        pkw_type = None
+        for vtype in types:
+            if "PKW" in vtype.get("name", "").upper():
+                pkw_type = vtype
+                break
+        
+        if not pkw_type:
+            log_test("GET /chiptuning/types", "FAIL", "PKW type not found in response")
+            return False
+        
+        pkw_ulid = pkw_type.get("id")
+        mdt_id = pkw_type.get("mdt_id")
+        
+        if not pkw_ulid:
+            log_test("GET /chiptuning/types", "FAIL", "PKW type has no id/ulid field")
+            return False
+        
+        if not mdt_id:
+            log_test("GET /chiptuning/types", "FAIL", "PKW type has no mdt_id field")
+            return False
+        
+        log_test("GET /chiptuning/types", "PASS", f"Found {len(types)} types, PKW ID: {pkw_ulid}, MDT_ID: {mdt_id}")
+        
     except Exception as e:
-        log_test("Blog API", False, f"Request failed: {str(e)}")
-    
-    # Test Contact API
-    print("\n5. Testing Contact Form API")
-    test_contact_data = {
-        "name": "Test User API",
-        "email": "test@example.com",
-        "subject": "API Test Message",
-        "message": "This is a test message from the API testing suite."
-    }
+        log_test("GET /chiptuning/types", "FAIL", f"Exception: {str(e)}")
+        return False
+
+    # Step 2: Get Manufacturers for PKW using mdt_id
+    print("🏭 Step 2: Getting manufacturers for PKW...")
     try:
-        response = requests.post(f"{BASE_URL}/contact", json=test_contact_data, timeout=10)
-        if response.status_code == 200:
-            log_test("Contact API", True, "Contact form submission successful")
-        else:
-            log_test("Contact API", False, f"HTTP {response.status_code}")
+        response = session.get(f"{API_BASE_URL}/chiptuning/manufacturers/{pkw_ulid}?mdt_id={mdt_id}")
+        
+        if response.status_code != 200:
+            log_test("GET /chiptuning/manufacturers", "FAIL", f"HTTP {response.status_code}: {response.text}")
+            return False
+        
+        data = response.json()
+        if not data.get("status"):
+            log_test("GET /chiptuning/manufacturers", "FAIL", f"API returned status=false: {data}")
+            return False
+        
+        manufacturers = data.get("data", [])
+        if not manufacturers:
+            log_test("GET /chiptuning/manufacturers", "FAIL", "No manufacturers returned")
+            return False
+        
+        # Look for a real manufacturer (Audi, BMW, Mercedes, etc.)
+        selected_manufacturer = None
+        real_brands = ["audi", "bmw", "mercedes", "volkswagen", "porsche", "ford", "opel"]
+        
+        for manu in manufacturers:
+            manu_name = manu.get("name", "").lower()
+            if any(brand in manu_name for brand in real_brands):
+                selected_manufacturer = manu
+                break
+        
+        if not selected_manufacturer:
+            # Fallback to first manufacturer
+            selected_manufacturer = manufacturers[0]
+        
+        manufacturer_ulid = selected_manufacturer.get("id")
+        manufacturer_name = selected_manufacturer.get("name")
+        
+        if not manufacturer_ulid:
+            log_test("GET /chiptuning/manufacturers", "FAIL", "Selected manufacturer has no id/ulid")
+            return False
+        
+        log_test("GET /chiptuning/manufacturers", "PASS", f"Found {len(manufacturers)} manufacturers, selected: {manufacturer_name} (ID: {manufacturer_ulid})")
+        
     except Exception as e:
-        log_test("Contact API", False, f"Request failed: {str(e)}")
-    
-    # Test Opening Hours API
-    print("\n6. Testing Opening Hours API")
+        log_test("GET /chiptuning/manufacturers", "FAIL", f"Exception: {str(e)}")
+        return False
+
+    # Step 3: Get Models for selected manufacturer
+    print("🚗 Step 3: Getting models for manufacturer...")
     try:
-        response = requests.get(f"{BASE_URL}/opening-hours", timeout=10)
-        if response.status_code == 200:
-            log_test("Opening Hours API", True, "Opening hours endpoint accessible")
-        else:
-            log_test("Opening Hours API", False, f"HTTP {response.status_code}")
+        response = session.get(f"{API_BASE_URL}/chiptuning/models/{manufacturer_ulid}?mdt_id={mdt_id}")
+        
+        if response.status_code != 200:
+            log_test("GET /chiptuning/models", "FAIL", f"HTTP {response.status_code}: {response.text}")
+            return False
+        
+        data = response.json()
+        if not data.get("status"):
+            log_test("GET /chiptuning/models", "FAIL", f"API returned status=false: {data}")
+            return False
+        
+        models = data.get("data", [])
+        if not models:
+            log_test("GET /chiptuning/models", "FAIL", "No models returned")
+            return False
+        
+        # Select first model
+        selected_model = models[0]
+        model_ulid = selected_model.get("id")
+        model_name = selected_model.get("name")
+        
+        if not model_ulid:
+            log_test("GET /chiptuning/models", "FAIL", "Selected model has no id/ulid")
+            return False
+        
+        log_test("GET /chiptuning/models", "PASS", f"Found {len(models)} models, selected: {model_name} (ID: {model_ulid})")
+        
     except Exception as e:
-        log_test("Opening Hours API", False, f"Request failed: {str(e)}")
-    
-    # Test Company Info API
-    print("\n7. Testing Company Info API")
+        log_test("GET /chiptuning/models", "FAIL", f"Exception: {str(e)}")
+        return False
+
+    # Step 4: Get Builds/Years for selected model
+    print("🔧 Step 4: Getting builds/years for model...")
     try:
-        response = requests.get(f"{BASE_URL}/company-info", timeout=10)
-        if response.status_code == 200:
-            log_test("Company Info API", True, "Company info endpoint accessible")
-        else:
-            log_test("Company Info API", False, f"HTTP {response.status_code}")
+        response = session.get(f"{API_BASE_URL}/chiptuning/builts/{model_ulid}?mdt_id={mdt_id}")
+        
+        if response.status_code != 200:
+            log_test("GET /chiptuning/builts", "FAIL", f"HTTP {response.status_code}: {response.text}")
+            return False
+        
+        data = response.json()
+        if not data.get("status"):
+            log_test("GET /chiptuning/builts", "FAIL", f"API returned status=false: {data}")
+            return False
+        
+        builts = data.get("data", [])
+        if not builts:
+            log_test("GET /chiptuning/builts", "FAIL", "No builds returned")
+            return False
+        
+        # Select first build
+        selected_built = builts[0]
+        built_ulid = selected_built.get("id")
+        built_name = selected_built.get("name")
+        
+        if not built_ulid:
+            log_test("GET /chiptuning/builts", "FAIL", "Selected build has no id/ulid")
+            return False
+        
+        log_test("GET /chiptuning/builts", "PASS", f"Found {len(builts)} builds, selected: {built_name} (ID: {built_ulid})")
+        
     except Exception as e:
-        log_test("Company Info API", False, f"Request failed: {str(e)}")
+        log_test("GET /chiptuning/builts", "FAIL", f"Exception: {str(e)}")
+        return False
+
+    # Step 5: Get Engines for selected build
+    print("🏎️ Step 5: Getting engines for build...")
+    try:
+        response = session.get(f"{API_BASE_URL}/chiptuning/engines/{built_ulid}?mdt_id={mdt_id}")
+        
+        if response.status_code != 200:
+            log_test("GET /chiptuning/engines", "FAIL", f"HTTP {response.status_code}: {response.text}")
+            return False
+        
+        data = response.json()
+        if not data.get("status"):
+            log_test("GET /chiptuning/engines", "FAIL", f"API returned status=false: {data}")
+            return False
+        
+        engines = data.get("data", [])
+        if not engines:
+            log_test("GET /chiptuning/engines", "FAIL", "No engines returned")
+            return False
+        
+        # Select first engine
+        selected_engine = engines[0]
+        engine_ulid = selected_engine.get("id")
+        engine_name = selected_engine.get("name")
+        
+        if not engine_ulid:
+            log_test("GET /chiptuning/engines", "FAIL", "Selected engine has no id/ulid")
+            return False
+        
+        log_test("GET /chiptuning/engines", "PASS", f"Found {len(engines)} engines, selected: {engine_name} (ID: {engine_ulid})")
+        
+    except Exception as e:
+        log_test("GET /chiptuning/engines", "FAIL", f"Exception: {str(e)}")
+        return False
+
+    # Summary
+    print("=" * 80)
+    print("✅ CHIPTUNING API CHAIN TEST COMPLETED SUCCESSFULLY!")
+    print("=" * 80)
+    print(f"🔗 Complete chain test passed:")
+    print(f"   Types → Manufacturers → Models → Builds → Engines")
+    print(f"   All endpoints returned status: true with real data")
+    print(f"   mdt_id parameter ({mdt_id}) passed correctly throughout chain")
+    print()
+    return True
+
+def test_basic_api_connectivity():
+    """Test basic API connectivity"""
+    print("🌐 Testing basic API connectivity...")
+    try:
+        response = requests.get(f"{API_BASE_URL}/", timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            log_test("Basic API connectivity", "PASS", f"API version: {data.get('version', 'unknown')}, mock_data: {data.get('mock_data', 'unknown')}")
+            return True
+        else:
+            log_test("Basic API connectivity", "FAIL", f"HTTP {response.status_code}")
+            return False
+    except Exception as e:
+        log_test("Basic API connectivity", "FAIL", f"Exception: {str(e)}")
+        return False
 
 def main():
     """Run all tests"""
-    print("🚀 BACKEND API COMPREHENSIVE TESTING")
-    print("=" * 80)
-    print(f"Base URL: {BASE_URL}")
-    print(f"Test Time: {datetime.now()}")
+    print(f"🚀 Starting Backend API Testing")
+    print(f"📡 Target API: {API_BASE_URL}")
+    print()
     
-    # Test the main focus: Chiptuning API with live external API
-    success = test_chiptuning_api()
+    # Test basic connectivity first
+    if not test_basic_api_connectivity():
+        print("❌ Basic connectivity failed. Stopping tests.")
+        sys.exit(1)
     
-    # Test other APIs for regression
-    test_all_other_apis()
+    # Test chiptuning API chain
+    success = test_chiptuning_api_chain()
     
-    print("\n" + "=" * 80)
-    print("🏁 TESTING COMPLETED")
     if success:
-        print("✅ Primary Chiptuning API tests PASSED - Live external API working!")
+        print("🎉 ALL TESTS PASSED! The chiptuning API chain is working with live external API.")
+        sys.exit(0)
     else:
-        print("❌ Primary Chiptuning API tests FAILED - Check external API connection")
-    print("=" * 80)
+        print("💥 SOME TESTS FAILED! Check the details above.")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

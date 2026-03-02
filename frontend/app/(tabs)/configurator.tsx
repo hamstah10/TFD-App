@@ -26,6 +26,8 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 interface SelectOption {
   id: string;
   name: string;
+  image?: string;
+  mdt_id?: string;
 }
 
 interface Stage {
@@ -66,6 +68,9 @@ export default function ConfiguratorScreen() {
   const [selectedModel, setSelectedModel] = useState<SelectOption | null>(null);
   const [selectedBuilt, setSelectedBuilt] = useState<SelectOption | null>(null);
   const [selectedEngine, setSelectedEngine] = useState<SelectOption | null>(null);
+  
+  // Store mdt_id for API calls
+  const [currentMdtId, setCurrentMdtId] = useState<string | null>(null);
 
   useEffect(() => {
     loadTypes();
@@ -104,9 +109,13 @@ export default function ConfiguratorScreen() {
     setEngines([]);
     setStages([]);
     
+    // Store mdt_id for subsequent API calls
+    const mdtId = item.mdt_id || null;
+    setCurrentMdtId(mdtId);
+    
     setLoading(true);
     try {
-      const response = await getManufacturers(item.id);
+      const response = await getManufacturers(item.id, mdtId || undefined);
       setManufacturers(response.data || []);
       setCurrentStep(1);
     } catch (error) {
@@ -128,7 +137,7 @@ export default function ConfiguratorScreen() {
     
     setLoading(true);
     try {
-      const response = await getModels(item.id);
+      const response = await getModels(item.id, currentMdtId || undefined);
       setModels(response.data || []);
       setCurrentStep(2);
     } catch (error) {
@@ -148,7 +157,7 @@ export default function ConfiguratorScreen() {
     
     setLoading(true);
     try {
-      const response = await getBuilts(item.id);
+      const response = await getBuilts(item.id, currentMdtId || undefined);
       setBuilts(response.data || []);
       setCurrentStep(3);
     } catch (error) {
@@ -166,7 +175,7 @@ export default function ConfiguratorScreen() {
     
     setLoading(true);
     try {
-      const response = await getEngines(item.id);
+      const response = await getEngines(item.id, currentMdtId || undefined);
       setEngines(response.data || []);
       setCurrentStep(4);
     } catch (error) {
@@ -182,7 +191,7 @@ export default function ConfiguratorScreen() {
     
     setLoading(true);
     try {
-      const response = await getStages(item.id);
+      const response = await getStages(item.id, currentMdtId || undefined);
       setStages(response.data || []);
       setCurrentStep(5);
     } catch (error) {
