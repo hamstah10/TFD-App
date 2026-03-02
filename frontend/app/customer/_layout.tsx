@@ -92,12 +92,9 @@ export default function CustomerLayout() {
         >
           <Ionicons 
             name="grid" 
-            size={20} 
+            size={22} 
             color={getActiveTab() === 'dashboard' ? '#ffffff' : '#8b8b8b'} 
           />
-          <Text style={[styles.navTabText, getActiveTab() === 'dashboard' && styles.navTabTextActive]}>
-            Dashboard
-          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -106,12 +103,9 @@ export default function CustomerLayout() {
         >
           <Ionicons 
             name="document" 
-            size={20} 
+            size={22} 
             color={getActiveTab() === 'files' ? '#ffffff' : '#8b8b8b'} 
           />
-          <Text style={[styles.navTabText, getActiveTab() === 'files' && styles.navTabTextActive]}>
-            Files
-          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -120,12 +114,9 @@ export default function CustomerLayout() {
         >
           <Ionicons 
             name="camera" 
-            size={20} 
+            size={22} 
             color={getActiveTab() === 'photos' ? '#ffffff' : '#8b8b8b'} 
           />
-          <Text style={[styles.navTabText, getActiveTab() === 'photos' && styles.navTabTextActive]}>
-            Fotos
-          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -134,12 +125,9 @@ export default function CustomerLayout() {
         >
           <Ionicons 
             name="car" 
-            size={20} 
+            size={22} 
             color={getActiveTab() === 'fahrzeugschein' ? '#ffffff' : '#8b8b8b'} 
           />
-          <Text style={[styles.navTabText, getActiveTab() === 'fahrzeugschein' && styles.navTabTextActive]}>
-            KFZ-Schein
-          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -148,12 +136,9 @@ export default function CustomerLayout() {
         >
           <Ionicons 
             name="chatbubbles" 
-            size={20} 
+            size={22} 
             color={getActiveTab() === 'tickets' ? '#ffffff' : '#8b8b8b'} 
           />
-          <Text style={[styles.navTabText, getActiveTab() === 'tickets' && styles.navTabTextActive]}>
-            Tickets
-          </Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -217,25 +202,22 @@ const styles = StyleSheet.create({
   navScrollView: {
     backgroundColor: '#121212',
     flexGrow: 0,
-    maxHeight: 60,
+    maxHeight: 56,
   },
   navContainer: {
     flexDirection: 'row',
     paddingHorizontal: 16,
     paddingVertical: 8,
-    gap: 8,
+    gap: 12,
     alignItems: 'center',
   },
   navTab: {
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    gap: 8,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     backgroundColor: '#1a1a1a',
-    minWidth: 100,
   },
   navTabActive: {
     backgroundColor: '#bd1f22',
