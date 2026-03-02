@@ -57,15 +57,99 @@ interface OrderData {
   stage: Stage | null;
 }
 
+interface Order {
+  id: string;
+  orderNumber: string;
+  createdAt: string;
+  status: 'pending' | 'processing' | 'completed' | 'cancelled';
+  fileName: string;
+  vehicle: string;
+  stage: string;
+  tuningTool: string;
+  method: string;
+  slaveOrMaster: string;
+}
+
+// Mock orders data
+const MOCK_ORDERS: Order[] = [
+  {
+    id: '1',
+    orderNumber: 'TFD-2024-001',
+    createdAt: '2024-03-01 14:30',
+    status: 'completed',
+    fileName: 'Original_Audi_A4.bin',
+    vehicle: 'Audi A4 2.0 TDI',
+    stage: 'Stage 1',
+    tuningTool: 'Autotuner',
+    method: 'OBD',
+    slaveOrMaster: 'Master',
+  },
+  {
+    id: '2',
+    orderNumber: 'TFD-2024-002',
+    createdAt: '2024-03-02 09:15',
+    status: 'processing',
+    fileName: 'BMW_330d_Original.bin',
+    vehicle: 'BMW 330d xDrive',
+    stage: 'Stage 2',
+    tuningTool: 'Kess3',
+    method: 'Bench',
+    slaveOrMaster: 'Slave',
+  },
+  {
+    id: '3',
+    orderNumber: 'TFD-2024-003',
+    createdAt: '2024-03-02 16:45',
+    status: 'pending',
+    fileName: 'VW_Golf_GTI.bin',
+    vehicle: 'VW Golf GTI',
+    stage: 'Stage 1',
+    tuningTool: 'CMD',
+    method: 'OBD',
+    slaveOrMaster: 'Master',
+  },
+];
+
 const TUNING_TOOLS = ['Autotuner', 'Flex', 'CMD', 'Kess3'];
 const METHODS = ['OBD', 'Bench', 'BDM'];
 const SLAVE_MASTER = ['Slave', 'Master'];
 
+type ViewMode = 'newOrder' | 'orders';
+
+const getStatusInfo = (status: string, language: string) => {
+  const statusMap: { [key: string]: { label: string; color: string; icon: string } } = {
+    pending: {
+      label: language === 'de' ? 'Ausstehend' : 'Pending',
+      color: '#ff9800',
+      icon: 'time',
+    },
+    processing: {
+      label: language === 'de' ? 'In Bearbeitung' : 'Processing',
+      color: '#2196f3',
+      icon: 'cog',
+    },
+    completed: {
+      label: language === 'de' ? 'Abgeschlossen' : 'Completed',
+      color: '#4caf50',
+      icon: 'checkmark-circle',
+    },
+    cancelled: {
+      label: language === 'de' ? 'Storniert' : 'Cancelled',
+      color: '#f44336',
+      icon: 'close-circle',
+    },
+  };
+  return statusMap[status] || statusMap.pending;
+};
+
 export default function FilesScreen() {
   const { language } = useLanguage();
+  const [viewMode, setViewMode] = useState<ViewMode>('orders');
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
+  const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
   // Order data
   const [orderData, setOrderData] = useState<OrderData>({
@@ -734,46 +818,218 @@ export default function FilesScreen() {
     </View>
   );
 
+  const renderOrderCard = (order: Order) => {
+    const statusInfo = getStatusInfo(order.status, language);
+    const isExpanded = expandedOrder === order.id;
+
+    return (
+      <TouchableOpacity
+        key={order.id}
+        style={styles.orderCard}
+        onPress={() => setExpandedOrder(isExpanded ? null : order.id)}
+        activeOpacity={0.8}
+      >
+        <View style={styles.orderHeader}>
+          <View style={styles.orderNumberContainer}>
+            <Text style={styles.orderNumber}>{order.orderNumber}</Text>
+            <Text style={styles.orderDate}>{order.createdAt}</Text>
+          </View>
+          <View style={[styles.statusBadge, { backgroundColor: statusInfo.color + '20' }]}>
+            <Ionicons name={statusInfo.icon as any} size={14} color={statusInfo.color} />
+            <Text style={[styles.statusText, { color: statusInfo.color }]}>
+              {statusInfo.label}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.orderMainInfo}>
+          <View style={styles.orderVehicle}>
+            <Ionicons name="car" size={18} color="#bd1f22" />
+            <Text style={styles.orderVehicleText}>{order.vehicle}</Text>
+          </View>
+          <View style={styles.orderStage}>
+            <Ionicons name="flash" size={16} color="#4caf50" />
+            <Text style={styles.orderStageText}>{order.stage}</Text>
+          </View>
+        </View>
+
+        <View style={styles.orderFile}>
+          <Ionicons name="document" size={16} color="#8b8b8b" />
+          <Text style={styles.orderFileText}>{order.fileName}</Text>
+        </View>
+
+        {isExpanded && (
+          <View style={styles.orderDetails}>
+            <View style={styles.orderDetailRow}>
+              <Text style={styles.orderDetailLabel}>Tool:</Text>
+              <Text style={styles.orderDetailValue}>{order.tuningTool}</Text>
+            </View>
+            <View style={styles.orderDetailRow}>
+              <Text style={styles.orderDetailLabel}>
+                {language === 'de' ? 'Methode:' : 'Method:'}
+              </Text>
+              <Text style={styles.orderDetailValue}>{order.method}</Text>
+            </View>
+            <View style={styles.orderDetailRow}>
+              <Text style={styles.orderDetailLabel}>Slave/Master:</Text>
+              <Text style={styles.orderDetailValue}>{order.slaveOrMaster}</Text>
+            </View>
+            
+            {order.status === 'completed' && (
+              <TouchableOpacity style={styles.downloadButton}>
+                <Ionicons name="download" size={18} color="#ffffff" />
+                <Text style={styles.downloadButtonText}>
+                  {language === 'de' ? 'Datei herunterladen' : 'Download File'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
+        <View style={styles.expandIndicator}>
+          <Ionicons
+            name={isExpanded ? 'chevron-up' : 'chevron-down'}
+            size={20}
+            color="#8b8b8b"
+          />
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderOrdersOverview = () => (
+    <View style={styles.ordersContainer}>
+      <View style={styles.ordersStats}>
+        <View style={styles.statCard}>
+          <Text style={styles.statNumber}>{orders.length}</Text>
+          <Text style={styles.statLabel}>
+            {language === 'de' ? 'Gesamt' : 'Total'}
+          </Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={[styles.statNumber, { color: '#ff9800' }]}>
+            {orders.filter(o => o.status === 'pending').length}
+          </Text>
+          <Text style={styles.statLabel}>
+            {language === 'de' ? 'Ausstehend' : 'Pending'}
+          </Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={[styles.statNumber, { color: '#2196f3' }]}>
+            {orders.filter(o => o.status === 'processing').length}
+          </Text>
+          <Text style={styles.statLabel}>
+            {language === 'de' ? 'In Arbeit' : 'Processing'}
+          </Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={[styles.statNumber, { color: '#4caf50' }]}>
+            {orders.filter(o => o.status === 'completed').length}
+          </Text>
+          <Text style={styles.statLabel}>
+            {language === 'de' ? 'Fertig' : 'Done'}
+          </Text>
+        </View>
+      </View>
+
+      {orders.length === 0 ? (
+        <View style={styles.emptyOrders}>
+          <Ionicons name="folder-open" size={48} color="#8b8b8b" />
+          <Text style={styles.emptyOrdersText}>
+            {language === 'de' 
+              ? 'Noch keine Aufträge vorhanden' 
+              : 'No orders yet'}
+          </Text>
+        </View>
+      ) : (
+        orders.map(renderOrderCard)
+      )}
+    </View>
+  );
+
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>
-          {language === 'de' ? 'Tuning-Auftrag' : 'Tuning Order'}
+          {language === 'de' ? 'Tuning-Aufträge' : 'Tuning Orders'}
         </Text>
       </View>
 
-      {/* Step Indicator */}
-      {renderStepIndicator()}
+      {/* Tab Switch */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[styles.tab, viewMode === 'orders' && styles.tabActive]}
+          onPress={() => setViewMode('orders')}
+        >
+          <Ionicons
+            name="list"
+            size={18}
+            color={viewMode === 'orders' ? '#ffffff' : '#8b8b8b'}
+          />
+          <Text style={[styles.tabText, viewMode === 'orders' && styles.tabTextActive]}>
+            {language === 'de' ? 'Aufträge' : 'Orders'}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, viewMode === 'newOrder' && styles.tabActive]}
+          onPress={() => setViewMode('newOrder')}
+        >
+          <Ionicons
+            name="add-circle"
+            size={18}
+            color={viewMode === 'newOrder' ? '#ffffff' : '#8b8b8b'}
+          />
+          <Text style={[styles.tabText, viewMode === 'newOrder' && styles.tabTextActive]}>
+            {language === 'de' ? 'Neuer Auftrag' : 'New Order'}
+          </Text>
+        </TouchableOpacity>
+      </View>
 
-      {/* Step Content */}
-      {currentStep === 1 && renderStep1()}
-      {currentStep === 2 && renderStep2()}
-      {currentStep === 3 && renderStep3()}
-      {currentStep === 4 && renderStep4()}
+      {/* Content based on view mode */}
+      {viewMode === 'orders' && renderOrdersOverview()}
 
-      {/* Navigation Buttons */}
-      {currentStep < 4 && (
-        <View style={styles.navButtons}>
-          {currentStep > 1 && (
-            <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-              <Ionicons name="arrow-back" size={20} color="#ffffff" />
-              <Text style={styles.backButtonText}>
-                {language === 'de' ? 'Zurück' : 'Back'}
-              </Text>
-            </TouchableOpacity>
+      {viewMode === 'newOrder' && (
+        <>
+          {/* Step Indicator */}
+          {renderStepIndicator()}
+
+          {/* Step Content */}
+          {currentStep === 1 && renderStep1()}
+          {currentStep === 2 && renderStep2()}
+          {currentStep === 3 && renderStep3()}
+          {currentStep === 4 && renderStep4()}
+
+          {/* Navigation Buttons */}
+          {currentStep < 4 && (
+            <View style={styles.navButtons}>
+              {currentStep > 1 && (
+                <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+                  <Ionicons name="arrow-back" size={20} color="#ffffff" />
+                  <Text style={styles.backButtonText}>
+                    {language === 'de' ? 'Zurück' : 'Back'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={[styles.nextButton, !canProceed() && styles.nextButtonDisabled]}
+                onPress={handleNext}
+                disabled={!canProceed()}
+              >
+                <Text style={styles.nextButtonText}>
+                  {language === 'de' ? 'Weiter' : 'Next'}
+                </Text>
+                <Ionicons name="arrow-forward" size={20} color="#ffffff" />
+              </TouchableOpacity>
+            </View>
           )}
-          <TouchableOpacity
-            style={[styles.nextButton, !canProceed() && styles.nextButtonDisabled]}
-            onPress={handleNext}
-            disabled={!canProceed()}
-          >
-            <Text style={styles.nextButtonText}>
-              {language === 'de' ? 'Weiter' : 'Next'}
-            </Text>
-            <Ionicons name="arrow-forward" size={20} color="#ffffff" />
-          </TouchableOpacity>
-        </View>
+        </>
+      )}
+
+      <View style={styles.bottomSpacer} />
+    </ScrollView>
+  );
+}
       )}
 
       <View style={styles.bottomSpacer} />
@@ -1142,5 +1398,180 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 30,
+  },
+  // Tab Styles
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#121212',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 20,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    gap: 8,
+    borderRadius: 10,
+  },
+  tabActive: {
+    backgroundColor: '#bd1f22',
+  },
+  tabText: {
+    color: '#8b8b8b',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  tabTextActive: {
+    color: '#ffffff',
+  },
+  // Orders Overview Styles
+  ordersContainer: {
+    flex: 1,
+  },
+  ordersStats: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 20,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: '#121212',
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+  },
+  statNumber: {
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  statLabel: {
+    color: '#8b8b8b',
+    fontSize: 11,
+    marginTop: 4,
+  },
+  emptyOrders: {
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  emptyOrdersText: {
+    color: '#8b8b8b',
+    fontSize: 16,
+    marginTop: 16,
+  },
+  orderCard: {
+    backgroundColor: '#121212',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+  },
+  orderHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  orderNumberContainer: {
+    flex: 1,
+  },
+  orderNumber: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  orderDate: {
+    color: '#8b8b8b',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  orderMainInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  orderVehicle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  orderVehicleText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  orderStage: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  orderStageText: {
+    color: '#4caf50',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  orderFile: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  orderFileText: {
+    color: '#8b8b8b',
+    fontSize: 13,
+  },
+  orderDetails: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#1a1a1a',
+  },
+  orderDetailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  orderDetailLabel: {
+    color: '#8b8b8b',
+    fontSize: 13,
+  },
+  orderDetailValue: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  downloadButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#4caf50',
+    borderRadius: 10,
+    paddingVertical: 12,
+    marginTop: 12,
+    gap: 8,
+  },
+  downloadButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  expandIndicator: {
+    alignItems: 'center',
+    marginTop: 8,
   },
 });
