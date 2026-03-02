@@ -24,8 +24,65 @@ interface VehicleField {
   key: string;
 }
 
+interface MockVehicle {
+  manufacturer: string;
+  model: string;
+  engine: string;
+  year: string;
+  stages: MockStage[];
+}
+
+interface MockStage {
+  id: string;
+  name: string;
+  org_hp: number;
+  org_tq: number;
+  tun_hp: number;
+  tun_tq: number;
+  delta_hp: number;
+  delta_tq: number;
+}
+
+type ScreenStep = 'scan' | 'data' | 'vehicle';
+
+// Mock vehicle data based on scanned info
+const getMockVehicle = (data: FahrzeugscheinData): MockVehicle => {
+  // Extract power from scanned data if available
+  const orgHp = data.p2_p4 ? parseInt(data.p2_p4) : 150;
+  
+  return {
+    manufacturer: data.d1 || 'Unbekannt',
+    model: data.d3 || 'Unbekannt',
+    engine: data.p1 ? `${data.p1} cm³` : '2.0 TDI',
+    year: data.ez_string || data.ez || '2020',
+    stages: [
+      {
+        id: 'stage1',
+        name: 'Stage 1',
+        org_hp: orgHp,
+        org_tq: Math.round(orgHp * 2.1),
+        tun_hp: Math.round(orgHp * 1.25),
+        tun_tq: Math.round(orgHp * 2.1 * 1.3),
+        delta_hp: Math.round(orgHp * 0.25),
+        delta_tq: Math.round(orgHp * 2.1 * 0.3),
+      },
+      {
+        id: 'stage2',
+        name: 'Stage 2',
+        org_hp: orgHp,
+        org_tq: Math.round(orgHp * 2.1),
+        tun_hp: Math.round(orgHp * 1.4),
+        tun_tq: Math.round(orgHp * 2.1 * 1.45),
+        delta_hp: Math.round(orgHp * 0.4),
+        delta_tq: Math.round(orgHp * 2.1 * 0.45),
+      },
+    ],
+  };
+};
+
 export default function FahrzeugscheinScreen() {
   const { language } = useLanguage();
+  const [currentStep, setCurrentStep] = useState<ScreenStep>('scan');
   const [cameraVisible, setCameraVisible] = useState(false);
   const [facing, setFacing] = useState<CameraType>('back');
   const [permission, requestPermission] = useCameraPermissions();
@@ -33,6 +90,8 @@ export default function FahrzeugscheinScreen() {
   const [scanning, setScanning] = useState(false);
   const [scannedData, setScannedData] = useState<FahrzeugscheinData | null>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [mockVehicle, setMockVehicle] = useState<MockVehicle | null>(null);
+  const [selectedStage, setSelectedStage] = useState<MockStage | null>(null);
   const cameraRef = useRef<CameraView>(null);
 
   const openCamera = async () => {
@@ -68,12 +127,14 @@ export default function FahrzeugscheinScreen() {
     setCapturedImage(base64);
     setScanning(true);
     setScannedData(null);
+    setCurrentStep('scan');
     
     try {
       const result = await scanFahrzeugschein(base64);
       
       if (result.success && result.data) {
         setScannedData(result.data);
+        setCurrentStep('data');
       } else {
         Alert.alert(
           language === 'de' ? 'Fehler' : 'Error',
@@ -124,9 +185,40 @@ export default function FahrzeugscheinScreen() {
     setFacing(current => (current === 'back' ? 'front' : 'back'));
   };
 
+  const handleNext = () => {
+    if (scannedData) {
+      const vehicle = getMockVehicle(scannedData);
+      setMockVehicle(vehicle);
+      setCurrentStep('vehicle');
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep === 'vehicle') {
+      setCurrentStep('data');
+    } else if (currentStep === 'data') {
+      setCurrentStep('scan');
+      setScannedData(null);
+      setCapturedImage(null);
+    }
+  };
+
   const resetScan = () => {
     setScannedData(null);
     setCapturedImage(null);
+    setMockVehicle(null);
+    setSelectedStage(null);
+    setCurrentStep('scan');
+  };
+
+  const handleRequestQuote = () => {
+    Alert.alert(
+      language === 'de' ? 'Anfrage gesendet' : 'Request Sent',
+      language === 'de' 
+        ? 'Ihre Tuning-Anfrage wurde erfolgreich gesendet. Wir melden uns in Kürze bei Ihnen.' 
+        : 'Your tuning request has been sent successfully. We will contact you shortly.',
+      [{ text: 'OK', onPress: resetScan }]
+    );
   };
 
   const getVehicleFields = (): VehicleField[] => {
@@ -143,16 +235,262 @@ export default function FahrzeugscheinScreen() {
       { key: 'p1', label_de: 'Hubraum (cm³)', label_en: 'Engine Size (cm³)', value: scannedData.p1 },
       { key: 'p3', label_de: 'Kraftstoff', label_en: 'Fuel Type', value: scannedData.p3 },
       { key: 'p2_p4', label_de: 'Leistung (kW)', label_en: 'Power (kW)', value: scannedData.p2_p4 },
-      { key: 'g', label_de: 'Leergewicht (kg)', label_en: 'Empty Weight (kg)', value: scannedData.g },
-      { key: 'f1', label_de: 'Zulässige Gesamtmasse', label_en: 'Max Weight', value: scannedData.f1 },
-      { key: 'j', label_de: 'Fahrzeugklasse', label_en: 'Vehicle Class', value: scannedData.j },
-      { key: 'field_14', label_de: 'Emissionsklasse', label_en: 'Emission Class', value: scannedData.field_14 },
-      { key: 'r', label_de: 'Farbe', label_en: 'Color', value: scannedData.r },
-      { key: 'name', label_de: 'Halter Name', label_en: 'Owner Name', value: scannedData.name },
-      { key: 'firstname', label_de: 'Vorname', label_en: 'First Name', value: scannedData.firstname },
-      { key: 'address', label_de: 'Adresse', label_en: 'Address', value: scannedData.address || `${scannedData.address1 || ''} ${scannedData.address2 || ''}`.trim() },
     ].filter(field => field.value);
   };
+
+  // Render Step 1: Scan
+  const renderScanStep = () => (
+    <>
+      {/* Show scanned image if available */}
+      {capturedImage && (
+        <View style={styles.imageContainer}>
+          <Image
+            source={{ uri: `data:image/jpeg;base64,${capturedImage}` }}
+            style={styles.capturedImage}
+            resizeMode="contain"
+          />
+        </View>
+      )}
+
+      {/* Scanning indicator */}
+      {scanning && (
+        <View style={styles.scanningContainer}>
+          <ActivityIndicator color="#bd1f22" size="large" />
+          <Text style={styles.scanningText}>
+            {language === 'de' ? 'Dokument wird analysiert...' : 'Analyzing document...'}
+          </Text>
+        </View>
+      )}
+
+      {/* Action Buttons */}
+      {!scanning && !scannedData && (
+        <View style={styles.actionsContainer}>
+          <TouchableOpacity style={styles.mainActionButton} onPress={openCamera}>
+            <View style={styles.mainActionIcon}>
+              <Ionicons name="camera" size={40} color="#bd1f22" />
+            </View>
+            <Text style={styles.mainActionTitle}>
+              {language === 'de' ? 'Fahrzeugschein fotografieren' : 'Take Photo of Registration'}
+            </Text>
+            <Text style={styles.mainActionSubtitle}>
+              {language === 'de' 
+                ? 'Halten Sie die Kamera über das Dokument' 
+                : 'Hold the camera over the document'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.secondaryActionButton} onPress={pickImage}>
+            <Ionicons name="images" size={24} color="#bd1f22" />
+            <Text style={styles.secondaryActionText}>
+              {language === 'de' ? 'Bild aus Galerie wählen' : 'Choose from Gallery'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Tips */}
+      {!scannedData && !scanning && (
+        <View style={styles.tipsContainer}>
+          <Text style={styles.tipsTitle}>
+            {language === 'de' ? 'Tipps für beste Ergebnisse' : 'Tips for Best Results'}
+          </Text>
+          <View style={styles.tipItem}>
+            <Ionicons name="sunny" size={20} color="#ffc107" />
+            <Text style={styles.tipText}>
+              {language === 'de' ? 'Gute Beleuchtung verwenden' : 'Use good lighting'}
+            </Text>
+          </View>
+          <View style={styles.tipItem}>
+            <Ionicons name="scan" size={20} color="#2196f3" />
+            <Text style={styles.tipText}>
+              {language === 'de' ? 'Dokument vollständig im Bild' : 'Document fully visible'}
+            </Text>
+          </View>
+          <View style={styles.tipItem}>
+            <Ionicons name="hand-left" size={20} color="#4caf50" />
+            <Text style={styles.tipText}>
+              {language === 'de' ? 'Kamera ruhig halten' : 'Hold camera steady'}
+            </Text>
+          </View>
+        </View>
+      )}
+    </>
+  );
+
+  // Render Step 2: Data Display
+  const renderDataStep = () => (
+    <View style={styles.dataContainer}>
+      <View style={styles.dataHeader}>
+        <Ionicons name="checkmark-circle" size={24} color="#4caf50" />
+        <Text style={styles.dataTitle}>
+          {language === 'de' ? 'Erkannte Fahrzeugdaten' : 'Detected Vehicle Data'}
+        </Text>
+      </View>
+      
+      <View style={styles.dataCard}>
+        {getVehicleFields().map((field, index) => (
+          <View key={field.key} style={[styles.fieldRow, index % 2 === 0 && styles.fieldRowAlt]}>
+            <Text style={styles.fieldLabel}>
+              {language === 'de' ? field.label_de : field.label_en}
+            </Text>
+            <Text style={styles.fieldValue}>{field.value}</Text>
+          </View>
+        ))}
+      </View>
+
+      <View style={styles.navButtons}>
+        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+          <Ionicons name="arrow-back" size={20} color="#ffffff" />
+          <Text style={styles.backButtonText}>
+            {language === 'de' ? 'Zurück' : 'Back'}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+          <Text style={styles.nextButtonText}>
+            {language === 'de' ? 'Weiter' : 'Next'}
+          </Text>
+          <Ionicons name="arrow-forward" size={20} color="#ffffff" />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  // Render Step 3: Vehicle & Stages
+  const renderVehicleStep = () => (
+    <View style={styles.vehicleContainer}>
+      {/* Vehicle Info Card */}
+      <View style={styles.vehicleCard}>
+        <View style={styles.vehicleHeader}>
+          <Ionicons name="car-sport" size={28} color="#bd1f22" />
+          <View style={styles.vehicleInfo}>
+            <Text style={styles.vehicleName}>
+              {mockVehicle?.manufacturer} {mockVehicle?.model}
+            </Text>
+            <Text style={styles.vehicleDetails}>
+              {mockVehicle?.engine} • {mockVehicle?.year}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Stages */}
+      <Text style={styles.stagesTitle}>
+        {language === 'de' ? 'Verfügbare Tuning-Stufen' : 'Available Tuning Stages'}
+      </Text>
+
+      {mockVehicle?.stages.map((stage) => (
+        <TouchableOpacity
+          key={stage.id}
+          style={[
+            styles.stageCard,
+            selectedStage?.id === stage.id && styles.stageCardSelected,
+          ]}
+          onPress={() => setSelectedStage(stage)}
+        >
+          {/* Stage Header */}
+          <View style={styles.stageHeader}>
+            <Ionicons name="flash" size={24} color={selectedStage?.id === stage.id ? '#ffffff' : '#bd1f22'} />
+            <Text style={[styles.stageName, selectedStage?.id === stage.id && styles.stageNameSelected]}>
+              {stage.name}
+            </Text>
+            {selectedStage?.id === stage.id && (
+              <Ionicons name="checkmark-circle" size={24} color="#ffffff" />
+            )}
+          </View>
+          
+          {/* Power/Torque Table */}
+          <View style={[styles.stageTable, selectedStage?.id === stage.id && styles.stageTableSelected]}>
+            {/* Table Header */}
+            <View style={styles.tableHeader}>
+              <Text style={styles.tableHeaderCell}></Text>
+              <Text style={styles.tableHeaderCell}>Original</Text>
+              <Text style={styles.tableHeaderCell}>{stage.name}</Text>
+              <View style={styles.tableHeaderIconCell}>
+                <Ionicons name="trending-up" size={18} color={selectedStage?.id === stage.id ? '#ffffff' : '#bd1f22'} />
+              </View>
+            </View>
+            
+            {/* HP Row */}
+            <View style={styles.tableRow}>
+              <Text style={[styles.tableLabel, selectedStage?.id === stage.id && styles.tableLabelSelected]}>PS</Text>
+              <Text style={[styles.tableValue, selectedStage?.id === stage.id && styles.tableValueSelected]}>{stage.org_hp}</Text>
+              <Text style={[styles.tableValue, styles.tunedValue, selectedStage?.id === stage.id && styles.tunedValueSelected]}>{stage.tun_hp}</Text>
+              <Text style={[styles.tableDelta, selectedStage?.id === stage.id && styles.tableDeltaSelected]}>+{stage.delta_hp}</Text>
+            </View>
+            
+            {/* Torque Row */}
+            <View style={styles.tableRow}>
+              <Text style={[styles.tableLabel, selectedStage?.id === stage.id && styles.tableLabelSelected]}>Nm</Text>
+              <Text style={[styles.tableValue, selectedStage?.id === stage.id && styles.tableValueSelected]}>{stage.org_tq}</Text>
+              <Text style={[styles.tableValue, styles.tunedValue, selectedStage?.id === stage.id && styles.tunedValueSelected]}>{stage.tun_tq}</Text>
+              <Text style={[styles.tableDelta, selectedStage?.id === stage.id && styles.tableDeltaSelected]}>+{stage.delta_tq}</Text>
+            </View>
+          </View>
+        </TouchableOpacity>
+      ))}
+
+      {/* Action Buttons */}
+      <View style={styles.navButtons}>
+        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+          <Ionicons name="arrow-back" size={20} color="#ffffff" />
+          <Text style={styles.backButtonText}>
+            {language === 'de' ? 'Zurück' : 'Back'}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.submitButton, !selectedStage && styles.submitButtonDisabled]}
+          onPress={handleRequestQuote}
+          disabled={!selectedStage}
+        >
+          <Ionicons name="send" size={20} color="#ffffff" />
+          <Text style={styles.submitButtonText}>
+            {language === 'de' ? 'Anfrage senden' : 'Send Request'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <TouchableOpacity style={styles.resetButton} onPress={resetScan}>
+        <Ionicons name="refresh" size={18} color="#bd1f22" />
+        <Text style={styles.resetButtonText}>
+          {language === 'de' ? 'Neuen Scan starten' : 'Start New Scan'}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  // Step Indicator
+  const renderStepIndicator = () => (
+    <View style={styles.stepIndicator}>
+      {['scan', 'data', 'vehicle'].map((step, index) => (
+        <React.Fragment key={step}>
+          <View style={[
+            styles.stepCircle,
+            (currentStep === step || 
+             (currentStep === 'data' && index === 0) ||
+             (currentStep === 'vehicle' && index <= 1)) && styles.stepCircleActive,
+            currentStep === step && styles.stepCircleCurrent,
+          ]}>
+            {(currentStep === 'data' && index === 0) || (currentStep === 'vehicle' && index < 2) ? (
+              <Ionicons name="checkmark" size={16} color="#ffffff" />
+            ) : (
+              <Text style={[
+                styles.stepNumber,
+                currentStep === step && styles.stepNumberActive,
+              ]}>
+                {index + 1}
+              </Text>
+            )}
+          </View>
+          {index < 2 && (
+            <View style={[
+              styles.stepLine,
+              ((currentStep === 'data' && index === 0) || (currentStep === 'vehicle')) && styles.stepLineActive,
+            ]} />
+          )}
+        </React.Fragment>
+      ))}
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -163,119 +501,25 @@ export default function FahrzeugscheinScreen() {
             {language === 'de' ? 'Fahrzeugschein Scanner' : 'Vehicle Registration Scanner'}
           </Text>
           <Text style={styles.subtitle}>
-            {language === 'de' 
-              ? 'Fotografieren Sie Ihren Fahrzeugschein, um die Daten automatisch zu erfassen' 
-              : 'Take a photo of your vehicle registration to automatically capture the data'}
+            {currentStep === 'scan' && (language === 'de' 
+              ? 'Fotografieren Sie Ihren Fahrzeugschein' 
+              : 'Take a photo of your vehicle registration')}
+            {currentStep === 'data' && (language === 'de' 
+              ? 'Überprüfen Sie die erkannten Daten' 
+              : 'Review the detected data')}
+            {currentStep === 'vehicle' && (language === 'de' 
+              ? 'Wählen Sie Ihre Tuning-Stufe' 
+              : 'Select your tuning stage')}
           </Text>
         </View>
 
-        {/* Show scanned image if available */}
-        {capturedImage && (
-          <View style={styles.imageContainer}>
-            <Image
-              source={{ uri: `data:image/jpeg;base64,${capturedImage}` }}
-              style={styles.capturedImage}
-              resizeMode="contain"
-            />
-          </View>
-        )}
+        {/* Step Indicator */}
+        {renderStepIndicator()}
 
-        {/* Scanning indicator */}
-        {scanning && (
-          <View style={styles.scanningContainer}>
-            <ActivityIndicator color="#bd1f22" size="large" />
-            <Text style={styles.scanningText}>
-              {language === 'de' ? 'Dokument wird analysiert...' : 'Analyzing document...'}
-            </Text>
-          </View>
-        )}
-
-        {/* Results */}
-        {scannedData && !scanning && (
-          <View style={styles.resultsContainer}>
-            <View style={styles.resultsHeader}>
-              <Ionicons name="checkmark-circle" size={24} color="#4caf50" />
-              <Text style={styles.resultsTitle}>
-                {language === 'de' ? 'Erkannte Daten' : 'Detected Data'}
-              </Text>
-            </View>
-            
-            {getVehicleFields().map((field, index) => (
-              <View key={field.key} style={[styles.fieldRow, index % 2 === 0 && styles.fieldRowAlt]}>
-                <Text style={styles.fieldLabel}>
-                  {language === 'de' ? field.label_de : field.label_en}
-                </Text>
-                <Text style={styles.fieldValue}>{field.value}</Text>
-              </View>
-            ))}
-            
-            <TouchableOpacity style={styles.resetButton} onPress={resetScan}>
-              <Ionicons name="refresh" size={20} color="#ffffff" />
-              <Text style={styles.resetButtonText}>
-                {language === 'de' ? 'Neuen Scan starten' : 'Start New Scan'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Action Buttons - show only when not scanning and no results */}
-        {!scanning && !scannedData && (
-          <View style={styles.actionsContainer}>
-            <TouchableOpacity style={styles.mainActionButton} onPress={openCamera}>
-              <View style={styles.mainActionIcon}>
-                <Ionicons name="camera" size={40} color="#bd1f22" />
-              </View>
-              <Text style={styles.mainActionTitle}>
-                {language === 'de' ? 'Fahrzeugschein fotografieren' : 'Take Photo of Registration'}
-              </Text>
-              <Text style={styles.mainActionSubtitle}>
-                {language === 'de' 
-                  ? 'Halten Sie die Kamera über das Dokument' 
-                  : 'Hold the camera over the document'}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.secondaryActionButton} onPress={pickImage}>
-              <Ionicons name="images" size={24} color="#bd1f22" />
-              <Text style={styles.secondaryActionText}>
-                {language === 'de' ? 'Bild aus Galerie wählen' : 'Choose from Gallery'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Tips */}
-        {!scannedData && !scanning && (
-          <View style={styles.tipsContainer}>
-            <Text style={styles.tipsTitle}>
-              {language === 'de' ? 'Tipps für beste Ergebnisse' : 'Tips for Best Results'}
-            </Text>
-            <View style={styles.tipItem}>
-              <Ionicons name="sunny" size={20} color="#ffc107" />
-              <Text style={styles.tipText}>
-                {language === 'de' 
-                  ? 'Gute Beleuchtung verwenden' 
-                  : 'Use good lighting'}
-              </Text>
-            </View>
-            <View style={styles.tipItem}>
-              <Ionicons name="scan" size={20} color="#2196f3" />
-              <Text style={styles.tipText}>
-                {language === 'de' 
-                  ? 'Dokument vollständig im Bild' 
-                  : 'Document fully visible'}
-              </Text>
-            </View>
-            <View style={styles.tipItem}>
-              <Ionicons name="hand-left" size={20} color="#4caf50" />
-              <Text style={styles.tipText}>
-                {language === 'de' 
-                  ? 'Kamera ruhig halten' 
-                  : 'Hold camera steady'}
-              </Text>
-            </View>
-          </View>
-        )}
+        {/* Step Content */}
+        {currentStep === 'scan' && renderScanStep()}
+        {currentStep === 'data' && renderDataStep()}
+        {currentStep === 'vehicle' && renderVehicleStep()}
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
@@ -371,6 +615,49 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
+  // Step Indicator
+  stepIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+    marginBottom: 10,
+  },
+  stepCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#1a1a1a',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#2a2a2a',
+  },
+  stepCircleActive: {
+    backgroundColor: '#bd1f22',
+    borderColor: '#bd1f22',
+  },
+  stepCircleCurrent: {
+    borderColor: '#ffffff',
+  },
+  stepNumber: {
+    color: '#8b8b8b',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  stepNumberActive: {
+    color: '#ffffff',
+  },
+  stepLine: {
+    width: 50,
+    height: 2,
+    backgroundColor: '#2a2a2a',
+    marginHorizontal: 8,
+  },
+  stepLineActive: {
+    backgroundColor: '#bd1f22',
+  },
+  // Scan Step
   imageContainer: {
     backgroundColor: '#121212',
     borderRadius: 16,
@@ -394,64 +681,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginTop: 16,
-  },
-  resultsContainer: {
-    backgroundColor: '#121212',
-    borderRadius: 16,
-    overflow: 'hidden',
-    marginBottom: 16,
-  },
-  resultsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#2a2a2a',
-    gap: 10,
-  },
-  resultsTitle: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  fieldRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1a1a1a',
-  },
-  fieldRowAlt: {
-    backgroundColor: '#1a1a1a',
-  },
-  fieldLabel: {
-    color: '#8b8b8b',
-    fontSize: 13,
-    flex: 1,
-  },
-  fieldValue: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '600',
-    flex: 1.2,
-    textAlign: 'right',
-  },
-  resetButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#bd1f22',
-    padding: 16,
-    gap: 8,
-    margin: 16,
-    borderRadius: 12,
-  },
-  resetButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '700',
   },
   actionsContainer: {
     gap: 16,
@@ -522,6 +751,248 @@ const styles = StyleSheet.create({
   tipText: {
     color: '#8b8b8b',
     fontSize: 14,
+  },
+  // Data Step
+  dataContainer: {
+    flex: 1,
+  },
+  dataHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 10,
+  },
+  dataTitle: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  dataCard: {
+    backgroundColor: '#121212',
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 20,
+  },
+  fieldRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1a1a1a',
+  },
+  fieldRowAlt: {
+    backgroundColor: '#1a1a1a',
+  },
+  fieldLabel: {
+    color: '#8b8b8b',
+    fontSize: 13,
+    flex: 1,
+  },
+  fieldValue: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+    flex: 1.2,
+    textAlign: 'right',
+  },
+  // Vehicle Step
+  vehicleContainer: {
+    flex: 1,
+  },
+  vehicleCard: {
+    backgroundColor: '#121212',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+  },
+  vehicleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  vehicleInfo: {
+    flex: 1,
+  },
+  vehicleName: {
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  vehicleDetails: {
+    color: '#8b8b8b',
+    fontSize: 14,
+  },
+  stagesTitle: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 16,
+  },
+  stageCard: {
+    backgroundColor: '#121212',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  stageCardSelected: {
+    backgroundColor: '#bd1f22',
+    borderColor: '#bd1f22',
+  },
+  stageHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 10,
+  },
+  stageName: {
+    flex: 1,
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  stageNameSelected: {
+    color: '#ffffff',
+  },
+  stageTable: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  stageTableSelected: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#252525',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  tableHeaderCell: {
+    flex: 1,
+    color: '#8b8b8b',
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  tableHeaderIconCell: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tableRow: {
+    flexDirection: 'row',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#252525',
+  },
+  tableLabel: {
+    flex: 1,
+    color: '#8b8b8b',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  tableLabelSelected: {
+    color: 'rgba(255,255,255,0.7)',
+  },
+  tableValue: {
+    flex: 1,
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  tableValueSelected: {
+    color: '#ffffff',
+  },
+  tunedValue: {
+    color: '#bd1f22',
+    fontWeight: '700',
+  },
+  tunedValueSelected: {
+    color: '#ffffff',
+  },
+  tableDelta: {
+    flex: 1,
+    color: '#4caf50',
+    fontSize: 14,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  tableDeltaSelected: {
+    color: '#90EE90',
+  },
+  // Navigation
+  navButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 10,
+    marginBottom: 16,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1a1a1a',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    gap: 8,
+  },
+  backButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  nextButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#bd1f22',
+    borderRadius: 12,
+    paddingVertical: 14,
+    gap: 8,
+  },
+  nextButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  submitButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#bd1f22',
+    borderRadius: 12,
+    paddingVertical: 14,
+    gap: 8,
+  },
+  submitButtonDisabled: {
+    opacity: 0.5,
+  },
+  submitButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  resetButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    gap: 8,
+  },
+  resetButtonText: {
+    color: '#bd1f22',
+    fontSize: 14,
+    fontWeight: '600',
   },
   bottomSpacer: {
     height: 30,
