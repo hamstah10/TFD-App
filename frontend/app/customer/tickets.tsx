@@ -250,7 +250,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 20,
+    paddingTop: 16,
+    paddingBottom: 16,
   },
   title: {
     color: '#ffffff',

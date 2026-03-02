@@ -173,7 +173,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   welcomeSection: {
-    paddingVertical: 20,
+    paddingTop: 16,
+    paddingBottom: 20,
   },
   welcomeText: {
     color: '#8b8b8b',

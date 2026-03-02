@@ -502,7 +502,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingTop: 16,
+    paddingBottom: 12,
   },
   headerLeft: {
     flexDirection: 'row',

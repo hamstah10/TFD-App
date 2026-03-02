@@ -360,7 +360,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   header: {
-    paddingVertical: 20,
+    paddingTop: 16,
+    paddingBottom: 16,
   },
   title: {
     color: '#ffffff',
