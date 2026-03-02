@@ -203,12 +203,15 @@ const styles = StyleSheet.create({
   },
   navScrollView: {
     backgroundColor: '#121212',
+    flexGrow: 0,
+    maxHeight: 60,
   },
   navContainer: {
     flexDirection: 'row',
     paddingHorizontal: 16,
     paddingVertical: 8,
     gap: 8,
+    alignItems: 'center',
   },
   navTab: {
     flexDirection: 'row',
