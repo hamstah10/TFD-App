@@ -3,7 +3,7 @@
 The user wants to build a mobile app for a chiptuning database, based on the website .
 
 **Initial Product Requirements:**
-1.  A vehicle configurator with cascading selections: Vehicle Type -> Manufacturer -> Model -> Version -> Engine.
+1.  A vehicle configurator with cascading selections.
 2.  A blog section.
 3.  A display for opening hours.
 4.  Contact information/form.
@@ -11,222 +11,238 @@ The user wants to build a mobile app for a chiptuning database, based on the web
 6.  An admin area to manage content.
 
 **Feature Requests added during development:**
-1.  Change the app's color scheme to red (), dark background (), and darker cards ().
-2.  Incorporate the company logo into the app header.
-3.  Redesign the vehicle configurator from dropdowns to an animated, sliding grid layout.
-4.  Create a global header containing the logo and language switch, persistent across all screens.
-5.  Implement a customer login area with a dashboard. The dashboard should have menus for Dashboard, Files, and Tickets and display mock data for active orders.
-6.  Implement an AI assistant (agent) in the configurator that users can talk to for vehicle selection.
-7.  Add a Fotos (Photos) section to the customer area where users can take a photo with their device camera or upload from the gallery and have it displayed.
-8.  The taken/uploaded photos must be saved on the backend.
+1.  Change app's color scheme.
+2.  Incorporate a company logo and update it.
+3.  Redesign the vehicle configurator to an animated, sliding grid layout.
+4.  Create a global header with logo and language switch.
+5.  Implement a customer login area with a dashboard.
+6.  Implement an AI assistant in the configurator.
+7.  Add a Fotos (Photos) section for users to upload/take photos.
+8.  Implement a Vehicle Registration Certificate scanner using  API. The flow should be: scan -> see data -> see a matching vehicle stage.
+9.  Make the logo's color dynamic: the -Downloads.com part should turn green when the business is open.
+10. Connect the configurator to the live chiptuning API.
+11. Redesign the Stages view in the configurator to be a detailed table.
+12. Ensure ECU options are displayed correctly.
+13. Implement a multi-step wizard in the Files section of the customer area for uploading tuning files.
+14. Add an Order Overview tab next to the new file upload wizard.
+15. Make UI/UX adjustments: standardize padding, change customer dashboard navigation to icons-only, and finally move it to a fixed bottom tab bar.
 </original_problem_statement>
 
 **User's preferred language**: The user primarily communicates in German. The next agent MUST respond in German.
 
 **what currently exists?**
-A full-stack Expo (React Native) and FastAPI application has been built.
-- **Frontend**: A complete mobile app UI with file-based routing using .
-    - **Home Page**: Displays welcome message, feature cards, and opening hours.
-    - **Configurator**: A multi-step, animated grid-based UI for vehicle selection. It currently uses mock data because the external API is blocked.
-    - **AI Assistant**: An AI chat interface is integrated into the configurator, allowing users to select vehicles via natural language.
-    - **Blog**: A screen to display blog posts.
-    - **Contact**: A contact form page.
-    - **Admin Panel**: A basic interface to create blog posts and view messages.
-    - **Customer Portal**: A protected area with login. It includes a dashboard, and pages for file uploads, tickets, and photo uploads. All data is currently mocked.
-    - **Global Layout**: A persistent header with the company logo and a language switcher (DE/EN) is present on all main screens. Tab navigation is at the bottom.
+A full-stack Expo (React Native) and FastAPI application.
+- **Frontend**: An Expo app with .
+    - **Home Page**: Displays welcome message, feature cards, and dynamic opening hours status.
+    - **Configurator**: A multi-step grid-based UI for vehicle selection, now connected to a **live external API**. It includes a detailed Stages view with a comparison table, and displays ECUs and their options.
+    - **Customer Portal**: A protected area with login.
+        - **Dashboard**: Navigation has been changed to icons-only and is being moved to the bottom.
+        - **Files**: A tabbed view with a multi-step New Order wizard for file uploads and a mock Order Overview list.
+        - **Photos**: A page for uploading and viewing photos.
+        - **Scanner**: A page to scan a vehicle registration certificate, which proxies the request to an external API and displays the results. It has a mock data fallback.
+    - **Global Layout**: A persistent header with the company logo (which changes color based on business hours) is present on all main screens.
 - **Backend**: A FastAPI server with endpoints for:
-    - Managing users, blog posts, and messages (CRUD).
-    - Providing mock data for the vehicle configurator.
-    - A  endpoint that communicates with OpenAI to power the AI assistant.
-    - Initial endpoints for photo upload () and retrieval ().
-- **Database**: MongoDB is used to store data for users, blog posts, and will store photos.
+    - Proxying requests to the live chiptuning API, adding the necessary IP and token headers.
+    - Proxying requests to the vehicle registration scanner API.
+    - Managing users, blog posts, and photos.
 
 **Last working item**:
-- Last item agent was working: The agent was implementing the backend storage for the photo upload feature requested by the user. The user noted that uploaded photos were not being saved. The agent has:
-    1.  Updated  to add  and  endpoints, and a  collection in MongoDB to store images as base64 strings.
-    2.  Updated  to add  and  functions to communicate with the new backend endpoints.
-    The agent was about to modify  to use these new functions to complete the feature.
+- Last item agent was working: The user requested to change the customer area's side navigation into a fixed navigation bar at the bottom of the screen.
 - Status: IN PROGRESS
 - Agent Testing Done: N
-- Which testing method agent to use? backend testing agent
+- Which testing method agent to use? screenshot tool
 - User Testing Done: N
 
 **All Pending/In progress Issue list**:
-- Issue 1: (P0) Complete the photo storage and display functionality.
-- Issue 2: (P1) The external chiptuning API is blocked.
-- Issue 3: (P2) Deployment readiness check failed with 4 blockers.
+- Issue 1: (P0) Finalize and test the customer dashboard bottom navigation.
+- Issue 2: (P1) The logout functionality was reported broken. A hook-related error was fixed, but the logout process itself was not re-tested or confirmed to be working.
+- Issue 3: (P2) The chiptuning API connection is fragile. The server's public IP address has changed during development, requiring the user to re-whitelist it. This is a recurring operational risk.
+- Issue 4: (P3) The file upload wizard and order overview are UI-only. The send button does not trigger any backend action, and the order list is mock data.
+- Issue 5: (P4) Deployment readiness check failed with 4 blockers in a previous session. This was never addressed.
 
 Issues Detail:
-- **Issue 1: Photo Storage and Display**
-    - Attempted fixes: Backend endpoints and frontend API service functions have been created.
+- **Issue 1: Customer Dashboard Bottom Navigation**
+    - Attempted fixes: The agent modified  to move the navigation  to the bottom and applied , .
     - Next debug checklist:
-        1.  Modify .
-        2.  In  and  functions, after getting the image's base64 data, call the  API function.
-        3.  Use the  API function within a  hook to fetch and display the list of saved photos.
-        4.  Ensure the photo list updates after a new photo is uploaded.
-    - Why fix this issue and what will be achieved with the fix?: This will complete the user-requested feature for customers to save and view photos in their portal.
+        1. Restart the frontend and take a screenshot of a customer area page (e.g., ).
+        2. Verify that the navigation bar is fixed at the bottom and doesn't scroll with the content.
+        3. Ensure the content area has appropriate padding at the bottom to avoid being obscured by the new nav bar.
+        4. Test navigation between the customer area tabs.
+    - Why fix this issue and what will be achieved with the fix?: This implements a direct user request for a more mobile-native UI in the customer portal.
     - Status: IN PROGRESS
     - Is recurring issue?: N
-    - Should Test frontend/backend/both after fix?: Both
+    - Should Test frontend/backend/both after fix?: Frontend
     - Blocked on other issue: None
 
-- **Issue 2: External API IP Block**
-    - Attempted fixes: The agent identified its public IP as  and asked the user to whitelist it. The user confirmed it was done, but API calls still fail with an IP is not allowed error. The agent retried several times without success.
+- **Issue 2: Logout Functionality Verification**
+    - Attempted fixes: The agent fixed a Rendered more hooks than during the previous render error in  by moving the  hook call.
     - Next debug checklist:
-        1.  Confirm with the user that the IP  is indeed whitelisted on their API provider's portal.
-        2.  Ask the user to double-check if there's any delay or cache on their provider's end.
-        3.  As a last resort, investigate if the server's outbound traffic might be routed through a different IP (e.g., a NAT gateway), although the 35.184.53.215 check suggests otherwise.
-    - Why fix this issue and what will be achieved with the fix?: This is a critical blocker for the core functionality of the app. Fixing it will allow the configurator to use real-time vehicle data instead of mock data.
-    - Status: BLOCKED
+        1.  Log into the app.
+        2.  Click the Logout button.
+        3.  Verify that the user is redirected to the login screen ().
+        4.  Verify that the auth token is cleared and accessing a protected route (e.g., ) redirects back to login.
+    - Why fix this issue and what will be achieved with the fix?: A non-working logout is a critical bug in the authentication flow.
+    - Status: TESTING PENDING
+    - Is recurring issue?: N
+    - Should Test frontend/backend/both after fix?: Frontend
+    - Blocked on other issue: None
+
+- **Issue 3: Chiptuning API IP Fragility**
+    - Attempted fixes: When the API failed, the agent checked its IP, found it had changed, and asked the user to whitelist the new one (). This resolved the issue for now.
+    - Next debug checklist: This is not a code issue but an operational one. The agent should be aware that if the configurator appears empty, the first step is to run 35.225.230.28 and verify the IP against the one the user has whitelisted.
+    - Why fix this issue and what will be achieved with the fix?: Mitigates the main point of failure for the app's core feature. A more permanent solution would involve a static IP for the server, which is outside the agent's control.
+    - Status: RESOLVED (for now)
     - Is recurring issue?: Y
     - Should Test frontend/backend/both after fix?: Backend
-    - Blocked on other issue: Awaiting user/third-party action.
+    - Blocked on other issue: None
 
-- **Issue 3: Deployment Blockers**
-    - Attempted fixes: The agent ran the , which identified 4 blockers. The agent acknowledged them but was interrupted by the user's request for the photo feature before it could address them.
+- **Issue 4: File Upload Wizard Backend**
+    - Attempted fixes: None. The wizard was created as a UI-only feature.
     - Next debug checklist:
-        1.  Re-run the  with  to get the list of current blockers.
-        2.  Address each blocker one by one, which are likely related to environment variables, permissions, or missing production configurations.
-    - Why fix this issue and what will be achieved with the fix?: This will make the application ready for a stable deployment.
+        1.  Define a new backend endpoint (e.g., ).
+        2.  The endpoint should accept the file and all the wizard data (tuning tool, method, slave/master, selected vehicle).
+        3.  Update  with a function to call this new endpoint.
+        4.  In , implement the  function to gather all state and call the API service.
+        5.  Implement backend logic to store the order and the file.
+    - Why fix this issue and what will be achieved with the fix?: This will make the file upload wizard a functional feature, which is a key requirement for the customer portal.
     - Status: NOT STARTED
     - Is recurring issue?: N
     - Should Test frontend/backend/both after fix?: Both
     - Blocked on other issue: None
 
 **In progress Task List**:
-- Task 1: (P0) Integrate Photo Upload/Display in Frontend
-    - Where to resume: .
-    - What will be achieved with this?: Users will be able to take/select photos, upload them to the server, and see their saved photos on the Fotos page.
+- Task 1: (P0) Refactor customer dashboard navigation to a fixed bottom tab bar.
+    - Where to resume: . Test the changes made.
+    - What will be achieved with this?: A more intuitive, mobile-friendly navigation for the customer area.
     - Status: IN PROGRESS
-    - Should Test frontend/backend/both after fix?: Both
+    - Should Test frontend/backend/both after fix?: Frontend
     - Blocked on something: None
 
 **Upcoming and Future Tasks**
 - **Upcoming Tasks**:
-    - (P1) Replace mock data in the customer dashboard (active orders, files, tickets) with data from a real API once the user provides the endpoints for it.
+    - (P0) Implement backend functionality for the New Order file upload wizard (see Issue 4).
+    - (P1) Implement a backend endpoint to fetch real data for the Order Overview tab.
+    - (P2) Connect the contact form on the contact page to a backend endpoint.
 - **Future Tasks**:
-    - (P2) Connect the contact form on the contact page to a backend endpoint to save/send messages.
+    - (P3) Address deployment blockers identified by the .
 
 **Completed work in this session**
 - **Recently completed:**
-    - Full application scaffolding (Frontend & Backend) (DONE)
-    - Backend with mock data for vehicle configurator (DONE)
-    - Frontend UI for Home, Configurator, Blog, Contact, Admin pages (DONE)
-    - Custom color scheme implementation (DONE)
-    - Company logo integration in the header (DONE)
-    - Redesign of the configurator from dropdowns to an animated grid (DONE)
-    - Refactoring to a global header layout (DONE)
-    - Customer portal feature with Login, Dashboard, Files & Tickets pages (using mock data) (DONE)
-    - AI Assistant integration in the configurator using OpenAI (DONE)
-    - Fotos page UI added to the customer portal with camera/gallery access (DONE)
-    - Layout fixes for the customer dashboard and navigation (DONE)
+  - Connected vehicle configurator to the live  API. (DONE)
+  - Implemented Vehicle Registration Certificate Scanner feature. (DONE)
+  - Replaced app logo and made its color dynamic based on business hours. (DONE)
+  - Standardized padding and margins across all pages. (DONE)
+  - Redesigned the Stages view in the configurator with a detailed table. (DONE)
+  - Fixed display of ECU options in the configurator. (DONE)
+  - Resolved a React Hook error that broke the customer area. (DONE)
+  - Implemented a multi-step wizard UI for file uploads. (DONE)
+  - Added a tabbed UI for New Order and Order Overview. (DONE)
+  - Changed customer dashboard navigation to use icons instead of text. (DONE)
 
 **Earlier issues found/mentioned but not fixed**
 - **Issue 1: Deployment Blockers**
-    - The  found 4 issues preventing deployment. The agent was about to fix them but was redirected by the user to a new feature request.
-    - Debug checklist: Rerun  with  and fix the reported issues.
+    - The  previously found 4 issues preventing deployment. This task was superseded by feature requests and never completed.
+    - Debug checklist: Re-run  with  and fix the reported issues.
     - Why to solve this issue and what will be achieved with this?: To make the app deployable.
     - Should Test frontend/backend/both after fix: Both.
     - Is recurring issue?: N
 
 **Known issue recurrence from previous fork**
-- None.
+- **Issue recurrence in previous fork**: The chiptuning API is blocked due to the server's IP not being whitelisted.
+- **Recurrence count**: 2 (at least once in the previous session, and once in this session).
+- **Status**: RESOLVED (for now). The agent is aware of the cause.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Frontend**: React Native, Expo, Expo Router (file-based routing), TypeScript
+- **Frontend**: React Native, Expo, Expo Router, TypeScript
 - **Backend**: Python, FastAPI
 - **Database**: MongoDB
-- **State Management**: React Context API for Authentication () and Language ().
-- **Styling**:  with a centralized  file.
-- **AI**:  library for OpenAI GPT model access.
-- **Image Handling**:  and  for capturing images, which are then converted to base64 for storage and transmission.
+- **State Management**: React Context API (Auth, Language)
+- **Image Handling**: , , base64 encoding.
+- **SVG**:  to render the complex new logo.
+- **API Integration**: Backend acts as a proxy to add authentication headers (, custom , ) to requests for third-party APIs.
 
 **key DB schema**
-- : { , , , ... }
-- : { , , , Mon Mar  2 19:05:45 UTC 2026, ... }
-- : { , , , , ... }
+- : { , , ... }
+- : { , , ... }
 - : { , ,  }
+- : (Hardcoded in , not in DB)
 
 **changes in tech stack**
-- None.
+- Added  and  to the frontend.
 
 **All files of reference**
-*   : Updated to add  endpoints and a  MongoDB collection.
-*   : Updated to add  and  functions.
-*   : The next file to be modified to complete the photo upload feature.
-*   : Contains the global header with logo and language switch.
-*   : Defines the layout for the protected customer area, including the navigation menu. Fixed recently to correct a layout bug.
-*   : Contains the grid-based configurator and the AI assistant integration.
-*   : Updated with  and  permissions for the photo feature.
-*   : Manages the customer's login state.
-*   : Manages the app's language (DE/EN).
+*   : **Last modified file**. Contains the navigation for the customer area, which is being refactored.
+*   : Contains the new file upload wizard and order overview UI.
+*   : Contains the new vehicle registration scanner UI.
+*   : New component for the dynamic SVG logo.
+*   : New custom hook for checking business hours.
+*   : Heavily modified to connect to the live API and render the new Stages table.
+*   : Heavily modified to proxy requests to the live chiptuning API and the scanner API.
 
 **Areas that need refactoring**:
-- The mock data is spread across multiple files (, frontend components). Once the live APIs are available, this should be cleaned up and removed.
+- The file upload wizard () is a very large component with over 500 lines of code. It contains state management, multiple steps, and complex UI logic. It should be broken down into smaller components for each step of the wizard.
+- Mock data for the order overview should be removed once a real backend is implemented.
 
 **key api endpoints**
-- : Get vehicle types (mocked).
-- : Get manufacturers (mocked).
--  (other configurator endpoints, all mocked).
-- : Create a blog post.
-- : Get all blog posts.
-- : Send a message to the AI assistant.
-- : Authenticate a customer (mocked).
-- : Upload a photo as a base64 string.
-- : Retrieve all photos for the logged-in user.
+- : AI assistant.
+- : Mocked customer login.
+- , : Photo storage.
+- : Proxies requests to .
+- : Proxies requests to chiptuning API.
+- : Proxies requests to chiptuning API.
+-  (all other configurator endpoints, now live proxies).
 
 **Critical Info for New Agent**
-- **API BLOCKER**: The primary task of connecting to the real chiptuning API is blocked. The application server's IP () is not whitelisted by the external API provider, despite the user's confirmation. Do not spend time on this until the user confirms the block is lifted. All configurator and customer data is currently mocked.
-- **Mock Login**: The customer login is mocked. Use  /  to log in.
-- **Photo Feature**: The photo storage feature is mid-implementation. The backend is ready, but the frontend () needs to be connected to the API service.
-- **Language**: The user's preferred language is German. All communication should be in German.
+- **Task Priority**: The immediate task is to finish the customer dashboard navigation refactor (moving it to the bottom). After that, verifying the logout functionality and then implementing the backend for the file upload wizard are the highest priorities.
+- **API IP Whitelisting**: The chiptuning API is the app's core feature and is dependent on the server's public IP ( at last check) being whitelisted by the provider. If the configurator is empty, this is the first thing to check.
+- **Incomplete Features**: The file upload wizard is UI-only. It does not save or send data anywhere.
+- **Logout Bug**: A bug was reported with the logout button. The agent fixed a related hook error, but you must verify if the logout itself now works as expected.
+- **Language**: All communication with the user must be in German.
 
 **documents created in this job**
--  (updated during development)
+- None.  was not used.
 
 **Last 10 User Messages and any pending HUMAN messages**
-10.  (User reports a layout bug on the dashboard). (Completed)
-9.   (User reports that the photo feature doesn't save images). (In Progress)
-8.   (User requests an AI assistant for the configurator). (Completed)
-7.   (User requests the photo upload feature). (In Progress)
-6.   (Agent initiated a deployment check). (Interrupted)
-5.   (User requests a customer login area). (Completed)
-4.   (User requests a global header). (Completed)
-3.   (User requests redesign of the configurator to a grid layout). (Completed)
-2.   (User requests adding the logo). (Completed)
-1.   (User requests a color scheme change). (Completed)
+10.  (Request to move customer nav to a fixed bottom bar). (In Progress)
+9.   (Request for a mock data fallback for the scanner). (Completed)
+8.   (Request to remove text from customer nav icons). (Completed)
+7.   (Request to implement a specific multi-step flow for the scanner). (Completed)
+6.   (Request to add an order overview tab). (Completed)
+5.   (Request to add more options to the file upload wizard). (Completed)
+4.   (Request to create a multi-step file upload wizard). (Completed)
+3.   (User reported the configurator was empty, which led to fixing the API connection). (Completed)
+2.   (User reported the logout was broken). (Testing Pending)
+1.   (User reported missing ECU options in the configurator). (Completed)
 
 **Project Health Check:**
 - **Broken**:
-    - Connection to the external chiptuning API.
+    - Logout functionality (needs verification).
 - **Mocked**:
-    - All vehicle data for the configurator.
-    - All customer data in the dashboard (orders, files, tickets).
-    - Customer authentication.
+    - Customer authentication (/).
+    - The entire New Order submission process.
+    - The Order Overview list.
+    - Vehicle registration scanner has a mock data fallback.
 
 **3rd Party Integrations**
-- **OpenAI GPT-4o** — uses Emergent LLM Key (for the AI assistant in the configurator).
+- **OpenAI GPT-4o**: Used for the AI assistant in the configurator. Uses Emergent LLM Key.
+- ** API**: The core chiptuning database. Requires a user-provided Bearer Token and IP whitelisting.
+- ** API**: Used for the vehicle registration scanner. Requires a user-provided .
 
 **Testing status**
-- Testing agent used after significant changes: NO (not since the last set of features was added).
+- Testing agent used after significant changes: NO
 - Troubleshoot agent used after agent stuck in loop: NO
 - Test files created: []
-- Known regressions: None.
+- Known regressions: The logout functionality might still be broken.
 
 **Credentials to test flow:**
 - Customer Login:
     - Username: 
     - Password: 
-(This is a mocked login hardcoded in the ).
+(This is mocked in ).
 
 **What agent forgot to execute**
-- The agent was instructed by the  to fix 4 deployment blockers. However, a new feature request from the user () came in, and the agent prioritized the user's request, leaving the deployment blockers unresolved.
-
+- The agent never went back to address the 4 deployment blockers identified by the  in a previous session. This task has been pending for a long time.
 </analysis>
-<SYS_PROMPT_SEPARATOR>
-<workspace_dir>
-/app
-</workspace_dir>

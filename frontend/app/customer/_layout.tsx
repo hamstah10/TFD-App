@@ -60,12 +60,7 @@ export default function CustomerLayout() {
       {/* Header */}
       <View style={styles.header}>
         <Logo width={160} height={50} isOpen={isOpen} />
-        <View style={styles.headerRight}>
-          <LanguageSwitch />
-          <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-            <Ionicons name="log-out-outline" size={20} color="#ffffff" />
-          </TouchableOpacity>
-        </View>
+        <LanguageSwitch />
       </View>
 
       {/* User Info Bar */}
@@ -77,22 +72,25 @@ export default function CustomerLayout() {
             <Text style={styles.userCompany}>{user?.company}</Text>
           </View>
         </View>
+        <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+          <Ionicons name="log-out-outline" size={20} color="#ffffff" />
+        </TouchableOpacity>
       </View>
 
-      {/* Navigation Tabs */}
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        style={styles.navScrollView}
-        contentContainerStyle={styles.navContainer}
-      >
+      {/* Content */}
+      <View style={styles.content}>
+        <Slot />
+      </View>
+
+      {/* Bottom Navigation */}
+      <View style={styles.bottomNav}>
         <TouchableOpacity
           style={[styles.navTab, getActiveTab() === 'dashboard' && styles.navTabActive]}
           onPress={() => navigateTo('dashboard')}
         >
           <Ionicons 
             name="grid" 
-            size={22} 
+            size={24} 
             color={getActiveTab() === 'dashboard' ? '#ffffff' : '#8b8b8b'} 
           />
         </TouchableOpacity>
@@ -103,7 +101,7 @@ export default function CustomerLayout() {
         >
           <Ionicons 
             name="document" 
-            size={22} 
+            size={24} 
             color={getActiveTab() === 'files' ? '#ffffff' : '#8b8b8b'} 
           />
         </TouchableOpacity>
@@ -114,7 +112,7 @@ export default function CustomerLayout() {
         >
           <Ionicons 
             name="camera" 
-            size={22} 
+            size={24} 
             color={getActiveTab() === 'photos' ? '#ffffff' : '#8b8b8b'} 
           />
         </TouchableOpacity>
@@ -125,7 +123,7 @@ export default function CustomerLayout() {
         >
           <Ionicons 
             name="car" 
-            size={22} 
+            size={24} 
             color={getActiveTab() === 'fahrzeugschein' ? '#ffffff' : '#8b8b8b'} 
           />
         </TouchableOpacity>
@@ -136,15 +134,10 @@ export default function CustomerLayout() {
         >
           <Ionicons 
             name="chatbubbles" 
-            size={22} 
+            size={24} 
             color={getActiveTab() === 'tickets' ? '#ffffff' : '#8b8b8b'} 
           />
         </TouchableOpacity>
-      </ScrollView>
-
-      {/* Content */}
-      <View style={styles.content}>
-        <Slot />
       </View>
     </View>
   );
@@ -166,11 +159,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#1a1a1a',
   },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
   logoutButton: {
     padding: 8,
     backgroundColor: '#bd1f22',
@@ -182,6 +170,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#1a1a1a',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   userInfo: {
     flexDirection: 'row',
@@ -199,38 +190,29 @@ const styles = StyleSheet.create({
     color: '#8b8b8b',
     fontSize: 12,
   },
-  navScrollView: {
-    backgroundColor: '#121212',
-    flexGrow: 0,
-    maxHeight: 56,
+  content: {
+    flex: 1,
   },
-  navContainer: {
+  bottomNav: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 12,
+    backgroundColor: '#121212',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingBottom: Platform.OS === 'ios' ? 28 : 12,
+    borderTopWidth: 1,
+    borderTopColor: '#1a1a1a',
+    justifyContent: 'space-around',
     alignItems: 'center',
   },
   navTab: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: '#1a1a1a',
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: 'transparent',
   },
   navTabActive: {
     backgroundColor: '#bd1f22',
-  },
-  navTabText: {
-    color: '#8b8b8b',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  navTabTextActive: {
-    color: '#ffffff',
-  },
-  content: {
-    flex: 1,
   },
 });

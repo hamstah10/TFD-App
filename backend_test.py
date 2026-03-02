@@ -6,7 +6,7 @@ import sys
 from datetime import datetime
 
 # Test configuration
-API_BASE_URL = "https://motor-test.preview.emergentagent.com/api"
+API_BASE_URL = "https://chiptuning-app.preview.emergentagent.com/api"
 
 def log_test(test_name, status, details=""):
     """Log test results"""
