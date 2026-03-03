@@ -1,43 +1,36 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { getOrders, Order } from '../../src/services/api';
 
-// Mock data for orders
-const MOCK_ORDERS = [
-  {
-    id: 'ORD-2024-001',
-    vehicle: 'Audi A4 2.0 TFSI',
-    stage: 'Stage 1',
-    status: 'in_progress',
-    created_at: '2024-02-28',
-    progress: 60,
-  },
-  {
-    id: 'ORD-2024-002',
-    vehicle: 'BMW 330i G20',
-    stage: 'Stage 2',
-    status: 'waiting',
-    created_at: '2024-02-27',
-    progress: 20,
-  },
-  {
-    id: 'ORD-2024-003',
-    vehicle: 'VW Golf GTI',
-    stage: 'Eco Tuning',
-    status: 'review',
-    created_at: '2024-02-26',
-    progress: 90,
-  },
-];
+interface DashboardOrder {
+  id: string;
+  orderNumber: string;
+  vehicle: string;
+  stage: string;
+  status: string;
+  createdAt: string;
+  progress: number;
+}
 
 const getStatusInfo = (status: string, language: string) => {
   const statusMap: { [key: string]: { label: string; color: string; icon: string } } = {
+    pending: {
+      label: language === 'de' ? 'Ausstehend' : 'Pending',
+      color: '#ff9800',
+      icon: 'time-outline',
+    },
     waiting: {
       label: language === 'de' ? 'Wartend' : 'Waiting',
       color: '#ff9800',
       icon: 'time-outline',
+    },
+    processing: {
+      label: language === 'de' ? 'In Bearbeitung' : 'Processing',
+      color: '#2196f3',
+      icon: 'construct-outline',
     },
     in_progress: {
       label: language === 'de' ? 'In Bearbeitung' : 'In Progress',
@@ -55,14 +48,56 @@ const getStatusInfo = (status: string, language: string) => {
       icon: 'checkmark-circle-outline',
     },
   };
-  return statusMap[status] || statusMap.waiting;
+  return statusMap[status] || statusMap.pending;
+};
+
+// Calculate progress based on status
+const getProgressFromStatus = (status: string): number => {
+  switch (status) {
+    case 'pending': return 10;
+    case 'waiting': return 20;
+    case 'processing': return 50;
+    case 'in_progress': return 60;
+    case 'review': return 80;
+    case 'completed': return 100;
+    default: return 0;
+  }
 };
 
 export default function CustomerDashboard() {
   const { language } = useLanguage();
-  const { user } = useAuth();
+  const { user, getAccessToken } = useAuth();
+  const [orders, setOrders] = useState<DashboardOrder[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const activeOrders = MOCK_ORDERS.filter(order => order.status !== 'completed');
+  useEffect(() => {
+    loadOrders();
+  }, []);
+
+  const loadOrders = async () => {
+    try {
+      const token = await getAccessToken();
+      if (token) {
+        const apiOrders = await getOrders(token);
+        const mappedOrders: DashboardOrder[] = apiOrders.map((o: Order) => ({
+          id: o.id,
+          orderNumber: o.orderNumber,
+          vehicle: o.vehicle,
+          stage: o.stage,
+          status: o.status,
+          createdAt: o.createdAt ? new Date(o.createdAt).toLocaleDateString('de-DE') : '',
+          progress: getProgressFromStatus(o.status),
+        }));
+        setOrders(mappedOrders);
+      }
+    } catch (error) {
+      console.error('Failed to load orders:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const activeOrders = orders.filter(order => order.status !== 'completed');
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -78,21 +113,21 @@ export default function CustomerDashboard() {
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
           <Ionicons name="document-text" size={28} color="#bd1f22" />
-          <Text style={styles.statNumber}>{activeOrders.length}</Text>
+          <Text style={styles.statNumber}>{loading ? '-' : activeOrders.length}</Text>
           <Text style={styles.statLabel}>
             {language === 'de' ? 'Aktive Aufträge' : 'Active Orders'}
           </Text>
         </View>
         <View style={styles.statCard}>
           <Ionicons name="cloud-upload" size={28} color="#2196f3" />
-          <Text style={styles.statNumber}>5</Text>
+          <Text style={styles.statNumber}>{loading ? '-' : orders.length}</Text>
           <Text style={styles.statLabel}>
             {language === 'de' ? 'Dateien' : 'Files'}
           </Text>
         </View>
         <View style={styles.statCard}>
           <Ionicons name="chatbubbles" size={28} color="#4caf50" />
-          <Text style={styles.statNumber}>2</Text>
+          <Text style={styles.statNumber}>0</Text>
           <Text style={styles.statLabel}>
             {language === 'de' ? 'Offene Tickets' : 'Open Tickets'}
           </Text>
@@ -112,42 +147,55 @@ export default function CustomerDashboard() {
           </TouchableOpacity>
         </View>
 
-        {activeOrders.map((order) => {
-          const statusInfo = getStatusInfo(order.status, language);
-          return (
-            <View key={order.id} style={styles.orderCard}>
-              <View style={styles.orderHeader}>
-                <View>
-                  <Text style={styles.orderId}>{order.id}</Text>
-                  <Text style={styles.orderVehicle}>{order.vehicle}</Text>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#bd1f22" />
+          </View>
+        ) : activeOrders.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="document-text-outline" size={48} color="#444" />
+            <Text style={styles.emptyText}>
+              {language === 'de' ? 'Keine aktiven Aufträge' : 'No active orders'}
+            </Text>
+          </View>
+        ) : (
+          activeOrders.map((order) => {
+            const statusInfo = getStatusInfo(order.status, language);
+            return (
+              <View key={order.id} style={styles.orderCard}>
+                <View style={styles.orderHeader}>
+                  <View>
+                    <Text style={styles.orderId}>{order.orderNumber}</Text>
+                    <Text style={styles.orderVehicle}>{order.vehicle}</Text>
+                  </View>
+                  <View style={[styles.statusBadge, { backgroundColor: statusInfo.color }]}>
+                    <Ionicons name={statusInfo.icon as any} size={14} color="#ffffff" />
+                    <Text style={styles.statusText}>{statusInfo.label}</Text>
+                  </View>
                 </View>
-                <View style={[styles.statusBadge, { backgroundColor: statusInfo.color }]}>
-                  <Ionicons name={statusInfo.icon as any} size={14} color="#ffffff" />
-                  <Text style={styles.statusText}>{statusInfo.label}</Text>
+                
+                <View style={styles.orderDetails}>
+                  <View style={styles.detailItem}>
+                    <Ionicons name="flash" size={16} color="#bd1f22" />
+                    <Text style={styles.detailText}>{order.stage}</Text>
+                  </View>
+                  <View style={styles.detailItem}>
+                    <Ionicons name="calendar" size={16} color="#8b8b8b" />
+                    <Text style={styles.detailText}>{order.createdAt}</Text>
+                  </View>
                 </View>
-              </View>
-              
-              <View style={styles.orderDetails}>
-                <View style={styles.detailItem}>
-                  <Ionicons name="flash" size={16} color="#bd1f22" />
-                  <Text style={styles.detailText}>{order.stage}</Text>
-                </View>
-                <View style={styles.detailItem}>
-                  <Ionicons name="calendar" size={16} color="#8b8b8b" />
-                  <Text style={styles.detailText}>{order.created_at}</Text>
-                </View>
-              </View>
 
-              {/* Progress Bar */}
-              <View style={styles.progressContainer}>
-                <View style={styles.progressBar}>
-                  <View style={[styles.progressFill, { width: `${order.progress}%` }]} />
+                {/* Progress Bar */}
+                <View style={styles.progressContainer}>
+                  <View style={styles.progressBar}>
+                    <View style={[styles.progressFill, { width: `${order.progress}%` }]} />
+                  </View>
+                  <Text style={styles.progressText}>{order.progress}%</Text>
                 </View>
-                <Text style={styles.progressText}>{order.progress}%</Text>
               </View>
-            </View>
-          );
-        })}
+            );
+          })
+        )}
 
         {activeOrders.length === 0 && (
           <View style={styles.emptyState}>
@@ -313,5 +361,13 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 30,
+  },
+  loadingContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    padding: 40,
+    alignItems: 'center',
   },
 });
