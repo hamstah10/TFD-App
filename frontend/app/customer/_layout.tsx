@@ -60,7 +60,12 @@ export default function CustomerLayout() {
       {/* Header */}
       <View style={styles.header}>
         <Logo width={160} height={50} isOpen={isOpen} />
-        <LanguageSwitch />
+        <View style={styles.headerRight}>
+          <View style={[styles.clockIcon, isOpen ? styles.clockOpen : styles.clockClosed]}>
+            <Ionicons name="time" size={20} color="#ffffff" />
+          </View>
+          <LanguageSwitch />
+        </View>
       </View>
 
       {/* User Info Bar */}
@@ -158,6 +163,24 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#1a1a1a',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  clockIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  clockOpen: {
+    backgroundColor: '#4caf50',
+  },
+  clockClosed: {
+    backgroundColor: '#f44336',
   },
   logoutButton: {
     padding: 8,
