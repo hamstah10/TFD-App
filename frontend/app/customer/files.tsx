@@ -100,7 +100,7 @@ const getStatusInfo = (status: string, language: string) => {
     },
     cancelled: {
       label: language === 'de' ? 'Storniert' : 'Cancelled',
-      color: '#f44336',
+      color: '#bd1f22',
       icon: 'close-circle',
     },
   };

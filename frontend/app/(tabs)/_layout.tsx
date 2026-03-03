@@ -127,6 +127,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#4caf50',
   },
   clockClosed: {
-    backgroundColor: '#f44336',
+    backgroundColor: '#bd1f22',
   },
 });

@@ -35,7 +35,7 @@ const getPriorityInfo = (priority: string, language: string) => {
     },
     high: {
       label: language === 'de' ? 'Hoch' : 'High',
-      color: '#f44336',
+      color: '#bd1f22',
     },
   };
   return priorityMap[priority] || priorityMap.normal;
