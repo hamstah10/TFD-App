@@ -97,7 +97,7 @@ export default function PhotosScreen() {
       base64: true,
     });
 
-    if (!result.canceled && result.assets[0] && user?.id) {
+    if (!result.canceled && result.assets[0]) {
       const asset = result.assets[0];
       if (asset.base64) {
         await savePhotoToServer(asset.base64, 'gallery_image.jpg');
