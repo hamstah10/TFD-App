@@ -25,8 +25,8 @@ export default function CustomerLayout() {
     return 'dashboard';
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     router.replace('/(tabs)');
   };
 

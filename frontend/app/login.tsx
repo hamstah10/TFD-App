@@ -41,15 +41,13 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      const success = await login(email, password);
-      if (success) {
+      const result = await login(email, password);
+      if (result.success) {
         router.replace('/customer/dashboard');
       } else {
         Alert.alert(
-          language === 'de' ? 'Fehler' : 'Error',
-          language === 'de' 
-            ? 'Ungültige Anmeldedaten.' 
-            : 'Invalid credentials.'
+          language === 'de' ? 'Anmeldung fehlgeschlagen' : 'Login Failed',
+          result.error || (language === 'de' ? 'Ungültige Anmeldedaten.' : 'Invalid credentials.')
         );
       }
     } catch (error) {
@@ -157,16 +155,6 @@ export default function LoginScreen() {
                 </>
               )}
             </TouchableOpacity>
-          </View>
-
-          {/* Demo Info */}
-          <View style={styles.demoInfo}>
-            <Ionicons name="information-circle" size={18} color="#2196f3" />
-            <Text style={styles.demoText}>
-              {language === 'de' 
-                ? 'Demo: Beliebige E-Mail + "demo" als Passwort' 
-                : 'Demo: Any email + "demo" as password'}
-            </Text>
           </View>
         </View>
       </KeyboardAvoidingView>

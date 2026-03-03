@@ -182,4 +182,61 @@ export const scanFahrzeugschein = async (base64Image: string): Promise<Fahrzeugs
   return response.data;
 };
 
+// ============== AUTH API ==============
+
+export interface LoginResponse {
+  tokenType: string;
+  accessToken: string;
+  accessTokenExpiresAt: string;
+  refreshToken: string;
+  refreshTokenExpiresAt: string;
+  customer: {
+    id: number;
+    companyName: string;
+    email: string;
+    username: string;
+  };
+}
+
+export interface RefreshResponse {
+  tokenType: string;
+  accessToken: string;
+  accessTokenExpiresAt: string;
+  refreshToken: string;
+  refreshTokenExpiresAt: string;
+}
+
+export const authLogin = async (email: string, password: string, deviceName: string = 'tuningfiles-app'): Promise<LoginResponse> => {
+  const response = await api.post('/auth/login', {
+    email,
+    password,
+    deviceName,
+  });
+  return response.data;
+};
+
+export const authRefresh = async (refreshToken: string): Promise<RefreshResponse> => {
+  const response = await api.post('/auth/refresh', {
+    refreshToken,
+  });
+  return response.data;
+};
+
+export const authLogout = async (accessToken: string): Promise<void> => {
+  await api.post('/auth/logout', {}, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+};
+
+export const authGetMe = async (accessToken: string) => {
+  const response = await api.get('/auth/me', {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  return response.data;
+};
+
 export default api;

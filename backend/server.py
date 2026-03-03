@@ -28,6 +28,9 @@ USE_MOCK_DATA = False  # Live API is now active!
 FAHRZEUGSCHEIN_API_BASE = "https://api.fahrzeugschein-scanner.de"
 FAHRZEUGSCHEIN_ACCESS_KEY = "361dc9e0-2bb6-4471-a690-7f0d8b973a10"
 
+# CRM API configuration for customer authentication
+CRM_API_BASE = "https://crm.tuningfux.de/public/api"
+
 # Create the main app without a prefix
 app = FastAPI()
 
@@ -342,6 +345,15 @@ class OpeningHours(BaseModel):
     friday: str = "08:00-18:00"
     saturday: str = "09:00-13:00"
     sunday: str = "geschlossen"
+
+# Auth Models for CRM API
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+    deviceName: str = "tuningfiles-app"
+
+class RefreshTokenRequest(BaseModel):
+    refreshToken: str
 
 # ============== HELPER FUNCTIONS ==============
 
@@ -887,6 +899,118 @@ async def scan_fahrzeugschein(request: FahrzeugscheinScanRequest):
                 success=False,
                 error=f"Unbekannter Fehler: {str(e)}"
             )
+
+# ============== AUTH ROUTES (CRM API Proxy) ==============
+
+from fastapi import Request, Header
+
+@api_router.post("/auth/login")
+async def login(login_request: LoginRequest):
+    """Proxy login request to CRM API"""
+    url = f"{CRM_API_BASE}/auth/login"
+    
+    async with httpx.AsyncClient(timeout=30.0) as http_client:
+        try:
+            response = await http_client.post(
+                url,
+                json={
+                    "email": login_request.email,
+                    "password": login_request.password,
+                    "deviceName": login_request.deviceName
+                },
+                headers={"Content-Type": "application/json"}
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            elif response.status_code == 401:
+                raise HTTPException(status_code=401, detail="Ungültige Anmeldedaten")
+            elif response.status_code == 422:
+                raise HTTPException(status_code=422, detail="Pflichtfelder fehlen")
+            else:
+                raise HTTPException(status_code=response.status_code, detail=response.text)
+                
+        except httpx.RequestError as e:
+            logger.error(f"CRM API request error: {str(e)}")
+            raise HTTPException(status_code=503, detail="CRM API nicht erreichbar")
+
+@api_router.post("/auth/refresh")
+async def refresh_token(refresh_request: RefreshTokenRequest):
+    """Proxy refresh token request to CRM API"""
+    url = f"{CRM_API_BASE}/auth/refresh"
+    
+    async with httpx.AsyncClient(timeout=30.0) as http_client:
+        try:
+            response = await http_client.post(
+                url,
+                json={"refreshToken": refresh_request.refreshToken},
+                headers={"Content-Type": "application/json"}
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            elif response.status_code == 401:
+                raise HTTPException(status_code=401, detail="Token ungültig oder abgelaufen")
+            else:
+                raise HTTPException(status_code=response.status_code, detail=response.text)
+                
+        except httpx.RequestError as e:
+            logger.error(f"CRM API request error: {str(e)}")
+            raise HTTPException(status_code=503, detail="CRM API nicht erreichbar")
+
+@api_router.get("/auth/me")
+async def get_me(request: Request):
+    """Proxy get current user request to CRM API"""
+    url = f"{CRM_API_BASE}/auth/me"
+    auth_header = request.headers.get("Authorization")
+    
+    if not auth_header:
+        raise HTTPException(status_code=401, detail="Authorization header fehlt")
+    
+    async with httpx.AsyncClient(timeout=30.0) as http_client:
+        try:
+            response = await http_client.get(
+                url,
+                headers={"Authorization": auth_header}
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            elif response.status_code == 401:
+                raise HTTPException(status_code=401, detail="Token ungültig oder abgelaufen")
+            else:
+                raise HTTPException(status_code=response.status_code, detail=response.text)
+                
+        except httpx.RequestError as e:
+            logger.error(f"CRM API request error: {str(e)}")
+            raise HTTPException(status_code=503, detail="CRM API nicht erreichbar")
+
+@api_router.post("/auth/logout")
+async def logout(request: Request):
+    """Proxy logout request to CRM API"""
+    url = f"{CRM_API_BASE}/auth/logout"
+    auth_header = request.headers.get("Authorization")
+    
+    if not auth_header:
+        raise HTTPException(status_code=401, detail="Authorization header fehlt")
+    
+    async with httpx.AsyncClient(timeout=30.0) as http_client:
+        try:
+            response = await http_client.post(
+                url,
+                headers={"Authorization": auth_header}
+            )
+            
+            if response.status_code == 204:
+                return {"message": "Erfolgreich abgemeldet"}
+            elif response.status_code == 401:
+                raise HTTPException(status_code=401, detail="Token ungültig")
+            else:
+                raise HTTPException(status_code=response.status_code, detail=response.text)
+                
+        except httpx.RequestError as e:
+            logger.error(f"CRM API request error: {str(e)}")
+            raise HTTPException(status_code=503, detail="CRM API nicht erreichbar")
 
 # Include the router in the main app
 app.include_router(api_router)

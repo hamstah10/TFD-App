@@ -1,7 +1,9 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authLogin, authRefresh, authLogout, LoginResponse } from '../services/api';
 
 interface User {
-  id: string;
+  id: number;
   email: string;
   name: string;
   company?: string;
@@ -10,32 +12,151 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
+  refreshTokens: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const STORAGE_KEYS = {
+  ACCESS_TOKEN: 'auth_access_token',
+  REFRESH_TOKEN: 'auth_refresh_token',
+  ACCESS_TOKEN_EXPIRES: 'auth_access_token_expires',
+  REFRESH_TOKEN_EXPIRES: 'auth_refresh_token_expires',
+  USER: 'auth_user',
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    // Mock login - in production this would call the API
-    // For demo purposes, accept any email with password "demo"
-    if (password === 'demo' || password.length >= 4) {
-      setUser({
-        id: '1',
-        email: email,
-        name: email.split('@')[0],
-        company: 'Demo Kunde GmbH',
-      });
-      return true;
+  // Load stored auth state on mount
+  useEffect(() => {
+    loadStoredAuth();
+  }, []);
+
+  const loadStoredAuth = async () => {
+    try {
+      const storedUser = await AsyncStorage.getItem(STORAGE_KEYS.USER);
+      const accessToken = await AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+      const refreshToken = await AsyncStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+      const accessExpires = await AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES);
+
+      if (storedUser && accessToken) {
+        const parsedUser = JSON.parse(storedUser);
+        
+        // Check if access token is expired
+        if (accessExpires && new Date(accessExpires) < new Date()) {
+          // Try to refresh
+          if (refreshToken) {
+            const refreshed = await refreshTokens();
+            if (refreshed) {
+              setUser(parsedUser);
+            }
+          }
+        } else {
+          setUser(parsedUser);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading stored auth:', error);
+    } finally {
+      setIsLoading(false);
     }
-    return false;
   };
 
-  const logout = () => {
+  const storeAuthData = async (response: LoginResponse) => {
+    const userData: User = {
+      id: response.customer.id,
+      email: response.customer.email,
+      name: response.customer.username,
+      company: response.customer.companyName,
+    };
+
+    await AsyncStorage.multiSet([
+      [STORAGE_KEYS.ACCESS_TOKEN, response.accessToken],
+      [STORAGE_KEYS.REFRESH_TOKEN, response.refreshToken],
+      [STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, response.accessTokenExpiresAt],
+      [STORAGE_KEYS.REFRESH_TOKEN_EXPIRES, response.refreshTokenExpiresAt],
+      [STORAGE_KEYS.USER, JSON.stringify(userData)],
+    ]);
+
+    setUser(userData);
+  };
+
+  const clearAuthData = async () => {
+    await AsyncStorage.multiRemove([
+      STORAGE_KEYS.ACCESS_TOKEN,
+      STORAGE_KEYS.REFRESH_TOKEN,
+      STORAGE_KEYS.ACCESS_TOKEN_EXPIRES,
+      STORAGE_KEYS.REFRESH_TOKEN_EXPIRES,
+      STORAGE_KEYS.USER,
+    ]);
     setUser(null);
+  };
+
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const response = await authLogin(email, password);
+      await storeAuthData(response);
+      return { success: true };
+    } catch (error: any) {
+      console.error('Login error:', error);
+      
+      let errorMessage = 'Anmeldung fehlgeschlagen';
+      
+      if (error.response?.status === 401) {
+        errorMessage = 'Ungültige E-Mail oder Passwort';
+      } else if (error.response?.status === 422) {
+        errorMessage = 'Bitte füllen Sie alle Felder aus';
+      } else if (error.response?.status === 503) {
+        errorMessage = 'Server nicht erreichbar. Bitte später erneut versuchen.';
+      } else if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      }
+      
+      return { success: false, error: errorMessage };
+    }
+  };
+
+  const logout = async () => {
+    try {
+      const accessToken = await AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+      if (accessToken) {
+        await authLogout(accessToken);
+      }
+    } catch (error) {
+      console.error('Logout API error:', error);
+      // Continue with local logout even if API fails
+    } finally {
+      await clearAuthData();
+    }
+  };
+
+  const refreshTokens = async (): Promise<boolean> => {
+    try {
+      const refreshToken = await AsyncStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+      if (!refreshToken) {
+        return false;
+      }
+
+      const response = await authRefresh(refreshToken);
+      
+      await AsyncStorage.multiSet([
+        [STORAGE_KEYS.ACCESS_TOKEN, response.accessToken],
+        [STORAGE_KEYS.REFRESH_TOKEN, response.refreshToken],
+        [STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, response.accessTokenExpiresAt],
+        [STORAGE_KEYS.REFRESH_TOKEN_EXPIRES, response.refreshTokenExpiresAt],
+      ]);
+
+      return true;
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      await clearAuthData();
+      return false;
+    }
   };
 
   return (
@@ -43,8 +164,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         isAuthenticated: !!user,
+        isLoading,
         login,
         logout,
+        refreshTokens,
       }}
     >
       {children}
