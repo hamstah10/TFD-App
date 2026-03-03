@@ -239,4 +239,103 @@ export const authGetMe = async (accessToken: string) => {
   return response.data;
 };
 
+// ============== ORDER API (User-specific) ==============
+
+export interface OrderCreateData {
+  fileName: string;
+  fileData: string;
+  fileSize: number;
+  tuningTool: string;
+  method: string;
+  slaveOrMaster: string;
+  vehicleType?: string;
+  manufacturer?: string;
+  model?: string;
+  built?: string;
+  engine?: string;
+  stage?: string;
+  vehicleDisplay?: string;
+}
+
+export interface Order {
+  id: string;
+  orderNumber: string;
+  customerId: number;
+  createdAt: string;
+  status: string;
+  fileName: string;
+  vehicle: string;
+  stage: string;
+  tuningTool: string;
+  method: string;
+  slaveOrMaster: string;
+}
+
+export const createOrder = async (accessToken: string, orderData: OrderCreateData): Promise<Order> => {
+  const response = await api.post('/orders', orderData, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  return response.data;
+};
+
+export const getOrders = async (accessToken: string): Promise<Order[]> => {
+  const response = await api.get('/orders', {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  return response.data;
+};
+
+export const getOrder = async (accessToken: string, orderId: string): Promise<Order> => {
+  const response = await api.get(`/orders/${orderId}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  return response.data;
+};
+
+// ============== CUSTOMER PHOTOS API (User-specific) ==============
+
+export interface CustomerPhoto {
+  id: string;
+  filename: string;
+  description: string;
+  createdAt: string;
+  base64?: string;
+}
+
+export const saveCustomerPhoto = async (accessToken: string, base64: string, filename?: string, description?: string): Promise<CustomerPhoto> => {
+  const response = await api.post('/customer/photos', {
+    base64,
+    filename,
+    description,
+  }, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  return response.data;
+};
+
+export const getCustomerPhotos = async (accessToken: string): Promise<CustomerPhoto[]> => {
+  const response = await api.get('/customer/photos', {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  return response.data;
+};
+
+export const deleteCustomerPhoto = async (accessToken: string, photoId: string): Promise<void> => {
+  await api.delete(`/customer/photos/${photoId}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+};
+
 export default api;

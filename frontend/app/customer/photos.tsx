@@ -17,20 +17,19 @@ import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { useAuth } from '../../src/contexts/AuthContext';
-import { savePhoto, getUserPhotos, deletePhoto as deletePhotoApi } from '../../src/services/api';
+import { saveCustomerPhoto, getCustomerPhotos, deleteCustomerPhoto, CustomerPhoto } from '../../src/services/api';
 
 interface CapturedPhoto {
   id: string;
-  user_id: string;
   base64: string;
   filename?: string;
   description?: string;
-  created_at: string;
+  createdAt: string;
 }
 
 export default function PhotosScreen() {
   const { language } = useLanguage();
-  const { user } = useAuth();
+  const { getAccessToken } = useAuth();
   const [photos, setPhotos] = useState<CapturedPhoto[]>([]);
   const [cameraVisible, setCameraVisible] = useState(false);
   const [facing, setFacing] = useState<CameraType>('back');
@@ -42,16 +41,24 @@ export default function PhotosScreen() {
   const cameraRef = useRef<CameraView>(null);
 
   useEffect(() => {
-    if (user?.id) {
-      loadPhotos();
-    }
-  }, [user?.id]);
+    loadPhotos();
+  }, []);
 
   const loadPhotos = async () => {
-    if (!user?.id) return;
     try {
-      const data = await getUserPhotos(user.id);
-      setPhotos(data);
+      const token = await getAccessToken();
+      if (token) {
+        const data = await getCustomerPhotos(token);
+        // Map API response to local interface
+        const mappedPhotos: CapturedPhoto[] = data.map((p: CustomerPhoto) => ({
+          id: p.id,
+          base64: p.base64 || '',
+          filename: p.filename,
+          description: p.description,
+          createdAt: p.createdAt,
+        }));
+        setPhotos(mappedPhotos);
+      }
     } catch (error) {
       console.error('Failed to load photos:', error);
     } finally {
@@ -99,12 +106,22 @@ export default function PhotosScreen() {
   };
 
   const savePhotoToServer = async (base64: string, filename: string) => {
-    if (!user?.id) return;
-    
     setSaving(true);
     try {
-      const newPhoto = await savePhoto(user.id, base64, filename);
-      setPhotos(prev => [newPhoto, ...prev]);
+      const token = await getAccessToken();
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+      const newPhoto = await saveCustomerPhoto(token, base64, filename);
+      // Map to local interface
+      const mappedPhoto: CapturedPhoto = {
+        id: newPhoto.id,
+        base64: base64,
+        filename: newPhoto.filename,
+        description: newPhoto.description,
+        createdAt: newPhoto.createdAt,
+      };
+      setPhotos(prev => [mappedPhoto, ...prev]);
       Alert.alert(
         language === 'de' ? 'Erfolg' : 'Success',
         language === 'de' ? 'Foto wurde gespeichert!' : 'Photo saved successfully!'
@@ -121,7 +138,7 @@ export default function PhotosScreen() {
   };
 
   const takePicture = async () => {
-    if (cameraRef.current && !capturing && user?.id) {
+    if (cameraRef.current && !capturing) {
       setCapturing(true);
       try {
         const photo = await cameraRef.current.takePictureAsync({
@@ -160,7 +177,9 @@ export default function PhotosScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await deletePhotoApi(photoId);
+              const token = await getAccessToken();
+              if (!token) throw new Error('Not authenticated');
+              await deleteCustomerPhoto(token, photoId);
               setPhotos(prev => prev.filter(p => p.id !== photoId));
             } catch (error) {
               console.error('Failed to delete photo:', error);

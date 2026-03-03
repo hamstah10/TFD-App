@@ -11,7 +11,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
 import { useLanguage } from '../../src/contexts/LanguageContext';
+import { useAuth } from '../../src/contexts/AuthContext';
 import {
   getVehicleTypes,
   getManufacturers,
@@ -19,6 +21,9 @@ import {
   getBuilts,
   getEngines,
   getStages,
+  createOrder,
+  getOrders,
+  Order as ApiOrder,
 } from '../../src/services/api';
 
 interface SelectOption {
@@ -70,46 +75,6 @@ interface Order {
   slaveOrMaster: string;
 }
 
-// Mock orders data
-const MOCK_ORDERS: Order[] = [
-  {
-    id: '1',
-    orderNumber: 'TFD-2024-001',
-    createdAt: '2024-03-01 14:30',
-    status: 'completed',
-    fileName: 'Original_Audi_A4.bin',
-    vehicle: 'Audi A4 2.0 TDI',
-    stage: 'Stage 1',
-    tuningTool: 'Autotuner',
-    method: 'OBD',
-    slaveOrMaster: 'Master',
-  },
-  {
-    id: '2',
-    orderNumber: 'TFD-2024-002',
-    createdAt: '2024-03-02 09:15',
-    status: 'processing',
-    fileName: 'BMW_330d_Original.bin',
-    vehicle: 'BMW 330d xDrive',
-    stage: 'Stage 2',
-    tuningTool: 'Kess3',
-    method: 'Bench',
-    slaveOrMaster: 'Slave',
-  },
-  {
-    id: '3',
-    orderNumber: 'TFD-2024-003',
-    createdAt: '2024-03-02 16:45',
-    status: 'pending',
-    fileName: 'VW_Golf_GTI.bin',
-    vehicle: 'VW Golf GTI',
-    stage: 'Stage 1',
-    tuningTool: 'CMD',
-    method: 'OBD',
-    slaveOrMaster: 'Master',
-  },
-];
-
 const TUNING_TOOLS = ['Autotuner', 'Flex', 'CMD', 'Kess3'];
 const METHODS = ['OBD', 'Bench', 'BDM'];
 const SLAVE_MASTER = ['Slave', 'Master'];
@@ -144,12 +109,14 @@ const getStatusInfo = (status: string, language: string) => {
 
 export default function FilesScreen() {
   const { language } = useLanguage();
+  const { getAccessToken } = useAuth();
   const [viewMode, setViewMode] = useState<ViewMode>('orders');
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [ordersLoading, setOrdersLoading] = useState(true);
 
   // Order data
   const [orderData, setOrderData] = useState<OrderData>({
@@ -173,6 +140,39 @@ export default function FilesScreen() {
   const [engines, setEngines] = useState<SelectOption[]>([]);
   const [stages, setStages] = useState<Stage[]>([]);
   const [currentMdtId, setCurrentMdtId] = useState<string | null>(null);
+
+  // Load orders on mount
+  useEffect(() => {
+    loadOrders();
+  }, []);
+
+  const loadOrders = async () => {
+    setOrdersLoading(true);
+    try {
+      const token = await getAccessToken();
+      if (token) {
+        const apiOrders = await getOrders(token);
+        // Map API orders to local Order type
+        const mappedOrders: Order[] = apiOrders.map((o: ApiOrder) => ({
+          id: o.id || o.orderNumber,
+          orderNumber: o.orderNumber,
+          createdAt: o.createdAt,
+          status: o.status as Order['status'],
+          fileName: o.fileName,
+          vehicle: o.vehicle,
+          stage: o.stage,
+          tuningTool: o.tuningTool,
+          method: o.method,
+          slaveOrMaster: o.slaveOrMaster,
+        }));
+        setOrders(mappedOrders);
+      }
+    } catch (error) {
+      console.error('Failed to load orders:', error);
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
 
   // Load vehicle types on step 3
   useEffect(() => {
@@ -341,10 +341,60 @@ export default function FilesScreen() {
   };
 
   const handleSubmit = async () => {
+    if (!orderData.file) {
+      Alert.alert(
+        language === 'de' ? 'Fehler' : 'Error',
+        language === 'de' ? 'Bitte wählen Sie eine Datei aus.' : 'Please select a file.'
+      );
+      return;
+    }
+
     setSubmitting(true);
-    // Simulate API call
-    setTimeout(() => {
-      setSubmitting(false);
+    try {
+      const token = await getAccessToken();
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      // Read file as base64
+      let fileData = '';
+      if (orderData.file.uri) {
+        try {
+          fileData = await FileSystem.readAsStringAsync(orderData.file.uri, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+        } catch (e) {
+          // For web, the file might already be in a different format
+          console.log('File read error, using empty data:', e);
+        }
+      }
+
+      // Build vehicle display string
+      const vehicleParts = [
+        orderData.manufacturer?.name,
+        orderData.model?.name,
+        orderData.built?.name,
+        orderData.engine?.name,
+      ].filter(Boolean);
+      const vehicleDisplay = vehicleParts.join(' ') || 'Unbekannt';
+
+      // Create order
+      await createOrder(token, {
+        fileName: orderData.file.name,
+        fileData: fileData,
+        fileSize: orderData.file.size,
+        tuningTool: orderData.tuningTool || '',
+        method: orderData.method || '',
+        slaveOrMaster: orderData.slaveOrMaster || '',
+        vehicleType: orderData.vehicleType?.name,
+        manufacturer: orderData.manufacturer?.name,
+        model: orderData.model?.name,
+        built: orderData.built?.name,
+        engine: orderData.engine?.name,
+        stage: orderData.stage?.name,
+        vehicleDisplay: vehicleDisplay,
+      });
+
       Alert.alert(
         language === 'de' ? 'Erfolgreich!' : 'Success!',
         language === 'de' 
@@ -365,9 +415,23 @@ export default function FilesScreen() {
             engine: null,
             stage: null,
           });
+          // Reload orders
+          loadOrders();
+          // Switch to orders view
+          setViewMode('orders');
         }}]
       );
-    }, 2000);
+    } catch (error: any) {
+      console.error('Order submission error:', error);
+      Alert.alert(
+        language === 'de' ? 'Fehler' : 'Error',
+        language === 'de' 
+          ? 'Bestellung konnte nicht übermittelt werden. Bitte versuchen Sie es erneut.' 
+          : 'Order could not be submitted. Please try again.'
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const renderStepIndicator = () => (

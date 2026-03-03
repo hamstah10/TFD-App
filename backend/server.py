@@ -355,7 +355,52 @@ class LoginRequest(BaseModel):
 class RefreshTokenRequest(BaseModel):
     refreshToken: str
 
+# Order Models
+class OrderCreate(BaseModel):
+    fileName: str
+    fileData: str  # Base64 encoded file
+    fileSize: int
+    tuningTool: str
+    method: str
+    slaveOrMaster: str
+    vehicleType: Optional[str] = None
+    manufacturer: Optional[str] = None
+    model: Optional[str] = None
+    built: Optional[str] = None
+    engine: Optional[str] = None
+    stage: Optional[str] = None
+    vehicleDisplay: Optional[str] = None  # Formatted vehicle string for display
+
+class OrderResponse(BaseModel):
+    id: str
+    orderNumber: str
+    customerId: int
+    createdAt: str
+    status: str
+    fileName: str
+    vehicle: str
+    stage: str
+    tuningTool: str
+    method: str
+    slaveOrMaster: str
+
 # ============== HELPER FUNCTIONS ==============
+
+async def verify_token_and_get_customer(authorization: str) -> dict:
+    """Verify token with CRM API and return customer data"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Authorization header fehlt oder ungültig")
+    
+    url = f"{CRM_API_BASE}/auth/me"
+    async with httpx.AsyncClient(timeout=30.0) as http_client:
+        try:
+            response = await http_client.get(url, headers={"Authorization": authorization})
+            if response.status_code == 200:
+                return response.json()
+            else:
+                raise HTTPException(status_code=401, detail="Token ungültig oder abgelaufen")
+        except httpx.RequestError:
+            raise HTTPException(status_code=503, detail="CRM API nicht erreichbar")
 
 async def get_public_ip() -> str:
     """Get the server's public IP address"""
@@ -1011,6 +1056,169 @@ async def logout(request: Request):
         except httpx.RequestError as e:
             logger.error(f"CRM API request error: {str(e)}")
             raise HTTPException(status_code=503, detail="CRM API nicht erreichbar")
+
+# ============== ORDER ROUTES (User-specific) ==============
+
+@api_router.post("/orders")
+async def create_order(order: OrderCreate, request: Request):
+    """Create a new order for the authenticated user"""
+    auth_header = request.headers.get("Authorization")
+    customer = await verify_token_and_get_customer(auth_header)
+    customer_id = customer.get("id")
+    
+    # Generate order number
+    order_count = await db.orders.count_documents({"customerId": customer_id})
+    order_number = f"TFD-{customer_id}-{order_count + 1:04d}"
+    
+    # Create order document
+    order_doc = {
+        "orderNumber": order_number,
+        "customerId": customer_id,
+        "customerEmail": customer.get("email"),
+        "companyName": customer.get("companyName"),
+        "createdAt": datetime.now(timezone.utc).isoformat(),
+        "status": "pending",
+        "fileName": order.fileName,
+        "fileSize": order.fileSize,
+        "fileData": order.fileData,  # Base64 encoded file
+        "vehicle": order.vehicleDisplay or "Unbekannt",
+        "vehicleType": order.vehicleType,
+        "manufacturer": order.manufacturer,
+        "model": order.model,
+        "built": order.built,
+        "engine": order.engine,
+        "stage": order.stage or "Nicht angegeben",
+        "tuningTool": order.tuningTool,
+        "method": order.method,
+        "slaveOrMaster": order.slaveOrMaster,
+    }
+    
+    result = await db.orders.insert_one(order_doc)
+    order_doc["id"] = str(result.inserted_id)
+    
+    # Remove _id and fileData from response
+    order_doc.pop("_id", None)
+    order_doc.pop("fileData", None)
+    
+    return order_doc
+
+@api_router.get("/orders")
+async def get_orders(request: Request):
+    """Get all orders for the authenticated user"""
+    auth_header = request.headers.get("Authorization")
+    customer = await verify_token_and_get_customer(auth_header)
+    customer_id = customer.get("id")
+    
+    cursor = db.orders.find(
+        {"customerId": customer_id},
+        {"fileData": 0, "_id": 0}  # Exclude file data and _id from response
+    ).sort("createdAt", -1)
+    
+    orders = await cursor.to_list(length=100)
+    
+    # Add id field from MongoDB _id
+    for order in orders:
+        if "_id" in order:
+            order["id"] = str(order["_id"])
+            del order["_id"]
+    
+    return orders
+
+@api_router.get("/orders/{order_id}")
+async def get_order(order_id: str, request: Request):
+    """Get a specific order for the authenticated user"""
+    auth_header = request.headers.get("Authorization")
+    customer = await verify_token_and_get_customer(auth_header)
+    customer_id = customer.get("id")
+    
+    order = await db.orders.find_one(
+        {"orderNumber": order_id, "customerId": customer_id},
+        {"fileData": 0}  # Exclude file data from response
+    )
+    
+    if not order:
+        raise HTTPException(status_code=404, detail="Auftrag nicht gefunden")
+    
+    order["id"] = str(order["_id"])
+    del order["_id"]
+    
+    return order
+
+# ============== PHOTOS ROUTES (User-specific, updated) ==============
+
+@api_router.post("/customer/photos")
+async def save_customer_photo(request: Request):
+    """Save a photo for the authenticated user"""
+    auth_header = request.headers.get("Authorization")
+    customer = await verify_token_and_get_customer(auth_header)
+    customer_id = customer.get("id")
+    
+    body = await request.json()
+    base64_data = body.get("base64")
+    filename = body.get("filename", "photo.jpg")
+    description = body.get("description", "")
+    
+    if not base64_data:
+        raise HTTPException(status_code=400, detail="Keine Bilddaten")
+    
+    photo_doc = {
+        "customerId": customer_id,
+        "customerEmail": customer.get("email"),
+        "base64": base64_data,
+        "filename": filename,
+        "description": description,
+        "createdAt": datetime.now(timezone.utc).isoformat(),
+    }
+    
+    result = await db.customer_photos.insert_one(photo_doc)
+    
+    return {
+        "id": str(result.inserted_id),
+        "filename": filename,
+        "description": description,
+        "createdAt": photo_doc["createdAt"],
+    }
+
+@api_router.get("/customer/photos")
+async def get_customer_photos(request: Request):
+    """Get all photos for the authenticated user"""
+    auth_header = request.headers.get("Authorization")
+    customer = await verify_token_and_get_customer(auth_header)
+    customer_id = customer.get("id")
+    
+    cursor = db.customer_photos.find(
+        {"customerId": customer_id},
+        {"_id": 1, "filename": 1, "description": 1, "createdAt": 1, "base64": 1}
+    ).sort("createdAt", -1)
+    
+    photos = await cursor.to_list(length=100)
+    
+    for photo in photos:
+        photo["id"] = str(photo["_id"])
+        del photo["_id"]
+    
+    return photos
+
+@api_router.delete("/customer/photos/{photo_id}")
+async def delete_customer_photo(photo_id: str, request: Request):
+    """Delete a photo for the authenticated user"""
+    auth_header = request.headers.get("Authorization")
+    customer = await verify_token_and_get_customer(auth_header)
+    customer_id = customer.get("id")
+    
+    from bson import ObjectId
+    try:
+        result = await db.customer_photos.delete_one({
+            "_id": ObjectId(photo_id),
+            "customerId": customer_id
+        })
+    except:
+        raise HTTPException(status_code=400, detail="Ungültige Photo-ID")
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Foto nicht gefunden")
+    
+    return {"message": "Foto gelöscht"}
 
 # Include the router in the main app
 app.include_router(api_router)

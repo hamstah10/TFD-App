@@ -13,9 +13,11 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  accessToken: string | null;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   refreshTokens: () => Promise<boolean>;
+  getAccessToken: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -75,25 +77,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       company: response.customer.companyName,
     };
 
-    await AsyncStorage.multiSet([
-      [STORAGE_KEYS.ACCESS_TOKEN, response.accessToken],
-      [STORAGE_KEYS.REFRESH_TOKEN, response.refreshToken],
-      [STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, response.accessTokenExpiresAt],
-      [STORAGE_KEYS.REFRESH_TOKEN_EXPIRES, response.refreshTokenExpiresAt],
-      [STORAGE_KEYS.USER, JSON.stringify(userData)],
-    ]);
+    // Use individual setItem calls for web compatibility
+    await AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, response.accessToken);
+    await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, response.refreshToken);
+    await AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, response.accessTokenExpiresAt);
+    await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_EXPIRES, response.refreshTokenExpiresAt);
+    await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
 
     setUser(userData);
   };
 
   const clearAuthData = async () => {
-    await AsyncStorage.multiRemove([
-      STORAGE_KEYS.ACCESS_TOKEN,
-      STORAGE_KEYS.REFRESH_TOKEN,
-      STORAGE_KEYS.ACCESS_TOKEN_EXPIRES,
-      STORAGE_KEYS.REFRESH_TOKEN_EXPIRES,
-      STORAGE_KEYS.USER,
-    ]);
+    // Use individual removeItem calls for web compatibility
+    await AsyncStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+    await AsyncStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+    await AsyncStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES);
+    await AsyncStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN_EXPIRES);
+    await AsyncStorage.removeItem(STORAGE_KEYS.USER);
     setUser(null);
   };
 
@@ -144,12 +144,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const response = await authRefresh(refreshToken);
       
-      await AsyncStorage.multiSet([
-        [STORAGE_KEYS.ACCESS_TOKEN, response.accessToken],
-        [STORAGE_KEYS.REFRESH_TOKEN, response.refreshToken],
-        [STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, response.accessTokenExpiresAt],
-        [STORAGE_KEYS.REFRESH_TOKEN_EXPIRES, response.refreshTokenExpiresAt],
-      ]);
+      // Use individual setItem calls for web compatibility
+      await AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, response.accessToken);
+      await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, response.refreshToken);
+      await AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, response.accessTokenExpiresAt);
+      await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_EXPIRES, response.refreshTokenExpiresAt);
 
       return true;
     } catch (error) {
@@ -159,15 +158,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const getAccessToken = async (): Promise<string | null> => {
+    const accessToken = await AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+    const accessExpires = await AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES);
+    
+    // Check if token is expired
+    if (accessExpires && new Date(accessExpires) < new Date()) {
+      // Try to refresh
+      const refreshed = await refreshTokens();
+      if (refreshed) {
+        return await AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+      }
+      return null;
+    }
+    
+    return accessToken;
+  };
+
   return (
     <AuthContext.Provider
       value={{
         user,
         isAuthenticated: !!user,
         isLoading,
+        accessToken: null, // We use getAccessToken() for fresh token
         login,
         logout,
         refreshTokens,
+        getAccessToken,
       }}
     >
       {children}
