@@ -1220,6 +1220,178 @@ async def delete_customer_photo(photo_id: str, request: Request):
     
     return {"message": "Foto gelöscht"}
 
+# ============== FAHRZEUGSCHEIN SCANS ROUTES (User-specific) ==============
+
+class ScanCreate(BaseModel):
+    imageBase64: Optional[str] = None
+    vehicleData: dict
+    selectedStage: Optional[dict] = None
+
+@api_router.post("/customer/scans")
+async def save_scan(scan: ScanCreate, request: Request):
+    """Save a fahrzeugschein scan for the authenticated user"""
+    auth_header = request.headers.get("Authorization")
+    customer = await verify_token_and_get_customer(auth_header)
+    customer_id = customer.get("id")
+    
+    scan_doc = {
+        "customerId": customer_id,
+        "customerEmail": customer.get("email"),
+        "createdAt": datetime.now(timezone.utc).isoformat(),
+        "vehicleData": scan.vehicleData,
+        "selectedStage": scan.selectedStage,
+        "imageBase64": scan.imageBase64,
+        "status": "saved",
+    }
+    
+    result = await db.customer_scans.insert_one(scan_doc)
+    
+    return {
+        "id": str(result.inserted_id),
+        "createdAt": scan_doc["createdAt"],
+        "vehicleData": scan.vehicleData,
+    }
+
+@api_router.get("/customer/scans")
+async def get_scans(request: Request):
+    """Get all scans for the authenticated user"""
+    auth_header = request.headers.get("Authorization")
+    customer = await verify_token_and_get_customer(auth_header)
+    customer_id = customer.get("id")
+    
+    cursor = db.customer_scans.find(
+        {"customerId": customer_id},
+        {"imageBase64": 0}  # Exclude image data for list view
+    ).sort("createdAt", -1)
+    
+    scans = await cursor.to_list(length=100)
+    
+    for scan in scans:
+        scan["id"] = str(scan["_id"])
+        del scan["_id"]
+    
+    return scans
+
+# ============== TICKETS ROUTES (User-specific) ==============
+
+class TicketCreate(BaseModel):
+    subject: str
+    message: str
+    priority: str = "normal"
+
+class TicketMessageCreate(BaseModel):
+    message: str
+
+@api_router.post("/customer/tickets")
+async def create_ticket(ticket: TicketCreate, request: Request):
+    """Create a new ticket for the authenticated user"""
+    auth_header = request.headers.get("Authorization")
+    customer = await verify_token_and_get_customer(auth_header)
+    customer_id = customer.get("id")
+    
+    # Generate ticket number
+    ticket_count = await db.customer_tickets.count_documents({"customerId": customer_id})
+    ticket_number = f"TKT-{customer_id}-{ticket_count + 1:04d}"
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    ticket_doc = {
+        "ticketNumber": ticket_number,
+        "customerId": customer_id,
+        "customerEmail": customer.get("email"),
+        "companyName": customer.get("companyName"),
+        "subject": ticket.subject,
+        "priority": ticket.priority,
+        "status": "open",
+        "createdAt": now,
+        "lastReply": now,
+        "messages": [
+            {
+                "sender": "customer",
+                "senderName": customer.get("email"),
+                "message": ticket.message,
+                "createdAt": now,
+            }
+        ],
+    }
+    
+    result = await db.customer_tickets.insert_one(ticket_doc)
+    ticket_doc["id"] = str(result.inserted_id)
+    del ticket_doc["_id"]
+    del ticket_doc["messages"]  # Don't return messages in create response
+    
+    return ticket_doc
+
+@api_router.get("/customer/tickets")
+async def get_tickets(request: Request):
+    """Get all tickets for the authenticated user"""
+    auth_header = request.headers.get("Authorization")
+    customer = await verify_token_and_get_customer(auth_header)
+    customer_id = customer.get("id")
+    
+    cursor = db.customer_tickets.find(
+        {"customerId": customer_id}
+    ).sort("createdAt", -1)
+    
+    tickets = await cursor.to_list(length=100)
+    
+    for ticket in tickets:
+        ticket["id"] = str(ticket["_id"])
+        del ticket["_id"]
+        ticket["messageCount"] = len(ticket.get("messages", []))
+        del ticket["messages"]  # Don't return full messages in list
+    
+    return tickets
+
+@api_router.get("/customer/tickets/{ticket_id}")
+async def get_ticket(ticket_id: str, request: Request):
+    """Get a specific ticket with messages"""
+    auth_header = request.headers.get("Authorization")
+    customer = await verify_token_and_get_customer(auth_header)
+    customer_id = customer.get("id")
+    
+    ticket = await db.customer_tickets.find_one({
+        "ticketNumber": ticket_id,
+        "customerId": customer_id
+    })
+    
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket nicht gefunden")
+    
+    ticket["id"] = str(ticket["_id"])
+    del ticket["_id"]
+    
+    return ticket
+
+@api_router.post("/customer/tickets/{ticket_id}/reply")
+async def reply_to_ticket(ticket_id: str, reply: TicketMessageCreate, request: Request):
+    """Add a reply to a ticket"""
+    auth_header = request.headers.get("Authorization")
+    customer = await verify_token_and_get_customer(auth_header)
+    customer_id = customer.get("id")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    
+    new_message = {
+        "sender": "customer",
+        "senderName": customer.get("email"),
+        "message": reply.message,
+        "createdAt": now,
+    }
+    
+    result = await db.customer_tickets.update_one(
+        {"ticketNumber": ticket_id, "customerId": customer_id},
+        {
+            "$push": {"messages": new_message},
+            "$set": {"lastReply": now, "status": "open"}
+        }
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Ticket nicht gefunden")
+    
+    return {"message": "Antwort gesendet", "createdAt": now}
+
 # Include the router in the main app
 app.include_router(api_router)
 

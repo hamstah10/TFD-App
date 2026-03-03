@@ -1,38 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../src/contexts/LanguageContext';
-
-// Mock data for tickets
-const MOCK_TICKETS = [
-  {
-    id: 'TKT-001',
-    subject: 'Frage zu Stage 2 Tuning',
-    status: 'open',
-    priority: 'normal',
-    created_at: '2024-02-28',
-    last_reply: '2024-02-28 14:30',
-    messages: 3,
-  },
-  {
-    id: 'TKT-002',
-    subject: 'Datei-Upload Problem',
-    status: 'answered',
-    priority: 'high',
-    created_at: '2024-02-27',
-    last_reply: '2024-02-27 16:45',
-    messages: 5,
-  },
-  {
-    id: 'TKT-003',
-    subject: 'Rechnung anfordern',
-    status: 'closed',
-    priority: 'low',
-    created_at: '2024-02-20',
-    last_reply: '2024-02-21 10:00',
-    messages: 2,
-  },
-];
+import { useAuth } from '../../src/contexts/AuthContext';
+import { getTickets, createTicket, Ticket } from '../../src/services/api';
 
 const getStatusInfo = (status: string, language: string) => {
   const statusMap: { [key: string]: { label: string; color: string } } = {
@@ -72,11 +43,33 @@ const getPriorityInfo = (priority: string, language: string) => {
 
 export default function TicketsScreen() {
   const { language } = useLanguage();
+  const { getAccessToken } = useAuth();
   const [showNewTicket, setShowNewTicket] = useState(false);
   const [newSubject, setNewSubject] = useState('');
   const [newMessage, setNewMessage] = useState('');
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleCreateTicket = () => {
+  useEffect(() => {
+    loadTickets();
+  }, []);
+
+  const loadTickets = async () => {
+    try {
+      const token = await getAccessToken();
+      if (token) {
+        const data = await getTickets(token);
+        setTickets(data);
+      }
+    } catch (error) {
+      console.error('Failed to load tickets:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateTicket = async () => {
     if (!newSubject.trim() || !newMessage.trim()) {
       Alert.alert(
         language === 'de' ? 'Fehler' : 'Error',
@@ -87,20 +80,40 @@ export default function TicketsScreen() {
       return;
     }
 
-    Alert.alert(
-      language === 'de' ? 'Ticket erstellt' : 'Ticket Created',
-      language === 'de' 
-        ? 'Ihr Ticket wurde erfolgreich erstellt.' 
-        : 'Your ticket has been created successfully.',
-      [{ text: 'OK', onPress: () => {
-        setShowNewTicket(false);
-        setNewSubject('');
-        setNewMessage('');
-      }}]
-    );
+    setSubmitting(true);
+    try {
+      const token = await getAccessToken();
+      if (!token) throw new Error('Not authenticated');
+      
+      await createTicket(token, newSubject, newMessage);
+      
+      Alert.alert(
+        language === 'de' ? 'Ticket erstellt' : 'Ticket Created',
+        language === 'de' 
+          ? 'Ihr Ticket wurde erfolgreich erstellt.' 
+          : 'Your ticket has been created successfully.',
+        [{ text: 'OK', onPress: () => {
+          setShowNewTicket(false);
+          setNewSubject('');
+          setNewMessage('');
+          loadTickets(); // Reload tickets
+        }}]
+      );
+    } catch (error) {
+      console.error('Failed to create ticket:', error);
+      Alert.alert(
+        language === 'de' ? 'Fehler' : 'Error',
+        language === 'de' 
+          ? 'Ticket konnte nicht erstellt werden.' 
+          : 'Failed to create ticket.'
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const openTickets = MOCK_TICKETS.filter(t => t.status !== 'closed');
+  const openTickets = tickets.filter(t => t.status !== 'closed');
+  const closedTickets = tickets.filter(t => t.status === 'closed');
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -174,14 +187,14 @@ export default function TicketsScreen() {
       {/* Stats */}
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{openTickets.length}</Text>
+          <Text style={styles.statNumber}>{loading ? '-' : openTickets.length}</Text>
           <Text style={styles.statLabel}>
             {language === 'de' ? 'Offene Tickets' : 'Open Tickets'}
           </Text>
         </View>
         <View style={styles.statCard}>
           <Text style={styles.statNumber}>
-            {MOCK_TICKETS.filter(t => t.status === 'closed').length}
+            {loading ? '-' : closedTickets.length}
           </Text>
           <Text style={styles.statLabel}>
             {language === 'de' ? 'Geschlossene' : 'Closed'}
@@ -195,44 +208,59 @@ export default function TicketsScreen() {
           {language === 'de' ? 'Alle Tickets' : 'All Tickets'}
         </Text>
 
-        {MOCK_TICKETS.map((ticket) => {
-          const statusInfo = getStatusInfo(ticket.status, language);
-          const priorityInfo = getPriorityInfo(ticket.priority, language);
-          
-          return (
-            <TouchableOpacity key={ticket.id} style={styles.ticketCard}>
-              <View style={styles.ticketHeader}>
-                <View style={styles.ticketIdContainer}>
-                  <Text style={styles.ticketId}>{ticket.id}</Text>
-                  <View style={[styles.priorityDot, { backgroundColor: priorityInfo.color }]} />
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#bd1f22" />
+          </View>
+        ) : tickets.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="chatbubbles-outline" size={48} color="#444" />
+            <Text style={styles.emptyText}>
+              {language === 'de' ? 'Keine Tickets vorhanden' : 'No tickets found'}
+            </Text>
+          </View>
+        ) : (
+          tickets.map((ticket) => {
+            const statusInfo = getStatusInfo(ticket.status, language);
+            const priorityInfo = getPriorityInfo(ticket.priority, language);
+            const createdDate = ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString('de-DE') : '';
+            const lastReplyDate = ticket.lastReply ? new Date(ticket.lastReply).toLocaleString('de-DE') : '';
+            
+            return (
+              <TouchableOpacity key={ticket.id} style={styles.ticketCard}>
+                <View style={styles.ticketHeader}>
+                  <View style={styles.ticketIdContainer}>
+                    <Text style={styles.ticketId}>{ticket.ticketNumber}</Text>
+                    <View style={[styles.priorityDot, { backgroundColor: priorityInfo.color }]} />
+                  </View>
+                  <View style={[styles.statusBadge, { backgroundColor: statusInfo.color }]}>
+                    <Text style={styles.statusText}>{statusInfo.label}</Text>
+                  </View>
                 </View>
-                <View style={[styles.statusBadge, { backgroundColor: statusInfo.color }]}>
-                  <Text style={styles.statusText}>{statusInfo.label}</Text>
-                </View>
-              </View>
 
-              <Text style={styles.ticketSubject}>{ticket.subject}</Text>
+                <Text style={styles.ticketSubject}>{ticket.subject}</Text>
 
-              <View style={styles.ticketMeta}>
-                <View style={styles.metaItem}>
-                  <Ionicons name="calendar" size={14} color="#8b8b8b" />
-                  <Text style={styles.metaText}>{ticket.created_at}</Text>
+                <View style={styles.ticketMeta}>
+                  <View style={styles.metaItem}>
+                    <Ionicons name="calendar" size={14} color="#8b8b8b" />
+                    <Text style={styles.metaText}>{createdDate}</Text>
+                  </View>
+                  <View style={styles.metaItem}>
+                    <Ionicons name="chatbubble" size={14} color="#8b8b8b" />
+                    <Text style={styles.metaText}>{ticket.messageCount} {language === 'de' ? 'Nachrichten' : 'messages'}</Text>
+                  </View>
                 </View>
-                <View style={styles.metaItem}>
-                  <Ionicons name="chatbubble" size={14} color="#8b8b8b" />
-                  <Text style={styles.metaText}>{ticket.messages} {language === 'de' ? 'Nachrichten' : 'messages'}</Text>
-                </View>
-              </View>
 
-              <View style={styles.ticketFooter}>
-                <Text style={styles.lastReply}>
-                  {language === 'de' ? 'Letzte Antwort:' : 'Last reply:'} {ticket.last_reply}
-                </Text>
-                <Ionicons name="chevron-forward" size={20} color="#8b8b8b" />
-              </View>
-            </TouchableOpacity>
-          );
-        })}
+                <View style={styles.ticketFooter}>
+                  <Text style={styles.lastReply}>
+                    {language === 'de' ? 'Letzte Antwort:' : 'Last reply:'} {lastReplyDate}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={20} color="#8b8b8b" />
+                </View>
+              </TouchableOpacity>
+            );
+          })
+        )}
       </View>
 
       <View style={styles.bottomSpacer} />
@@ -422,5 +450,20 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 30,
+  },
+  loadingContainer: {
+    padding: 40,
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    padding: 40,
+    alignItems: 'center',
+    backgroundColor: '#121212',
+    borderRadius: 12,
+  },
+  emptyText: {
+    color: '#8b8b8b',
+    fontSize: 16,
+    marginTop: 12,
   },
 });

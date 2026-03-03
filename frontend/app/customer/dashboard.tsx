@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { useAuth } from '../../src/contexts/AuthContext';
-import { getOrders, Order } from '../../src/services/api';
+import { getOrders, getTickets, Order, Ticket } from '../../src/services/api';
 
 interface DashboardOrder {
   id: string;
@@ -68,17 +68,23 @@ export default function CustomerDashboard() {
   const { language } = useLanguage();
   const { user, getAccessToken } = useAuth();
   const [orders, setOrders] = useState<DashboardOrder[]>([]);
+  const [openTickets, setOpenTickets] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadOrders();
+    loadData();
   }, []);
 
-  const loadOrders = async () => {
+  const loadData = async () => {
     try {
       const token = await getAccessToken();
       if (token) {
-        const apiOrders = await getOrders(token);
+        // Load orders and tickets in parallel
+        const [apiOrders, apiTickets] = await Promise.all([
+          getOrders(token),
+          getTickets(token),
+        ]);
+        
         const mappedOrders: DashboardOrder[] = apiOrders.map((o: Order) => ({
           id: o.id,
           orderNumber: o.orderNumber,
@@ -89,9 +95,13 @@ export default function CustomerDashboard() {
           progress: getProgressFromStatus(o.status),
         }));
         setOrders(mappedOrders);
+        
+        // Count open tickets
+        const openCount = apiTickets.filter((t: Ticket) => t.status !== 'closed').length;
+        setOpenTickets(openCount);
       }
     } catch (error) {
-      console.error('Failed to load orders:', error);
+      console.error('Failed to load data:', error);
     } finally {
       setLoading(false);
     }
@@ -127,7 +137,7 @@ export default function CustomerDashboard() {
         </View>
         <View style={styles.statCard}>
           <Ionicons name="chatbubbles" size={28} color="#4caf50" />
-          <Text style={styles.statNumber}>0</Text>
+          <Text style={styles.statNumber}>{loading ? '-' : openTickets}</Text>
           <Text style={styles.statLabel}>
             {language === 'de' ? 'Offene Tickets' : 'Open Tickets'}
           </Text>

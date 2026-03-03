@@ -15,7 +15,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { useLanguage } from '../../src/contexts/LanguageContext';
-import { scanFahrzeugschein, FahrzeugscheinData } from '../../src/services/api';
+import { useAuth } from '../../src/contexts/AuthContext';
+import { scanFahrzeugschein, FahrzeugscheinData, saveScan } from '../../src/services/api';
 
 interface VehicleField {
   label_de: string;
@@ -101,6 +102,7 @@ const getMockVehicle = (data: FahrzeugscheinData): MockVehicle => {
 
 export default function FahrzeugscheinScreen() {
   const { language } = useLanguage();
+  const { getAccessToken } = useAuth();
   const [currentStep, setCurrentStep] = useState<ScreenStep>('scan');
   const [cameraVisible, setCameraVisible] = useState(false);
   const [facing, setFacing] = useState<CameraType>('back');
@@ -111,6 +113,7 @@ export default function FahrzeugscheinScreen() {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [mockVehicle, setMockVehicle] = useState<MockVehicle | null>(null);
   const [selectedStage, setSelectedStage] = useState<MockStage | null>(null);
+  const [saving, setSaving] = useState(false);
   const cameraRef = useRef<CameraView>(null);
 
   const openCamera = async () => {
@@ -226,14 +229,35 @@ export default function FahrzeugscheinScreen() {
     setCurrentStep('scan');
   };
 
-  const handleRequestQuote = () => {
-    Alert.alert(
-      language === 'de' ? 'Anfrage gesendet' : 'Request Sent',
-      language === 'de' 
-        ? 'Ihre Tuning-Anfrage wurde erfolgreich gesendet. Wir melden uns in Kürze bei Ihnen.' 
-        : 'Your tuning request has been sent successfully. We will contact you shortly.',
-      [{ text: 'OK', onPress: resetScan }]
-    );
+  const handleRequestQuote = async () => {
+    if (!scannedData || !selectedStage) return;
+    
+    setSaving(true);
+    try {
+      const token = await getAccessToken();
+      if (!token) throw new Error('Not authenticated');
+      
+      // Save the scan to the database
+      await saveScan(token, scannedData, selectedStage, capturedImage || undefined);
+      
+      Alert.alert(
+        language === 'de' ? 'Anfrage gesendet' : 'Request Sent',
+        language === 'de' 
+          ? 'Ihre Tuning-Anfrage wurde erfolgreich gespeichert. Wir melden uns in Kürze bei Ihnen.' 
+          : 'Your tuning request has been saved successfully. We will contact you shortly.',
+        [{ text: 'OK', onPress: resetScan }]
+      );
+    } catch (error) {
+      console.error('Failed to save scan:', error);
+      Alert.alert(
+        language === 'de' ? 'Fehler' : 'Error',
+        language === 'de' 
+          ? 'Anfrage konnte nicht gespeichert werden.' 
+          : 'Failed to save request.'
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   const getVehicleFields = (): VehicleField[] => {
@@ -453,13 +477,19 @@ export default function FahrzeugscheinScreen() {
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.submitButton, !selectedStage && styles.submitButtonDisabled]}
+          style={[styles.submitButton, (!selectedStage || saving) && styles.submitButtonDisabled]}
           onPress={handleRequestQuote}
-          disabled={!selectedStage}
+          disabled={!selectedStage || saving}
         >
-          <Ionicons name="send" size={20} color="#ffffff" />
+          {saving ? (
+            <ActivityIndicator size="small" color="#ffffff" />
+          ) : (
+            <Ionicons name="send" size={20} color="#ffffff" />
+          )}
           <Text style={styles.submitButtonText}>
-            {language === 'de' ? 'Anfrage senden' : 'Send Request'}
+            {saving 
+              ? (language === 'de' ? 'Wird gespeichert...' : 'Saving...')
+              : (language === 'de' ? 'Anfrage senden' : 'Send Request')}
           </Text>
         </TouchableOpacity>
       </View>

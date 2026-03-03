@@ -338,4 +338,110 @@ export const deleteCustomerPhoto = async (accessToken: string, photoId: string):
   });
 };
 
+// ============== SCANS API (User-specific) ==============
+
+export interface ScanData {
+  id: string;
+  createdAt: string;
+  vehicleData: FahrzeugscheinData;
+  selectedStage?: any;
+}
+
+export const saveScan = async (
+  accessToken: string, 
+  vehicleData: FahrzeugscheinData, 
+  selectedStage?: any,
+  imageBase64?: string
+): Promise<ScanData> => {
+  const response = await api.post('/customer/scans', {
+    vehicleData,
+    selectedStage,
+    imageBase64,
+  }, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  return response.data;
+};
+
+export const getScans = async (accessToken: string): Promise<ScanData[]> => {
+  const response = await api.get('/customer/scans', {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  return response.data;
+};
+
+// ============== TICKETS API (User-specific) ==============
+
+export interface Ticket {
+  id: string;
+  ticketNumber: string;
+  subject: string;
+  priority: string;
+  status: string;
+  createdAt: string;
+  lastReply: string;
+  messageCount: number;
+}
+
+export interface TicketMessage {
+  sender: string;
+  senderName: string;
+  message: string;
+  createdAt: string;
+}
+
+export interface TicketDetail extends Ticket {
+  messages: TicketMessage[];
+}
+
+export const createTicket = async (
+  accessToken: string, 
+  subject: string, 
+  message: string, 
+  priority: string = 'normal'
+): Promise<Ticket> => {
+  const response = await api.post('/customer/tickets', {
+    subject,
+    message,
+    priority,
+  }, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  return response.data;
+};
+
+export const getTickets = async (accessToken: string): Promise<Ticket[]> => {
+  const response = await api.get('/customer/tickets', {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  return response.data;
+};
+
+export const getTicketDetail = async (accessToken: string, ticketNumber: string): Promise<TicketDetail> => {
+  const response = await api.get(`/customer/tickets/${ticketNumber}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  return response.data;
+};
+
+export const replyToTicket = async (accessToken: string, ticketNumber: string, message: string): Promise<void> => {
+  await api.post(`/customer/tickets/${ticketNumber}/reply`, {
+    message,
+  }, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+};
+
 export default api;
