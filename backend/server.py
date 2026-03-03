@@ -8,7 +8,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List, Optional, Any
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 import httpx
 
 ROOT_DIR = Path(__file__).parent
@@ -396,7 +396,11 @@ async def verify_token_and_get_customer(authorization: str) -> dict:
         try:
             response = await http_client.get(url, headers={"Authorization": authorization})
             if response.status_code == 200:
-                return response.json()
+                result = response.json()
+                # CRM API returns data in a "data" wrapper
+                if "data" in result:
+                    return result["data"]
+                return result
             else:
                 raise HTTPException(status_code=401, detail="Token ungültig oder abgelaufen")
         except httpx.RequestError:
