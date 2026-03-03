@@ -29,7 +29,7 @@ FAHRZEUGSCHEIN_API_BASE = "https://api.fahrzeugschein-scanner.de"
 FAHRZEUGSCHEIN_ACCESS_KEY = "361dc9e0-2bb6-4471-a690-7f0d8b973a10"
 
 # CRM API configuration for customer authentication
-CRM_API_BASE = "https://crm.tuningfux.de/public/api"
+CRM_API_BASE = "https://crm.tuningfux.de/api"
 
 # Create the main app without a prefix
 app = FastAPI()
