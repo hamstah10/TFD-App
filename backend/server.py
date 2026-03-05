@@ -338,12 +338,12 @@ class ContactMessageCreate(BaseModel):
 
 # Opening Hours Model
 class OpeningHours(BaseModel):
-    monday: str = "08:00-18:00"
-    tuesday: str = "08:00-18:00"
-    wednesday: str = "08:00-18:00"
-    thursday: str = "08:00-18:00"
-    friday: str = "08:00-18:00"
-    saturday: str = "09:00-13:00"
+    monday: str = "05:00-18:00"
+    tuesday: str = "05:00-18:00"
+    wednesday: str = "05:00-18:00"
+    thursday: str = "05:00-18:00"
+    friday: str = "05:00-18:00"
+    saturday: str = "05:00-13:00"
     sunday: str = "geschlossen"
 
 # Auth Models for CRM API
