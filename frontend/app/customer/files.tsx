@@ -47,6 +47,7 @@ interface FileData {
   name: string;
   size: number;
   uri: string;
+  base64?: string;
 }
 
 interface OrderData {
@@ -292,12 +293,60 @@ export default function FilesScreen() {
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const file = result.assets[0];
+        
+        // Read file as base64 immediately after picking
+        let base64Data = '';
+        try {
+          if (Platform.OS === 'web') {
+            // For web, fetch the file and convert to base64
+            const response = await fetch(file.uri);
+            const blob = await response.blob();
+            base64Data = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                const result = reader.result as string;
+                // Remove data URL prefix if present
+                const base64 = result.includes(',') ? result.split(',')[1] : result;
+                resolve(base64);
+              };
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+            });
+          } else {
+            // For native (iOS/Android), use FileSystem
+            base64Data = await FileSystem.readAsStringAsync(file.uri, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
+          }
+          console.log('File read successfully, base64 length:', base64Data.length);
+        } catch (readError) {
+          console.error('Error reading file as base64:', readError);
+          Alert.alert(
+            language === 'de' ? 'Fehler' : 'Error',
+            language === 'de' 
+              ? 'Die Datei konnte nicht gelesen werden. Bitte versuchen Sie es mit einer anderen Datei.'
+              : 'The file could not be read. Please try with a different file.'
+          );
+          return;
+        }
+        
+        if (!base64Data || base64Data.trim() === '') {
+          Alert.alert(
+            language === 'de' ? 'Fehler' : 'Error',
+            language === 'de' 
+              ? 'Die Datei ist leer oder konnte nicht gelesen werden.'
+              : 'The file is empty or could not be read.'
+          );
+          return;
+        }
+        
         setOrderData(prev => ({
           ...prev,
           file: {
             name: file.name,
             size: file.size || 0,
             uri: file.uri,
+            base64: base64Data,
           },
         }));
       }
@@ -358,22 +407,36 @@ export default function FilesScreen() {
           language === 'de' ? 'Fehler' : 'Error',
           language === 'de' ? 'Sitzung abgelaufen. Bitte erneut anmelden.' : 'Session expired. Please login again.'
         );
+        setSubmitting(false);
         return;
       }
 
-      // Read file as base64
-      let fileData = '';
-      if (orderData.file.uri) {
+      // Use the base64 data that was read when the file was picked
+      let fileData = orderData.file.base64 || '';
+      
+      // If base64 wasn't stored, try to read it now (fallback)
+      if (!fileData && orderData.file.uri) {
         try {
-          fileData = await FileSystem.readAsStringAsync(orderData.file.uri, {
-            encoding: FileSystem.EncodingType.Base64,
-          });
-        } catch (e) {
-          console.log('File read error:', e);
-          // Try to get base64 from the file object itself (for web)
-          if (orderData.file.base64) {
-            fileData = orderData.file.base64;
+          if (Platform.OS === 'web') {
+            const response = await fetch(orderData.file.uri);
+            const blob = await response.blob();
+            fileData = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                const result = reader.result as string;
+                const base64 = result.includes(',') ? result.split(',')[1] : result;
+                resolve(base64);
+              };
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+            });
+          } else {
+            fileData = await FileSystem.readAsStringAsync(orderData.file.uri, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
           }
+        } catch (e) {
+          console.error('Fallback file read error:', e);
         }
       }
       
@@ -382,12 +445,14 @@ export default function FilesScreen() {
         Alert.alert(
           language === 'de' ? 'Fehler' : 'Error',
           language === 'de' 
-            ? 'Die Datei konnte nicht gelesen werden. Bitte versuchen Sie es erneut.'
-            : 'The file could not be read. Please try again.'
+            ? 'Die Datei konnte nicht gelesen werden. Bitte wählen Sie die Datei erneut aus.'
+            : 'The file could not be read. Please select the file again.'
         );
-        setIsSubmitting(false);
+        setSubmitting(false);
         return;
       }
+      
+      console.log('File data length:', fileData.length);
 
       // Build vehicle display string
       const vehicleParts = [
