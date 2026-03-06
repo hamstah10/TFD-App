@@ -369,9 +369,24 @@ export default function FilesScreen() {
             encoding: FileSystem.EncodingType.Base64,
           });
         } catch (e) {
-          // For web, the file might already be in a different format
-          console.log('File read error, using empty data:', e);
+          console.log('File read error:', e);
+          // Try to get base64 from the file object itself (for web)
+          if (orderData.file.base64) {
+            fileData = orderData.file.base64;
+          }
         }
+      }
+      
+      // Validate fileData is not empty
+      if (!fileData || fileData.trim() === '') {
+        Alert.alert(
+          language === 'de' ? 'Fehler' : 'Error',
+          language === 'de' 
+            ? 'Die Datei konnte nicht gelesen werden. Bitte versuchen Sie es erneut.'
+            : 'The file could not be read. Please try again.'
+        );
+        setIsSubmitting(false);
+        return;
       }
 
       // Build vehicle display string
