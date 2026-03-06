@@ -80,11 +80,26 @@ Mobile app for a chiptuning database based on tuningfiles-download.com website. 
 - [x] Photos section (user-specific)
 - [x] Tickets system (user-specific)
 - [x] Scans section (user-specific)
+- [x] **Expo Push Notifications** ✅ (NEW)
+- [x] **CRM Webhook Integration** ✅ (NEW)
 
 ### Bug Fixes (2026-03-06)
 - [x] **Fixed iOS token retrieval issue** - Token now stored in React state + SecureStore
 - [x] **Fixed CRM /auth/me response parsing** - Now correctly extracts customer from `{"customer": {...}}` wrapper
 - [x] **Fixed logout using wrong storage API** - Now uses consistent `storage` helper
+
+### Push Notification System (NEW)
+**Webhook URL for CRM**: `https://ios-auth-fix-1.preview.emergentagent.com/api/webhooks/crm/order`
+
+**Supported Events**:
+- `order.created` - Sends push notification when new order is created
+
+**API Endpoints**:
+- `POST /api/push/register` - Register Expo push token
+- `POST /api/push/unregister` - Unregister push tokens
+- `POST /api/push/test` - Test push notification
+- `POST /api/webhooks/crm/order` - CRM webhook for order events
+- `POST /api/webhooks/crm/ticket` - CRM webhook for ticket events (future)
 
 ## Known Limitations
 - Chiptuning API requires IP whitelisting (check with `curl ifconfig.me`)
