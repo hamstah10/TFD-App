@@ -41,21 +41,26 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
+      console.log('Starting login...');
       const result = await login(email, password);
+      console.log('Login result:', result);
       if (result.success) {
+        console.log('Login successful, navigating to dashboard');
         router.replace('/customer/dashboard');
       } else {
+        console.log('Login failed:', result.error);
         Alert.alert(
           language === 'de' ? 'Anmeldung fehlgeschlagen' : 'Login Failed',
           result.error || (language === 'de' ? 'Ungültige Anmeldedaten.' : 'Invalid credentials.')
         );
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Login exception:', error);
       Alert.alert(
         language === 'de' ? 'Fehler' : 'Error',
-        language === 'de' 
+        error.message || (language === 'de' 
           ? 'Ein Fehler ist aufgetreten.' 
-          : 'An error occurred.'
+          : 'An error occurred.')
       );
     } finally {
       setLoading(false);
