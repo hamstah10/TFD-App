@@ -352,8 +352,13 @@ export default function FilesScreen() {
     setSubmitting(true);
     try {
       const token = await getAccessToken();
+      console.log('Got token for order:', token ? token.substring(0, 20) + '...' : 'NULL');
       if (!token) {
-        throw new Error('Not authenticated');
+        Alert.alert(
+          language === 'de' ? 'Fehler' : 'Error',
+          language === 'de' ? 'Sitzung abgelaufen. Bitte erneut anmelden.' : 'Session expired. Please login again.'
+        );
+        return;
       }
 
       // Read file as base64
