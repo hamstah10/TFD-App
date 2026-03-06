@@ -1070,6 +1070,9 @@ async def create_order(order: OrderCreate, request: Request):
     customer = await verify_token_and_get_customer(auth_header)
     customer_id = customer.get("id")
     
+    if not customer_id:
+        raise HTTPException(status_code=401, detail="Kunde nicht gefunden")
+    
     # Generate order number
     order_count = await db.orders.count_documents({"customerId": customer_id})
     order_number = f"TFD-{customer_id}-{order_count + 1:04d}"
