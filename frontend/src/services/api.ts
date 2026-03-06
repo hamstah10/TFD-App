@@ -207,12 +207,23 @@ export interface RefreshResponse {
 }
 
 export const authLogin = async (email: string, password: string, deviceName: string = 'tuningfiles-app'): Promise<LoginResponse> => {
-  const response = await api.post('/auth/login', {
-    email,
-    password,
-    deviceName,
-  });
-  return response.data;
+  console.log('authLogin called with:', { email, passwordLength: password.length, deviceName });
+  console.log('API_BASE:', API_BASE);
+  
+  try {
+    const response = await api.post('/auth/login', {
+      email: email.trim(),
+      password: password,
+      deviceName,
+    });
+    console.log('Login API response status:', response.status);
+    return response.data;
+  } catch (error: any) {
+    console.error('Login API error:', error.message);
+    console.error('Login API response:', error.response?.data);
+    console.error('Login API status:', error.response?.status);
+    throw error;
+  }
 };
 
 export const authRefresh = async (refreshToken: string): Promise<RefreshResponse> => {
