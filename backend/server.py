@@ -1067,8 +1067,15 @@ async def logout(request: Request):
 async def create_order(order: OrderCreate, request: Request):
     """Create a new order for the authenticated user and forward to CRM"""
     auth_header = request.headers.get("Authorization")
+    logger.info(f"POST /orders - Authorization header present: {bool(auth_header)}")
+    if auth_header:
+        logger.info(f"POST /orders - Auth header format: {auth_header[:30]}..." if len(auth_header) > 30 else f"POST /orders - Auth header: {auth_header}")
+    else:
+        logger.error("POST /orders - No Authorization header received!")
+    
     customer = await verify_token_and_get_customer(auth_header)
     customer_id = customer.get("id")
+    logger.info(f"POST /orders - Customer ID: {customer_id}, Email: {customer.get('email')}")
     
     if not customer_id:
         raise HTTPException(status_code=401, detail="Kunde nicht gefunden")
@@ -1127,6 +1134,9 @@ async def create_order(order: OrderCreate, request: Request):
     crm_error = None
     
     try:
+        logger.info(f"Forwarding order to CRM: {CRM_API_BASE}/orders")
+        logger.info(f"CRM payload customerId: {crm_order_payload.get('customerId')}, fileName: {crm_order_payload.get('fileName')}")
+        
         async with httpx.AsyncClient(timeout=60.0) as http_client:
             crm_response = await http_client.post(
                 f"{CRM_API_BASE}/orders",
@@ -1136,6 +1146,8 @@ async def create_order(order: OrderCreate, request: Request):
                     "Content-Type": "application/json"
                 }
             )
+            
+            logger.info(f"CRM response status: {crm_response.status_code}")
             
             if crm_response.status_code in [200, 201]:
                 crm_data = crm_response.json()

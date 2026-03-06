@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://chiptuning-app.preview.emergentagent.com';
+const API_BASE = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://ios-auth-fix-1.preview.emergentagent.com';
 
 const api = axios.create({
   baseURL: `${API_BASE}/api`,
@@ -283,6 +283,10 @@ export interface Order {
 }
 
 export const createOrder = async (accessToken: string, orderData: OrderCreateData): Promise<Order> => {
+  console.log('createOrder called with token:', accessToken ? accessToken.substring(0, 20) + '...' : 'NULL');
+  if (!accessToken) {
+    throw new Error('No access token provided');
+  }
   const response = await api.post('/orders', orderData, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
