@@ -99,11 +99,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
+      console.log('Attempting login for:', email);
       const response = await authLogin(email, password);
+      console.log('Login successful');
       await storeAuthData(response);
       return { success: true };
     } catch (error: any) {
       console.error('Login error:', error);
+      console.error('Error message:', error.message);
+      console.error('Error response:', error.response?.data);
       
       let errorMessage = 'Anmeldung fehlgeschlagen';
       
@@ -115,6 +119,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         errorMessage = 'Server nicht erreichbar. Bitte später erneut versuchen.';
       } else if (error.response?.data?.detail) {
         errorMessage = error.response.data.detail;
+      } else if (error.message?.includes('Network Error')) {
+        errorMessage = 'Netzwerkfehler. Bitte Internetverbindung prüfen.';
+      } else if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Zeitüberschreitung. Bitte erneut versuchen.';
       }
       
       return { success: false, error: errorMessage };
