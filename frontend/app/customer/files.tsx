@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,14 @@ import {
   Alert,
   ActivityIndicator,
   Platform,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { useFocusEffect } from 'expo-router';
 import {
   getVehicleTypes,
   getManufacturers,
@@ -67,7 +69,8 @@ interface Order {
   id: string;
   orderNumber: string;
   createdAt: string;
-  status: 'pending' | 'processing' | 'completed' | 'cancelled';
+  status: 'pending' | 'processing' | 'completed' | 'cancelled' | string;
+  statusLabel?: string;
   fileName: string;
   vehicle: string;
   stage: string;
@@ -118,6 +121,7 @@ export default function FilesScreen() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [ordersLoading, setOrdersLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Order data
   const [orderData, setOrderData] = useState<OrderData>({
@@ -147,6 +151,13 @@ export default function FilesScreen() {
     loadOrders();
   }, []);
 
+  // Refresh orders when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadOrders();
+    }, [])
+  );
+
   const loadOrders = async () => {
     setOrdersLoading(true);
     try {
@@ -159,6 +170,7 @@ export default function FilesScreen() {
           orderNumber: o.orderNumber,
           createdAt: o.createdAt,
           status: o.status as Order['status'],
+          statusLabel: o.statusLabel,
           fileName: o.fileName,
           vehicle: o.vehicle,
           stage: o.stage,
@@ -174,6 +186,13 @@ export default function FilesScreen() {
       setOrdersLoading(false);
     }
   };
+
+  // Pull-to-refresh handler
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadOrders();
+    setRefreshing(false);
+  }, []);
 
   // Load vehicle types on step 3
   useEffect(() => {
@@ -1364,7 +1383,18 @@ export default function FilesScreen() {
   );
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView 
+      style={styles.container} 
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={['#bd1f22']}
+          tintColor="#bd1f22"
+        />
+      }
+    >
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>
