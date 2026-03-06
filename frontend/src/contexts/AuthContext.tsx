@@ -3,6 +3,11 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { authLogin, authRefresh, authLogout, LoginResponse } from '../services/api';
+import { 
+  registerForPushNotificationsAsync, 
+  registerPushTokenWithBackend,
+  unregisterPushToken 
+} from '../services/notifications';
 
 interface User {
   id: number;
@@ -143,6 +148,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await authLogin(email, password);
       console.log('Login successful');
       await storeAuthData(response);
+      
+      // Register for push notifications after successful login
+      try {
+        const expoPushToken = await registerForPushNotificationsAsync();
+        if (expoPushToken && response.accessToken) {
+          await registerPushTokenWithBackend(response.accessToken, expoPushToken);
+          console.log('Push notifications registered');
+        }
+      } catch (pushError) {
+        // Don't fail login if push registration fails
+        console.warn('Push notification registration failed:', pushError);
+      }
+      
       return { success: true };
     } catch (error: any) {
       console.error('Login error:', error);
@@ -174,6 +192,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Use currentToken from state first, fallback to storage
       const accessToken = currentToken || await storage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
       if (accessToken) {
+        // Unregister push notifications before logout
+        try {
+          await unregisterPushToken(accessToken);
+        } catch (pushError) {
+          console.warn('Push token unregister failed:', pushError);
+        }
         await authLogout(accessToken);
       }
     } catch (error) {

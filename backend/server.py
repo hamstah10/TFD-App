@@ -1475,6 +1475,297 @@ async def reply_to_ticket(ticket_id: str, reply: TicketMessageCreate, request: R
     
     return {"message": "Antwort gesendet", "createdAt": now}
 
+# ============== PUSH NOTIFICATIONS ==============
+
+from exponent_server_sdk import PushClient, PushMessage, PushServerError, DeviceNotRegisteredError
+import hmac
+import hashlib
+
+# Webhook signing secret (configure in CRM)
+WEBHOOK_SIGNING_SECRET = os.environ.get('WEBHOOK_SIGNING_SECRET', '')
+
+class PushTokenRegister(BaseModel):
+    expoPushToken: str
+
+class WebhookOrderCreated(BaseModel):
+    event: str
+    sentAt: str
+    data: dict
+
+async def send_push_notification(
+    push_token: str,
+    title: str,
+    body: str,
+    data: dict = None,
+    channel_id: str = "default"
+) -> bool:
+    """Send a push notification via Expo"""
+    if not push_token or not push_token.startswith("ExponentPushToken"):
+        logger.warning(f"Invalid push token: {push_token}")
+        return False
+    
+    try:
+        message = PushMessage(
+            to=push_token,
+            title=title,
+            body=body,
+            data=data or {},
+            sound="default",
+            priority="high",
+            channel_id=channel_id,
+        )
+        
+        response = PushClient().publish(message)
+        
+        if response.status == "ok":
+            logger.info(f"Push notification sent successfully to {push_token[:30]}...")
+            return True
+        else:
+            logger.error(f"Push notification failed: {response}")
+            return False
+            
+    except DeviceNotRegisteredError:
+        logger.warning(f"Device not registered, removing token: {push_token[:30]}...")
+        # Mark token as inactive
+        await db.push_tokens.update_one(
+            {"expoPushToken": push_token},
+            {"$set": {"isActive": False}}
+        )
+        return False
+    except PushServerError as e:
+        logger.error(f"Expo push server error: {e}")
+        return False
+    except Exception as e:
+        logger.error(f"Push notification error: {e}")
+        return False
+
+async def send_push_to_customer(customer_id: int, title: str, body: str, data: dict = None, channel_id: str = "default"):
+    """Send push notification to all devices of a customer"""
+    tokens = await db.push_tokens.find({
+        "customerId": customer_id,
+        "isActive": True
+    }).to_list(10)
+    
+    results = []
+    for token_doc in tokens:
+        success = await send_push_notification(
+            token_doc["expoPushToken"],
+            title,
+            body,
+            data,
+            channel_id
+        )
+        results.append(success)
+    
+    return any(results)
+
+@api_router.post("/push/register")
+async def register_push_token(token_data: PushTokenRegister, request: Request):
+    """Register a push token for the authenticated user"""
+    auth_header = request.headers.get("Authorization")
+    customer = await verify_token_and_get_customer(auth_header)
+    customer_id = customer.get("id")
+    
+    if not customer_id:
+        raise HTTPException(status_code=401, detail="Kunde nicht gefunden")
+    
+    # Validate token format
+    if not token_data.expoPushToken.startswith("ExponentPushToken"):
+        raise HTTPException(status_code=400, detail="Ungültiges Token-Format")
+    
+    # Check if token already exists
+    existing = await db.push_tokens.find_one({"expoPushToken": token_data.expoPushToken})
+    
+    if existing:
+        # Update existing token
+        await db.push_tokens.update_one(
+            {"expoPushToken": token_data.expoPushToken},
+            {"$set": {
+                "customerId": customer_id,
+                "customerEmail": customer.get("email"),
+                "isActive": True,
+                "updatedAt": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        logger.info(f"Updated push token for customer {customer_id}")
+    else:
+        # Insert new token
+        await db.push_tokens.insert_one({
+            "customerId": customer_id,
+            "customerEmail": customer.get("email"),
+            "expoPushToken": token_data.expoPushToken,
+            "isActive": True,
+            "createdAt": datetime.now(timezone.utc).isoformat(),
+            "updatedAt": datetime.now(timezone.utc).isoformat()
+        })
+        logger.info(f"Registered new push token for customer {customer_id}")
+    
+    return {"message": "Push-Token registriert", "customerId": customer_id}
+
+@api_router.post("/push/unregister")
+async def unregister_push_token(request: Request):
+    """Unregister push tokens for the authenticated user"""
+    auth_header = request.headers.get("Authorization")
+    customer = await verify_token_and_get_customer(auth_header)
+    customer_id = customer.get("id")
+    
+    if not customer_id:
+        raise HTTPException(status_code=401, detail="Kunde nicht gefunden")
+    
+    # Mark all tokens for this customer as inactive
+    result = await db.push_tokens.update_many(
+        {"customerId": customer_id},
+        {"$set": {"isActive": False, "updatedAt": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    logger.info(f"Unregistered {result.modified_count} push tokens for customer {customer_id}")
+    return {"message": "Push-Tokens deaktiviert", "count": result.modified_count}
+
+def verify_webhook_signature(timestamp: str, payload: bytes, signature: str) -> bool:
+    """Verify the webhook signature from CRM"""
+    if not WEBHOOK_SIGNING_SECRET:
+        logger.warning("No webhook signing secret configured, skipping verification")
+        return True
+    
+    # Build the signed payload: <timestamp>.<raw_json_payload>
+    signed_payload = f"{timestamp}.{payload.decode('utf-8')}"
+    
+    # Calculate expected signature
+    expected = hmac.new(
+        WEBHOOK_SIGNING_SECRET.encode(),
+        signed_payload.encode(),
+        hashlib.sha256
+    ).hexdigest()
+    
+    # Extract signature from header (format: sha256=<hmac>)
+    if signature.startswith("sha256="):
+        signature = signature[7:]
+    
+    return hmac.compare_digest(expected, signature)
+
+@api_router.post("/webhooks/crm/order")
+async def webhook_order_created(request: Request):
+    """
+    Webhook endpoint for CRM order events.
+    Configure this URL in CRM: Verwaltung -> Webhooks
+    URL: https://your-domain.com/api/webhooks/crm/order
+    """
+    # Get raw body for signature verification
+    body = await request.body()
+    
+    # Verify signature if secret is configured
+    timestamp = request.headers.get("X-Webhook-Timestamp", "")
+    signature = request.headers.get("X-Webhook-Signature", "")
+    
+    if WEBHOOK_SIGNING_SECRET and signature:
+        if not verify_webhook_signature(timestamp, body, signature):
+            logger.error("Invalid webhook signature")
+            raise HTTPException(status_code=401, detail="Ungültige Webhook-Signatur")
+    
+    # Parse the payload
+    try:
+        import json
+        payload = json.loads(body)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Ungültiges JSON")
+    
+    event = payload.get("event")
+    data = payload.get("data", {})
+    
+    logger.info(f"Received webhook: {event}")
+    logger.info(f"Webhook data: {data}")
+    
+    if event == "order.created":
+        customer_id = data.get("customerId")
+        order_id = data.get("orderId")
+        file_name = data.get("fileName", "Datei")
+        
+        if customer_id:
+            # Send push notification
+            await send_push_to_customer(
+                customer_id=customer_id,
+                title="Neuer Auftrag erstellt",
+                body=f"Auftrag #{order_id} wurde erfolgreich angelegt.",
+                data={
+                    "type": "order_update",
+                    "orderId": str(order_id),
+                    "status": "created"
+                },
+                channel_id="orders"
+            )
+            logger.info(f"Sent push notification for order {order_id} to customer {customer_id}")
+    
+    return {"status": "ok", "event": event}
+
+@api_router.post("/webhooks/crm/ticket")
+async def webhook_ticket_reply(request: Request):
+    """
+    Webhook endpoint for CRM ticket events.
+    (For future use when CRM supports ticket webhooks)
+    """
+    body = await request.body()
+    
+    # Verify signature
+    timestamp = request.headers.get("X-Webhook-Timestamp", "")
+    signature = request.headers.get("X-Webhook-Signature", "")
+    
+    if WEBHOOK_SIGNING_SECRET and signature:
+        if not verify_webhook_signature(timestamp, body, signature):
+            raise HTTPException(status_code=401, detail="Ungültige Webhook-Signatur")
+    
+    try:
+        import json
+        payload = json.loads(body)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Ungültiges JSON")
+    
+    event = payload.get("event")
+    data = payload.get("data", {})
+    
+    logger.info(f"Received ticket webhook: {event}")
+    
+    if event == "ticket.reply":
+        customer_id = data.get("customerId")
+        ticket_number = data.get("ticketNumber")
+        
+        if customer_id:
+            await send_push_to_customer(
+                customer_id=customer_id,
+                title="Neue Ticket-Antwort",
+                body=f"Sie haben eine neue Antwort zu Ticket {ticket_number}.",
+                data={
+                    "type": "ticket_reply",
+                    "ticketNumber": ticket_number
+                },
+                channel_id="tickets"
+            )
+    
+    return {"status": "ok", "event": event}
+
+# Test endpoint to send a push notification (for debugging)
+@api_router.post("/push/test")
+async def test_push_notification(request: Request):
+    """Test endpoint to verify push notifications work"""
+    auth_header = request.headers.get("Authorization")
+    customer = await verify_token_and_get_customer(auth_header)
+    customer_id = customer.get("id")
+    
+    if not customer_id:
+        raise HTTPException(status_code=401, detail="Kunde nicht gefunden")
+    
+    success = await send_push_to_customer(
+        customer_id=customer_id,
+        title="Test-Benachrichtigung",
+        body="Push-Notifications funktionieren!",
+        data={"type": "test"},
+        channel_id="default"
+    )
+    
+    if success:
+        return {"message": "Test-Benachrichtigung gesendet"}
+    else:
+        raise HTTPException(status_code=404, detail="Kein aktives Push-Token gefunden")
+
 # Include the router in the main app
 app.include_router(api_router)
 
