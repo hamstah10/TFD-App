@@ -1077,6 +1077,10 @@ async def create_order(order: OrderCreate, request: Request):
     else:
         logger.error("POST /orders - No Authorization header received!")
     
+    # Log incoming fileData status
+    fileData_length = len(order.fileData) if order.fileData else 0
+    logger.info(f"POST /orders - fileData length: {fileData_length}, fileName: {order.fileName}")
+    
     customer = await verify_token_and_get_customer(auth_header)
     customer_id = customer.get("id")
     logger.info(f"POST /orders - Customer ID: {customer_id}, Email: {customer.get('email')}")
