@@ -171,10 +171,10 @@ export default function CustomerDashboard() {
             </Text>
           </View>
         ) : (
-          activeOrders.map((order) => {
+          activeOrders.map((order, index) => {
             const statusInfo = getStatusInfo(order.status, language);
             return (
-              <View key={order.id} style={styles.orderCard}>
+              <View key={order.id || order.orderNumber || `order-${index}`} style={styles.orderCard}>
                 <View style={styles.orderHeader}>
                   <View>
                     <Text style={styles.orderId}>{order.orderNumber}</Text>

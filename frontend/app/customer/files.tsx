@@ -1419,7 +1419,11 @@ export default function FilesScreen() {
           </Text>
         </View>
       ) : (
-        orders.map(renderOrderCard)
+        orders.map((order) => (
+          <React.Fragment key={order.id || order.orderNumber}>
+            {renderOrderCard(order)}
+          </React.Fragment>
+        ))
       )}
     </View>
   );
