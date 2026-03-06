@@ -365,7 +365,7 @@ export default function FilesScreen() {
     return { manufacturer, model, year, engine };
   };
 
-  // Try to auto-select vehicle based on filename
+  // Try to auto-select vehicle based on filename (optional feature)
   const tryAutoSelectVehicle = async (filename: string) => {
     const parsed = parseFilenameForVehicle(filename);
     
@@ -374,102 +374,177 @@ export default function FilesScreen() {
       return;
     }
     
-    setLoading(true);
     try {
       // First, get vehicle types and find PKW (most common)
       const typesResponse = await getVehicleTypes();
-      const pkwType = typesResponse.data?.find((t: SelectOption) => 
+      const types = typesResponse.data || [];
+      const pkwType = types.find((t: SelectOption) => 
         t.name.toLowerCase().includes('pkw') || t.name.toLowerCase().includes('car')
-      ) || typesResponse.data?.[0];
+      ) || types[0];
       
-      if (!pkwType) return;
+      if (!pkwType) {
+        console.log('No vehicle type found');
+        return;
+      }
+      
+      setVehicleTypes(types);
+      
+      // Get mdt_id from pkwType
+      const mdtId = pkwType.mdt_id || '1';
       
       // Get manufacturers for this type
-      const manuResponse = await getManufacturers(pkwType.id, pkwType.mdt_id);
-      setManufacturers(manuResponse.data || []);
+      const manuResponse = await getManufacturers(pkwType.id, mdtId);
+      const manuList = manuResponse.data || [];
+      setManufacturers(manuList);
       
       // Find matching manufacturer
-      const matchedManu = manuResponse.data?.find((m: SelectOption) =>
+      const matchedManu = manuList.find((m: SelectOption) =>
         m.name.toLowerCase().includes(parsed.manufacturer!.toLowerCase()) ||
         parsed.manufacturer!.toLowerCase().includes(m.name.toLowerCase())
       );
       
-      if (matchedManu) {
+      if (!matchedManu) {
+        console.log('Manufacturer not found:', parsed.manufacturer);
+        // Still set the vehicle type so user can continue manually
+        setOrderData(prev => ({ 
+          ...prev, 
+          vehicleType: pkwType,
+        }));
+        return;
+      }
+      
+      // Use the manufacturer's mdt_id or fall back
+      const manuMdtId = matchedManu.mdt_id || mdtId;
+      setCurrentMdtId(manuMdtId);
+      
+      // Get models for this manufacturer
+      const modelsResponse = await getModels(matchedManu.id, manuMdtId);
+      const modelsList = modelsResponse.data || [];
+      setModels(modelsList);
+      
+      // Try to find matching model
+      let matchedModel = null;
+      if (parsed.model && modelsList.length > 0) {
+        // Try exact match first
+        matchedModel = modelsList.find((m: SelectOption) =>
+          m.name.toLowerCase() === parsed.model!.toLowerCase()
+        );
+        
+        // If no exact match, try partial match
+        if (!matchedModel) {
+          matchedModel = modelsList.find((m: SelectOption) =>
+            m.name.toLowerCase().startsWith(parsed.model!.toLowerCase()) ||
+            m.name.toLowerCase().includes(parsed.model!.toLowerCase())
+          );
+        }
+      }
+      
+      if (!matchedModel) {
+        console.log('Model not found:', parsed.model);
         setOrderData(prev => ({ 
           ...prev, 
           vehicleType: pkwType,
           manufacturer: matchedManu,
-          model: null,
-          built: null,
-          engine: null,
-          stage: null
         }));
-        setCurrentMdtId(matchedManu.mdt_id || null);
         
-        // Get models for this manufacturer
-        const modelsResponse = await getModels(matchedManu.id, matchedManu.mdt_id);
-        setModels(modelsResponse.data || []);
+        Alert.alert(
+          language === 'de' ? 'Fahrzeug teilweise erkannt' : 'Vehicle partially detected',
+          language === 'de' 
+            ? `Erkannt: ${parsed.manufacturer}\n\nBitte wählen Sie das Modell manuell aus.`
+            : `Detected: ${parsed.manufacturer}\n\nPlease select the model manually.`
+        );
+        return;
+      }
+      
+      // Get builts for this model
+      const modelMdtId = matchedModel.mdt_id || manuMdtId;
+      const builtsResponse = await getBuilts(matchedModel.id, modelMdtId);
+      const builtsList = builtsResponse.data || [];
+      setBuilts(builtsList);
+      
+      // Try to find matching year
+      let matchedBuilt = null;
+      if (parsed.year && builtsList.length > 0) {
+        matchedBuilt = builtsList.find((b: SelectOption) =>
+          b.name.includes(parsed.year!)
+        );
+      }
+      
+      if (!matchedBuilt) {
+        console.log('Year not found:', parsed.year);
+        setOrderData(prev => ({ 
+          ...prev, 
+          vehicleType: pkwType,
+          manufacturer: matchedManu,
+          model: matchedModel,
+        }));
         
-        // Try to find matching model
-        if (parsed.model && modelsResponse.data) {
-          const matchedModel = modelsResponse.data.find((m: SelectOption) =>
-            m.name.toLowerCase().includes(parsed.model!.toLowerCase()) ||
-            parsed.model!.toLowerCase().includes(m.name.toLowerCase())
-          );
-          
-          if (matchedModel) {
-            setOrderData(prev => ({ ...prev, model: matchedModel }));
-            
-            // Get builts for this model
-            const builtsResponse = await getBuilts(matchedModel.id, matchedModel.mdt_id);
-            setBuilts(builtsResponse.data || []);
-            
-            // Try to find matching year
-            if (parsed.year && builtsResponse.data) {
-              const matchedBuilt = builtsResponse.data.find((b: SelectOption) =>
-                b.name.includes(parsed.year!)
-              );
-              
-              if (matchedBuilt) {
-                setOrderData(prev => ({ ...prev, built: matchedBuilt }));
-                
-                // Get engines for this built
-                const enginesResponse = await getEngines(matchedBuilt.id, matchedBuilt.mdt_id);
-                setEngines(enginesResponse.data || []);
-                
-                // Try to find matching engine
-                if (parsed.engine && enginesResponse.data) {
-                  const matchedEngine = enginesResponse.data.find((e: SelectOption) =>
-                    e.name.toLowerCase().includes(parsed.engine!.toLowerCase()) ||
-                    parsed.engine!.toLowerCase().includes(e.name.split(' ')[0].toLowerCase())
-                  );
-                  
-                  if (matchedEngine) {
-                    setOrderData(prev => ({ ...prev, engine: matchedEngine }));
-                    
-                    // Get stages for this engine
-                    const stagesResponse = await getStages(matchedEngine.id, matchedEngine.mdt_id);
-                    setStages(stagesResponse.data || []);
-                  }
-                }
-              }
-            }
-          }
-        }
+        Alert.alert(
+          language === 'de' ? 'Fahrzeug teilweise erkannt' : 'Vehicle partially detected',
+          language === 'de' 
+            ? `Erkannt: ${parsed.manufacturer} ${parsed.model}\n\nBitte wählen Sie das Baujahr manuell aus.`
+            : `Detected: ${parsed.manufacturer} ${parsed.model}\n\nPlease select the build year manually.`
+        );
+        return;
+      }
+      
+      // Get engines for this built
+      const builtMdtId = matchedBuilt.mdt_id || modelMdtId;
+      const enginesResponse = await getEngines(matchedBuilt.id, builtMdtId);
+      const enginesList = enginesResponse.data || [];
+      setEngines(enginesList);
+      
+      // Try to find matching engine
+      let matchedEngine = null;
+      if (parsed.engine && enginesList.length > 0) {
+        matchedEngine = enginesList.find((e: SelectOption) =>
+          e.name.toLowerCase().includes(parsed.engine!.toLowerCase().split(' ')[0])
+        );
+      }
+      
+      if (!matchedEngine) {
+        setOrderData(prev => ({ 
+          ...prev, 
+          vehicleType: pkwType,
+          manufacturer: matchedManu,
+          model: matchedModel,
+          built: matchedBuilt,
+        }));
         
-        // Show success message
-        const detectedParts = [parsed.manufacturer, parsed.model, parsed.year].filter(Boolean).join(' ');
         Alert.alert(
           language === 'de' ? 'Fahrzeug erkannt' : 'Vehicle detected',
           language === 'de' 
-            ? `Erkannt: ${detectedParts}\n\nBitte überprüfen und ergänzen Sie die Auswahl.`
-            : `Detected: ${detectedParts}\n\nPlease verify and complete the selection.`
+            ? `Erkannt: ${parsed.manufacturer} ${parsed.model} ${parsed.year}\n\nBitte wählen Sie den Motor manuell aus.`
+            : `Detected: ${parsed.manufacturer} ${parsed.model} ${parsed.year}\n\nPlease select the engine manually.`
         );
+        return;
       }
+      
+      // Get stages for this engine
+      const engineMdtId = matchedEngine.mdt_id || builtMdtId;
+      const stagesResponse = await getStages(matchedEngine.id, engineMdtId);
+      setStages(stagesResponse.data || []);
+      
+      // Set all found values
+      setOrderData(prev => ({ 
+        ...prev, 
+        vehicleType: pkwType,
+        manufacturer: matchedManu,
+        model: matchedModel,
+        built: matchedBuilt,
+        engine: matchedEngine,
+      }));
+      
+      Alert.alert(
+        language === 'de' ? 'Fahrzeug erkannt!' : 'Vehicle detected!',
+        language === 'de' 
+          ? `Erkannt: ${parsed.manufacturer} ${parsed.model} ${parsed.year}\n\nBitte wählen Sie nur noch die Tuning-Stufe aus.`
+          : `Detected: ${parsed.manufacturer} ${parsed.model} ${parsed.year}\n\nPlease just select the tuning stage.`
+      );
+      
     } catch (error) {
-      console.error('Error auto-selecting vehicle:', error);
-    } finally {
-      setLoading(false);
+      console.error('Error in auto-select vehicle:', error);
+      // Don't show error to user, just let them select manually
     }
   };
 
