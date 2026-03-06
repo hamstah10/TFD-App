@@ -397,7 +397,11 @@ async def verify_token_and_get_customer(authorization: str) -> dict:
             response = await http_client.get(url, headers={"Authorization": authorization})
             if response.status_code == 200:
                 result = response.json()
-                # CRM API returns data in a "data" wrapper
+                logger.info(f"CRM /auth/me response: {result}")
+                # CRM API returns data in a "customer" wrapper
+                if "customer" in result:
+                    return result["customer"]
+                # Fallback for "data" wrapper
                 if "data" in result:
                     return result["data"]
                 return result
