@@ -1699,6 +1699,53 @@ async def webhook_order_created(request: Request):
             )
             logger.info(f"Sent push notification for order {order_id} to customer {customer_id}")
     
+    elif event == "order.status_changed":
+        customer_id = data.get("customerId")
+        order_id = data.get("orderId")
+        old_status = data.get("oldStatus", "")
+        new_status = data.get("newStatus") or data.get("status", "")
+        
+        # Status translations for German notifications
+        status_messages = {
+            "eingegangen": "eingegangen",
+            "in_bearbeitung": "in Bearbeitung",
+            "in bearbeitung": "in Bearbeitung",
+            "fertig": "fertig",
+            "abgeschlossen": "abgeschlossen",
+            "storniert": "storniert",
+            "pending": "ausstehend",
+            "processing": "in Bearbeitung",
+            "completed": "fertig",
+            "cancelled": "storniert",
+        }
+        
+        status_display = status_messages.get(new_status.lower(), new_status) if new_status else "aktualisiert"
+        
+        if customer_id:
+            await send_push_to_customer(
+                customer_id=customer_id,
+                title="Auftragsstatus geändert",
+                body=f"Auftrag #{order_id} ist jetzt: {status_display}",
+                data={
+                    "type": "order_update",
+                    "orderId": str(order_id),
+                    "oldStatus": old_status,
+                    "newStatus": new_status,
+                    "status": "status_changed"
+                },
+                channel_id="orders"
+            )
+            logger.info(f"Sent status change notification for order {order_id} to customer {customer_id}: {new_status}")
+            
+            # Also update local order if it exists
+            try:
+                await db.orders.update_one(
+                    {"crmOrderId": order_id},
+                    {"$set": {"status": new_status, "updatedAt": datetime.now(timezone.utc).isoformat()}}
+                )
+            except Exception as e:
+                logger.warning(f"Could not update local order status: {e}")
+    
     return {"status": "ok", "event": event}
 
 @api_router.post("/webhooks/crm/ticket")
