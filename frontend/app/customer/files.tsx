@@ -284,6 +284,195 @@ export default function FilesScreen() {
     setOrderData(prev => ({ ...prev, stage }));
   };
 
+  // Parse filename to extract vehicle information
+  const parseFilenameForVehicle = (filename: string): { manufacturer?: string; model?: string; year?: string; engine?: string } => {
+    // Remove file extension
+    const nameWithoutExt = filename.replace(/\.[^/.]+$/, '');
+    
+    // Replace underscores and common separators with spaces
+    const normalized = nameWithoutExt
+      .replace(/_/g, ' ')
+      .replace(/-/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    // Common patterns in tuning file names:
+    // "Audi A6 2011 (C7) 3.0 TDI EU6 (FWD) 218 hp Bosch EDC17CP54 OBD VR"
+    // "BMW 320i 2020 Stage1"
+    // "VW Golf 7 2.0 TDI"
+    
+    const parts = normalized.split(' ');
+    
+    // Known manufacturers
+    const knownManufacturers = [
+      'Audi', 'BMW', 'Mercedes', 'VW', 'Volkswagen', 'Porsche', 'Seat', 'Skoda',
+      'Ford', 'Opel', 'Peugeot', 'Renault', 'Citroen', 'Fiat', 'Alfa', 'Hyundai',
+      'Kia', 'Toyota', 'Honda', 'Nissan', 'Mazda', 'Volvo', 'Jaguar', 'Land',
+      'Mini', 'Smart', 'Jeep', 'Dodge', 'Chevrolet', 'Tesla', 'Lexus', 'Infiniti',
+      'Mitsubishi', 'Subaru', 'Suzuki', 'Dacia', 'Cupra', 'DS'
+    ];
+    
+    let manufacturer: string | undefined;
+    let model: string | undefined;
+    let year: string | undefined;
+    let engine: string | undefined;
+    
+    // Find manufacturer
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      const matchedManu = knownManufacturers.find(m => 
+        m.toLowerCase() === part.toLowerCase()
+      );
+      if (matchedManu) {
+        manufacturer = matchedManu;
+        // Model is usually the next part(s)
+        if (i + 1 < parts.length) {
+          // Check if next part is a model name (not a year)
+          const nextPart = parts[i + 1];
+          if (!/^\d{4}$/.test(nextPart) && !/^\(\w+\)$/.test(nextPart)) {
+            model = nextPart;
+          }
+        }
+        break;
+      }
+    }
+    
+    // Find year (4 digit number between 1990 and 2030)
+    for (const part of parts) {
+      const yearMatch = part.match(/^(19\d{2}|20[0-3]\d)$/);
+      if (yearMatch) {
+        year = yearMatch[1];
+        break;
+      }
+    }
+    
+    // Find engine info (patterns like "2.0 TDI", "3.0 TFSI", "320i", "2.0T")
+    const enginePatterns = [
+      /(\d+\.\d+)\s*(TDI|TFSI|TSI|CDI|HDI|CRDI|T|Turbo)/i,
+      /(\d{3}[a-z]?i?)/i, // BMW style like 320i, 330d
+      /(\d+\.\d+)\s*(Diesel|Benzin|Petrol)/i,
+    ];
+    
+    for (const pattern of enginePatterns) {
+      const match = normalized.match(pattern);
+      if (match) {
+        engine = match[0];
+        break;
+      }
+    }
+    
+    console.log('Parsed filename:', { manufacturer, model, year, engine });
+    return { manufacturer, model, year, engine };
+  };
+
+  // Try to auto-select vehicle based on filename
+  const tryAutoSelectVehicle = async (filename: string) => {
+    const parsed = parseFilenameForVehicle(filename);
+    
+    if (!parsed.manufacturer) {
+      console.log('Could not detect manufacturer from filename');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      // First, get vehicle types and find PKW (most common)
+      const typesResponse = await getVehicleTypes();
+      const pkwType = typesResponse.data?.find((t: SelectOption) => 
+        t.name.toLowerCase().includes('pkw') || t.name.toLowerCase().includes('car')
+      ) || typesResponse.data?.[0];
+      
+      if (!pkwType) return;
+      
+      // Get manufacturers for this type
+      const manuResponse = await getManufacturers(pkwType.id, pkwType.mdt_id);
+      setManufacturers(manuResponse.data || []);
+      
+      // Find matching manufacturer
+      const matchedManu = manuResponse.data?.find((m: SelectOption) =>
+        m.name.toLowerCase().includes(parsed.manufacturer!.toLowerCase()) ||
+        parsed.manufacturer!.toLowerCase().includes(m.name.toLowerCase())
+      );
+      
+      if (matchedManu) {
+        setOrderData(prev => ({ 
+          ...prev, 
+          vehicleType: pkwType,
+          manufacturer: matchedManu,
+          model: null,
+          built: null,
+          engine: null,
+          stage: null
+        }));
+        setCurrentMdtId(matchedManu.mdt_id || null);
+        
+        // Get models for this manufacturer
+        const modelsResponse = await getModels(matchedManu.id, matchedManu.mdt_id);
+        setModels(modelsResponse.data || []);
+        
+        // Try to find matching model
+        if (parsed.model && modelsResponse.data) {
+          const matchedModel = modelsResponse.data.find((m: SelectOption) =>
+            m.name.toLowerCase().includes(parsed.model!.toLowerCase()) ||
+            parsed.model!.toLowerCase().includes(m.name.toLowerCase())
+          );
+          
+          if (matchedModel) {
+            setOrderData(prev => ({ ...prev, model: matchedModel }));
+            
+            // Get builts for this model
+            const builtsResponse = await getBuilts(matchedModel.id, matchedModel.mdt_id);
+            setBuilts(builtsResponse.data || []);
+            
+            // Try to find matching year
+            if (parsed.year && builtsResponse.data) {
+              const matchedBuilt = builtsResponse.data.find((b: SelectOption) =>
+                b.name.includes(parsed.year!)
+              );
+              
+              if (matchedBuilt) {
+                setOrderData(prev => ({ ...prev, built: matchedBuilt }));
+                
+                // Get engines for this built
+                const enginesResponse = await getEngines(matchedBuilt.id, matchedBuilt.mdt_id);
+                setEngines(enginesResponse.data || []);
+                
+                // Try to find matching engine
+                if (parsed.engine && enginesResponse.data) {
+                  const matchedEngine = enginesResponse.data.find((e: SelectOption) =>
+                    e.name.toLowerCase().includes(parsed.engine!.toLowerCase()) ||
+                    parsed.engine!.toLowerCase().includes(e.name.split(' ')[0].toLowerCase())
+                  );
+                  
+                  if (matchedEngine) {
+                    setOrderData(prev => ({ ...prev, engine: matchedEngine }));
+                    
+                    // Get stages for this engine
+                    const stagesResponse = await getStages(matchedEngine.id, matchedEngine.mdt_id);
+                    setStages(stagesResponse.data || []);
+                  }
+                }
+              }
+            }
+          }
+        }
+        
+        // Show success message
+        const detectedParts = [parsed.manufacturer, parsed.model, parsed.year].filter(Boolean).join(' ');
+        Alert.alert(
+          language === 'de' ? 'Fahrzeug erkannt' : 'Vehicle detected',
+          language === 'de' 
+            ? `Erkannt: ${detectedParts}\n\nBitte überprüfen und ergänzen Sie die Auswahl.`
+            : `Detected: ${detectedParts}\n\nPlease verify and complete the selection.`
+        );
+      }
+    } catch (error) {
+      console.error('Error auto-selecting vehicle:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handlePickFile = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -349,6 +538,9 @@ export default function FilesScreen() {
             base64: base64Data,
           },
         }));
+        
+        // Try to auto-detect vehicle from filename
+        tryAutoSelectVehicle(file.name);
       }
     } catch (error) {
       console.error('Error picking file:', error);
