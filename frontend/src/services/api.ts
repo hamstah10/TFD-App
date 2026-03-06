@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = process.env.EXPO_PUBLIC_BACKEND_URL;
+const API_BASE = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://chiptuning-app.preview.emergentagent.com';
 
 const api = axios.create({
   baseURL: `${API_BASE}/api`,
