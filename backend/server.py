@@ -1702,24 +1702,18 @@ async def webhook_order_created(request: Request):
     elif event == "order.status_changed":
         customer_id = data.get("customerId")
         order_id = data.get("orderId")
-        old_status = data.get("oldStatus", "")
-        new_status = data.get("newStatus") or data.get("status", "")
+        # Use correct field names from CRM
+        old_status = data.get("previousStatus", "")
+        old_status_label = data.get("previousStatusLabel", "")
+        new_status = data.get("status", "")
+        new_status_label = data.get("statusLabel", "")
+        changed_at = data.get("changedAt", "")
+        source = data.get("source", "")
         
-        # Status translations for German notifications
-        status_messages = {
-            "eingegangen": "eingegangen",
-            "in_bearbeitung": "in Bearbeitung",
-            "in bearbeitung": "in Bearbeitung",
-            "fertig": "fertig",
-            "abgeschlossen": "abgeschlossen",
-            "storniert": "storniert",
-            "pending": "ausstehend",
-            "processing": "in Bearbeitung",
-            "completed": "fertig",
-            "cancelled": "storniert",
-        }
+        # Use the label for display (more user-friendly)
+        status_display = new_status_label or new_status or "aktualisiert"
         
-        status_display = status_messages.get(new_status.lower(), new_status) if new_status else "aktualisiert"
+        logger.info(f"Status change: Order {order_id} from '{old_status_label}' to '{new_status_label}' (source: {source})")
         
         if customer_id:
             await send_push_to_customer(
@@ -1729,19 +1723,24 @@ async def webhook_order_created(request: Request):
                 data={
                     "type": "order_update",
                     "orderId": str(order_id),
-                    "oldStatus": old_status,
-                    "newStatus": new_status,
-                    "status": "status_changed"
+                    "previousStatus": old_status,
+                    "status": new_status,
+                    "statusLabel": new_status_label,
+                    "changedAt": changed_at
                 },
                 channel_id="orders"
             )
-            logger.info(f"Sent status change notification for order {order_id} to customer {customer_id}: {new_status}")
+            logger.info(f"Sent status change notification for order {order_id} to customer {customer_id}: {status_display}")
             
             # Also update local order if it exists
             try:
                 await db.orders.update_one(
                     {"crmOrderId": order_id},
-                    {"$set": {"status": new_status, "updatedAt": datetime.now(timezone.utc).isoformat()}}
+                    {"$set": {
+                        "status": new_status,
+                        "statusLabel": new_status_label,
+                        "updatedAt": changed_at or datetime.now(timezone.utc).isoformat()
+                    }}
                 )
             except Exception as e:
                 logger.warning(f"Could not update local order status: {e}")
