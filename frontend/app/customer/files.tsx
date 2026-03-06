@@ -85,8 +85,9 @@ const SLAVE_MASTER = ['Slave', 'Master'];
 
 type ViewMode = 'newOrder' | 'orders';
 
-const getStatusInfo = (status: string, language: string) => {
+const getStatusInfo = (status: string, language: string, statusLabel?: string) => {
   const statusMap: { [key: string]: { label: string; color: string; icon: string } } = {
+    // English/default statuses
     pending: {
       label: language === 'de' ? 'Ausstehend' : 'Pending',
       color: '#ff9800',
@@ -107,7 +108,48 @@ const getStatusInfo = (status: string, language: string) => {
       color: '#bd1f22',
       icon: 'close-circle',
     },
+    // German/CRM statuses
+    eingegangen: {
+      label: 'Eingegangen',
+      color: '#ff9800',
+      icon: 'time',
+    },
+    in_bearbeitung: {
+      label: 'In Bearbeitung',
+      color: '#2196f3',
+      icon: 'cog',
+    },
+    abgeschlossen: {
+      label: 'Abgeschlossen',
+      color: '#4caf50',
+      icon: 'checkmark-circle',
+    },
+    fertig: {
+      label: 'Fertig',
+      color: '#4caf50',
+      icon: 'checkmark-circle',
+    },
+    abgelehnt: {
+      label: 'Abgelehnt',
+      color: '#bd1f22',
+      icon: 'close-circle',
+    },
+    storniert: {
+      label: 'Storniert',
+      color: '#bd1f22',
+      icon: 'close-circle',
+    },
   };
+  
+  // If we have a statusLabel from CRM, use it
+  if (statusLabel && !statusMap[status]) {
+    return {
+      label: statusLabel,
+      color: '#607d8b', // Default gray for unknown statuses
+      icon: 'information-circle',
+    };
+  }
+  
   return statusMap[status] || statusMap.pending;
 };
 
@@ -1254,7 +1296,7 @@ export default function FilesScreen() {
   );
 
   const renderOrderCard = (order: Order) => {
-    const statusInfo = getStatusInfo(order.status, language);
+    const statusInfo = getStatusInfo(order.status, language, order.statusLabel);
     const isExpanded = expandedOrder === order.id;
 
     return (
