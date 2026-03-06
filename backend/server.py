@@ -1065,7 +1065,7 @@ async def logout(request: Request):
 
 @api_router.post("/orders")
 async def create_order(order: OrderCreate, request: Request):
-    """Create a new order for the authenticated user"""
+    """Create a new order for the authenticated user and forward to CRM"""
     auth_header = request.headers.get("Authorization")
     customer = await verify_token_and_get_customer(auth_header)
     customer_id = customer.get("id")
@@ -1074,13 +1074,15 @@ async def create_order(order: OrderCreate, request: Request):
     order_count = await db.orders.count_documents({"customerId": customer_id})
     order_number = f"TFD-{customer_id}-{order_count + 1:04d}"
     
-    # Create order document
+    created_at = datetime.now(timezone.utc).isoformat()
+    
+    # Create order document for local storage
     order_doc = {
         "orderNumber": order_number,
         "customerId": customer_id,
         "customerEmail": customer.get("email"),
         "companyName": customer.get("companyName"),
-        "createdAt": datetime.now(timezone.utc).isoformat(),
+        "createdAt": created_at,
         "status": "pending",
         "fileName": order.fileName,
         "fileSize": order.fileSize,
@@ -1097,12 +1099,70 @@ async def create_order(order: OrderCreate, request: Request):
         "slaveOrMaster": order.slaveOrMaster,
     }
     
+    # Forward order to CRM API
+    crm_order_payload = {
+        "customerId": customer_id,
+        "customerEmail": customer.get("email"),
+        "fileName": order.fileName,
+        "fileData": order.fileData,
+        "fileSize": order.fileSize,
+        "vehicleType": order.vehicleType,
+        "manufacturer": order.manufacturer,
+        "model": order.model,
+        "built": order.built,
+        "engine": order.engine,
+        "vehicleDisplay": order.vehicleDisplay or "Unbekannt",
+        "tuningTool": order.tuningTool,
+        "method": order.method,
+        "slaveOrMaster": order.slaveOrMaster,
+        "stage": order.stage,
+        "createdAt": created_at,
+        "deviceName": "tuningfiles-app",
+    }
+    
+    crm_order_id = None
+    crm_error = None
+    
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as http_client:
+            crm_response = await http_client.post(
+                f"{CRM_API_BASE}/orders",
+                json=crm_order_payload,
+                headers={
+                    "Authorization": auth_header,
+                    "Content-Type": "application/json"
+                }
+            )
+            
+            if crm_response.status_code in [200, 201]:
+                crm_data = crm_response.json()
+                crm_order_id = crm_data.get("id") or crm_data.get("orderId")
+                order_doc["crmOrderId"] = crm_order_id
+                order_doc["crmSynced"] = True
+                logger.info(f"Order successfully sent to CRM: {crm_order_id}")
+            else:
+                crm_error = f"CRM API returned {crm_response.status_code}: {crm_response.text}"
+                order_doc["crmSynced"] = False
+                order_doc["crmError"] = crm_error
+                logger.error(f"CRM API error: {crm_error}")
+                
+    except httpx.RequestError as e:
+        crm_error = f"CRM API request failed: {str(e)}"
+        order_doc["crmSynced"] = False
+        order_doc["crmError"] = crm_error
+        logger.error(crm_error)
+    
+    # Save to local database
     result = await db.orders.insert_one(order_doc)
     order_doc["id"] = str(result.inserted_id)
     
     # Remove _id and fileData from response
     order_doc.pop("_id", None)
     order_doc.pop("fileData", None)
+    
+    # Add CRM sync status to response
+    if crm_order_id:
+        order_doc["crmOrderId"] = crm_order_id
     
     return order_doc
 
