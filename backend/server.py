@@ -1101,11 +1101,11 @@ async def create_order(order: OrderCreate, request: Request):
     
     # Forward order to CRM API
     crm_order_payload = {
-        "customerId": customer_id,
+        "customerId": int(customer_id),  # Ensure it's an integer
         "customerEmail": customer.get("email"),
         "fileName": order.fileName,
         "fileData": order.fileData,
-        "fileSize": order.fileSize,
+        "fileSize": int(order.fileSize),  # Ensure it's an integer
         "vehicleType": order.vehicleType,
         "manufacturer": order.manufacturer,
         "model": order.model,
