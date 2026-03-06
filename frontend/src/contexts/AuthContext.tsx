@@ -70,21 +70,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const storeAuthData = async (response: LoginResponse) => {
-    const userData: User = {
-      id: response.customer.id,
-      email: response.customer.email,
-      name: response.customer.username,
-      company: response.customer.companyName,
-    };
+    try {
+      const userData: User = {
+        id: response.customer.id,
+        email: response.customer.email,
+        name: response.customer.username,
+        company: response.customer.companyName,
+      };
 
-    // Use individual setItem calls for web compatibility
-    await AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, response.accessToken);
-    await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, response.refreshToken);
-    await AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, response.accessTokenExpiresAt);
-    await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_EXPIRES, response.refreshTokenExpiresAt);
-    await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
+      // Use individual setItem calls for web compatibility
+      await AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, response.accessToken);
+      await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, response.refreshToken);
+      await AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, response.accessTokenExpiresAt);
+      await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_EXPIRES, response.refreshTokenExpiresAt);
+      await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
 
-    setUser(userData);
+      setUser(userData);
+      console.log('Auth data stored successfully');
+    } catch (error) {
+      console.error('Error storing auth data:', error);
+      throw error;
+    }
   };
 
   const clearAuthData = async () => {
