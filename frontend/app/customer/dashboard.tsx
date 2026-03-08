@@ -12,12 +12,14 @@ interface DashboardOrder {
   vehicle: string;
   stage: string;
   status: string;
+  statusLabel?: string;
   createdAt: string;
   progress: number;
 }
 
-const getStatusInfo = (status: string, language: string) => {
+const getStatusInfo = (status: string, language: string, statusLabel?: string) => {
   const statusMap: { [key: string]: { label: string; color: string; icon: string } } = {
+    // English statuses
     pending: {
       label: language === 'de' ? 'Ausstehend' : 'Pending',
       color: '#ff9800',
@@ -48,7 +50,48 @@ const getStatusInfo = (status: string, language: string) => {
       color: '#4caf50',
       icon: 'checkmark-circle-outline',
     },
+    // German/CRM statuses
+    eingegangen: {
+      label: 'Eingegangen',
+      color: '#ff9800',
+      icon: 'time-outline',
+    },
+    in_bearbeitung: {
+      label: 'In Bearbeitung',
+      color: '#2196f3',
+      icon: 'construct-outline',
+    },
+    abgeschlossen: {
+      label: 'Abgeschlossen',
+      color: '#4caf50',
+      icon: 'checkmark-circle-outline',
+    },
+    fertig: {
+      label: 'Fertig',
+      color: '#4caf50',
+      icon: 'checkmark-circle-outline',
+    },
+    abgelehnt: {
+      label: 'Abgelehnt',
+      color: '#bd1f22',
+      icon: 'close-circle-outline',
+    },
+    storniert: {
+      label: 'Storniert',
+      color: '#bd1f22',
+      icon: 'close-circle-outline',
+    },
   };
+  
+  // If we have a statusLabel from CRM and status not in map, use it
+  if (statusLabel && !statusMap[status]) {
+    return {
+      label: statusLabel,
+      color: '#607d8b',
+      icon: 'information-circle-outline',
+    };
+  }
+  
   return statusMap[status] || statusMap.pending;
 };
 
@@ -88,11 +131,12 @@ export default function CustomerDashboard() {
         ]);
         
         const mappedOrders: DashboardOrder[] = apiOrders.map((o: Order) => ({
-          id: o.id,
+          id: o.id || o.orderNumber,
           orderNumber: o.orderNumber,
           vehicle: o.vehicle,
           stage: o.stage,
           status: o.status,
+          statusLabel: o.statusLabel,
           createdAt: o.createdAt ? new Date(o.createdAt).toLocaleDateString('de-DE') : '',
           progress: getProgressFromStatus(o.status),
         }));
