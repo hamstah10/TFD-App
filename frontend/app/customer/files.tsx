@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,14 @@ import {
   Alert,
   ActivityIndicator,
   Platform,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { useAuth } from '../../src/contexts/AuthContext';
+import { useFocusEffect } from 'expo-router';
 import {
   getVehicleTypes,
   getManufacturers,
@@ -47,6 +49,7 @@ interface FileData {
   name: string;
   size: number;
   uri: string;
+  base64?: string;
 }
 
 interface OrderData {
@@ -66,7 +69,8 @@ interface Order {
   id: string;
   orderNumber: string;
   createdAt: string;
-  status: 'pending' | 'processing' | 'completed' | 'cancelled';
+  status: 'pending' | 'processing' | 'completed' | 'cancelled' | string;
+  statusLabel?: string;
   fileName: string;
   vehicle: string;
   stage: string;
@@ -81,8 +85,9 @@ const SLAVE_MASTER = ['Slave', 'Master'];
 
 type ViewMode = 'newOrder' | 'orders';
 
-const getStatusInfo = (status: string, language: string) => {
+const getStatusInfo = (status: string, language: string, statusLabel?: string) => {
   const statusMap: { [key: string]: { label: string; color: string; icon: string } } = {
+    // English/default statuses
     pending: {
       label: language === 'de' ? 'Ausstehend' : 'Pending',
       color: '#ff9800',
@@ -103,7 +108,48 @@ const getStatusInfo = (status: string, language: string) => {
       color: '#bd1f22',
       icon: 'close-circle',
     },
+    // German/CRM statuses
+    eingegangen: {
+      label: 'Eingegangen',
+      color: '#ff9800',
+      icon: 'time',
+    },
+    in_bearbeitung: {
+      label: 'In Bearbeitung',
+      color: '#2196f3',
+      icon: 'cog',
+    },
+    abgeschlossen: {
+      label: 'Abgeschlossen',
+      color: '#4caf50',
+      icon: 'checkmark-circle',
+    },
+    fertig: {
+      label: 'Fertig',
+      color: '#4caf50',
+      icon: 'checkmark-circle',
+    },
+    abgelehnt: {
+      label: 'Abgelehnt',
+      color: '#bd1f22',
+      icon: 'close-circle',
+    },
+    storniert: {
+      label: 'Storniert',
+      color: '#bd1f22',
+      icon: 'close-circle',
+    },
   };
+  
+  // If we have a statusLabel from CRM, use it
+  if (statusLabel && !statusMap[status]) {
+    return {
+      label: statusLabel,
+      color: '#607d8b', // Default gray for unknown statuses
+      icon: 'information-circle',
+    };
+  }
+  
   return statusMap[status] || statusMap.pending;
 };
 
@@ -117,6 +163,7 @@ export default function FilesScreen() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [ordersLoading, setOrdersLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Order data
   const [orderData, setOrderData] = useState<OrderData>({
@@ -146,6 +193,13 @@ export default function FilesScreen() {
     loadOrders();
   }, []);
 
+  // Refresh orders when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      loadOrders();
+    }, [])
+  );
+
   const loadOrders = async () => {
     setOrdersLoading(true);
     try {
@@ -158,6 +212,7 @@ export default function FilesScreen() {
           orderNumber: o.orderNumber,
           createdAt: o.createdAt,
           status: o.status as Order['status'],
+          statusLabel: o.statusLabel,
           fileName: o.fileName,
           vehicle: o.vehicle,
           stage: o.stage,
@@ -173,6 +228,13 @@ export default function FilesScreen() {
       setOrdersLoading(false);
     }
   };
+
+  // Pull-to-refresh handler
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadOrders();
+    setRefreshing(false);
+  }, []);
 
   // Load vehicle types on step 3
   useEffect(() => {
@@ -283,6 +345,270 @@ export default function FilesScreen() {
     setOrderData(prev => ({ ...prev, stage }));
   };
 
+  // Parse filename to extract vehicle information
+  const parseFilenameForVehicle = (filename: string): { manufacturer?: string; model?: string; year?: string; engine?: string } => {
+    // Remove file extension
+    const nameWithoutExt = filename.replace(/\.[^/.]+$/, '');
+    
+    // Replace underscores and common separators with spaces
+    const normalized = nameWithoutExt
+      .replace(/_/g, ' ')
+      .replace(/-/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    // Common patterns in tuning file names:
+    // "Audi A6 2011 (C7) 3.0 TDI EU6 (FWD) 218 hp Bosch EDC17CP54 OBD VR"
+    // "BMW 320i 2020 Stage1"
+    // "VW Golf 7 2.0 TDI"
+    
+    const parts = normalized.split(' ');
+    
+    // Known manufacturers
+    const knownManufacturers = [
+      'Audi', 'BMW', 'Mercedes', 'VW', 'Volkswagen', 'Porsche', 'Seat', 'Skoda',
+      'Ford', 'Opel', 'Peugeot', 'Renault', 'Citroen', 'Fiat', 'Alfa', 'Hyundai',
+      'Kia', 'Toyota', 'Honda', 'Nissan', 'Mazda', 'Volvo', 'Jaguar', 'Land',
+      'Mini', 'Smart', 'Jeep', 'Dodge', 'Chevrolet', 'Tesla', 'Lexus', 'Infiniti',
+      'Mitsubishi', 'Subaru', 'Suzuki', 'Dacia', 'Cupra', 'DS'
+    ];
+    
+    let manufacturer: string | undefined;
+    let model: string | undefined;
+    let year: string | undefined;
+    let engine: string | undefined;
+    
+    // Find manufacturer
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      const matchedManu = knownManufacturers.find(m => 
+        m.toLowerCase() === part.toLowerCase()
+      );
+      if (matchedManu) {
+        manufacturer = matchedManu;
+        // Model is usually the next part(s)
+        if (i + 1 < parts.length) {
+          // Check if next part is a model name (not a year)
+          const nextPart = parts[i + 1];
+          if (!/^\d{4}$/.test(nextPart) && !/^\(\w+\)$/.test(nextPart)) {
+            model = nextPart;
+          }
+        }
+        break;
+      }
+    }
+    
+    // Find year (4 digit number between 1990 and 2030)
+    for (const part of parts) {
+      const yearMatch = part.match(/^(19\d{2}|20[0-3]\d)$/);
+      if (yearMatch) {
+        year = yearMatch[1];
+        break;
+      }
+    }
+    
+    // Find engine info (patterns like "2.0 TDI", "3.0 TFSI", "320i", "2.0T")
+    const enginePatterns = [
+      /(\d+\.\d+)\s*(TDI|TFSI|TSI|CDI|HDI|CRDI|T|Turbo)/i,
+      /(\d{3}[a-z]?i?)/i, // BMW style like 320i, 330d
+      /(\d+\.\d+)\s*(Diesel|Benzin|Petrol)/i,
+    ];
+    
+    for (const pattern of enginePatterns) {
+      const match = normalized.match(pattern);
+      if (match) {
+        engine = match[0];
+        break;
+      }
+    }
+    
+    console.log('Parsed filename:', { manufacturer, model, year, engine });
+    return { manufacturer, model, year, engine };
+  };
+
+  // Try to auto-select vehicle based on filename (optional feature)
+  const tryAutoSelectVehicle = async (filename: string) => {
+    const parsed = parseFilenameForVehicle(filename);
+    
+    if (!parsed.manufacturer) {
+      console.log('Could not detect manufacturer from filename');
+      return;
+    }
+    
+    try {
+      // First, get vehicle types and find PKW (most common)
+      const typesResponse = await getVehicleTypes();
+      const types = typesResponse.data || [];
+      const pkwType = types.find((t: SelectOption) => 
+        t.name.toLowerCase().includes('pkw') || t.name.toLowerCase().includes('car')
+      ) || types[0];
+      
+      if (!pkwType) {
+        console.log('No vehicle type found');
+        return;
+      }
+      
+      setVehicleTypes(types);
+      
+      // Get mdt_id from pkwType
+      const mdtId = pkwType.mdt_id || '1';
+      
+      // Get manufacturers for this type
+      const manuResponse = await getManufacturers(pkwType.id, mdtId);
+      const manuList = manuResponse.data || [];
+      setManufacturers(manuList);
+      
+      // Find matching manufacturer
+      const matchedManu = manuList.find((m: SelectOption) =>
+        m.name.toLowerCase().includes(parsed.manufacturer!.toLowerCase()) ||
+        parsed.manufacturer!.toLowerCase().includes(m.name.toLowerCase())
+      );
+      
+      if (!matchedManu) {
+        console.log('Manufacturer not found:', parsed.manufacturer);
+        // Still set the vehicle type so user can continue manually
+        setOrderData(prev => ({ 
+          ...prev, 
+          vehicleType: pkwType,
+        }));
+        return;
+      }
+      
+      // Use the manufacturer's mdt_id or fall back
+      const manuMdtId = matchedManu.mdt_id || mdtId;
+      setCurrentMdtId(manuMdtId);
+      
+      // Get models for this manufacturer
+      const modelsResponse = await getModels(matchedManu.id, manuMdtId);
+      const modelsList = modelsResponse.data || [];
+      setModels(modelsList);
+      
+      // Try to find matching model
+      let matchedModel = null;
+      if (parsed.model && modelsList.length > 0) {
+        // Try exact match first
+        matchedModel = modelsList.find((m: SelectOption) =>
+          m.name.toLowerCase() === parsed.model!.toLowerCase()
+        );
+        
+        // If no exact match, try partial match
+        if (!matchedModel) {
+          matchedModel = modelsList.find((m: SelectOption) =>
+            m.name.toLowerCase().startsWith(parsed.model!.toLowerCase()) ||
+            m.name.toLowerCase().includes(parsed.model!.toLowerCase())
+          );
+        }
+      }
+      
+      if (!matchedModel) {
+        console.log('Model not found:', parsed.model);
+        setOrderData(prev => ({ 
+          ...prev, 
+          vehicleType: pkwType,
+          manufacturer: matchedManu,
+        }));
+        
+        Alert.alert(
+          language === 'de' ? 'Fahrzeug teilweise erkannt' : 'Vehicle partially detected',
+          language === 'de' 
+            ? `Erkannt: ${parsed.manufacturer}\n\nBitte wählen Sie das Modell manuell aus.`
+            : `Detected: ${parsed.manufacturer}\n\nPlease select the model manually.`
+        );
+        return;
+      }
+      
+      // Get builts for this model
+      const modelMdtId = matchedModel.mdt_id || manuMdtId;
+      const builtsResponse = await getBuilts(matchedModel.id, modelMdtId);
+      const builtsList = builtsResponse.data || [];
+      setBuilts(builtsList);
+      
+      // Try to find matching year
+      let matchedBuilt = null;
+      if (parsed.year && builtsList.length > 0) {
+        matchedBuilt = builtsList.find((b: SelectOption) =>
+          b.name.includes(parsed.year!)
+        );
+      }
+      
+      if (!matchedBuilt) {
+        console.log('Year not found:', parsed.year);
+        setOrderData(prev => ({ 
+          ...prev, 
+          vehicleType: pkwType,
+          manufacturer: matchedManu,
+          model: matchedModel,
+        }));
+        
+        Alert.alert(
+          language === 'de' ? 'Fahrzeug teilweise erkannt' : 'Vehicle partially detected',
+          language === 'de' 
+            ? `Erkannt: ${parsed.manufacturer} ${parsed.model}\n\nBitte wählen Sie das Baujahr manuell aus.`
+            : `Detected: ${parsed.manufacturer} ${parsed.model}\n\nPlease select the build year manually.`
+        );
+        return;
+      }
+      
+      // Get engines for this built
+      const builtMdtId = matchedBuilt.mdt_id || modelMdtId;
+      const enginesResponse = await getEngines(matchedBuilt.id, builtMdtId);
+      const enginesList = enginesResponse.data || [];
+      setEngines(enginesList);
+      
+      // Try to find matching engine
+      let matchedEngine = null;
+      if (parsed.engine && enginesList.length > 0) {
+        matchedEngine = enginesList.find((e: SelectOption) =>
+          e.name.toLowerCase().includes(parsed.engine!.toLowerCase().split(' ')[0])
+        );
+      }
+      
+      if (!matchedEngine) {
+        setOrderData(prev => ({ 
+          ...prev, 
+          vehicleType: pkwType,
+          manufacturer: matchedManu,
+          model: matchedModel,
+          built: matchedBuilt,
+        }));
+        
+        Alert.alert(
+          language === 'de' ? 'Fahrzeug erkannt' : 'Vehicle detected',
+          language === 'de' 
+            ? `Erkannt: ${parsed.manufacturer} ${parsed.model} ${parsed.year}\n\nBitte wählen Sie den Motor manuell aus.`
+            : `Detected: ${parsed.manufacturer} ${parsed.model} ${parsed.year}\n\nPlease select the engine manually.`
+        );
+        return;
+      }
+      
+      // Get stages for this engine
+      const engineMdtId = matchedEngine.mdt_id || builtMdtId;
+      const stagesResponse = await getStages(matchedEngine.id, engineMdtId);
+      setStages(stagesResponse.data || []);
+      
+      // Set all found values
+      setOrderData(prev => ({ 
+        ...prev, 
+        vehicleType: pkwType,
+        manufacturer: matchedManu,
+        model: matchedModel,
+        built: matchedBuilt,
+        engine: matchedEngine,
+      }));
+      
+      Alert.alert(
+        language === 'de' ? 'Fahrzeug erkannt!' : 'Vehicle detected!',
+        language === 'de' 
+          ? `Erkannt: ${parsed.manufacturer} ${parsed.model} ${parsed.year}\n\nBitte wählen Sie nur noch die Tuning-Stufe aus.`
+          : `Detected: ${parsed.manufacturer} ${parsed.model} ${parsed.year}\n\nPlease just select the tuning stage.`
+      );
+      
+    } catch (error) {
+      console.error('Error in auto-select vehicle:', error);
+      // Don't show error to user, just let them select manually
+    }
+  };
+
   const handlePickFile = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -292,14 +618,65 @@ export default function FilesScreen() {
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const file = result.assets[0];
+        
+        // Read file as base64 immediately after picking
+        let base64Data = '';
+        try {
+          if (Platform.OS === 'web') {
+            // For web, fetch the file and convert to base64
+            const response = await fetch(file.uri);
+            const blob = await response.blob();
+            base64Data = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                const result = reader.result as string;
+                // Remove data URL prefix if present
+                const base64 = result.includes(',') ? result.split(',')[1] : result;
+                resolve(base64);
+              };
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+            });
+          } else {
+            // For native (iOS/Android), use FileSystem
+            base64Data = await FileSystem.readAsStringAsync(file.uri, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
+          }
+          console.log('File read successfully, base64 length:', base64Data.length);
+        } catch (readError) {
+          console.error('Error reading file as base64:', readError);
+          Alert.alert(
+            language === 'de' ? 'Fehler' : 'Error',
+            language === 'de' 
+              ? 'Die Datei konnte nicht gelesen werden. Bitte versuchen Sie es mit einer anderen Datei.'
+              : 'The file could not be read. Please try with a different file.'
+          );
+          return;
+        }
+        
+        if (!base64Data || base64Data.trim() === '') {
+          Alert.alert(
+            language === 'de' ? 'Fehler' : 'Error',
+            language === 'de' 
+              ? 'Die Datei ist leer oder konnte nicht gelesen werden.'
+              : 'The file is empty or could not be read.'
+          );
+          return;
+        }
+        
         setOrderData(prev => ({
           ...prev,
           file: {
             name: file.name,
             size: file.size || 0,
             uri: file.uri,
+            base64: base64Data,
           },
         }));
+        
+        // Try to auto-detect vehicle from filename
+        tryAutoSelectVehicle(file.name);
       }
     } catch (error) {
       console.error('Error picking file:', error);
@@ -352,22 +729,58 @@ export default function FilesScreen() {
     setSubmitting(true);
     try {
       const token = await getAccessToken();
+      console.log('Got token for order:', token ? token.substring(0, 20) + '...' : 'NULL');
       if (!token) {
-        throw new Error('Not authenticated');
+        Alert.alert(
+          language === 'de' ? 'Fehler' : 'Error',
+          language === 'de' ? 'Sitzung abgelaufen. Bitte erneut anmelden.' : 'Session expired. Please login again.'
+        );
+        setSubmitting(false);
+        return;
       }
 
-      // Read file as base64
-      let fileData = '';
-      if (orderData.file.uri) {
+      // Use the base64 data that was read when the file was picked
+      let fileData = orderData.file.base64 || '';
+      
+      // If base64 wasn't stored, try to read it now (fallback)
+      if (!fileData && orderData.file.uri) {
         try {
-          fileData = await FileSystem.readAsStringAsync(orderData.file.uri, {
-            encoding: FileSystem.EncodingType.Base64,
-          });
+          if (Platform.OS === 'web') {
+            const response = await fetch(orderData.file.uri);
+            const blob = await response.blob();
+            fileData = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                const result = reader.result as string;
+                const base64 = result.includes(',') ? result.split(',')[1] : result;
+                resolve(base64);
+              };
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+            });
+          } else {
+            fileData = await FileSystem.readAsStringAsync(orderData.file.uri, {
+              encoding: FileSystem.EncodingType.Base64,
+            });
+          }
         } catch (e) {
-          // For web, the file might already be in a different format
-          console.log('File read error, using empty data:', e);
+          console.error('Fallback file read error:', e);
         }
       }
+      
+      // Validate fileData is not empty
+      if (!fileData || fileData.trim() === '') {
+        Alert.alert(
+          language === 'de' ? 'Fehler' : 'Error',
+          language === 'de' 
+            ? 'Die Datei konnte nicht gelesen werden. Bitte wählen Sie die Datei erneut aus.'
+            : 'The file could not be read. Please select the file again.'
+        );
+        setSubmitting(false);
+        return;
+      }
+      
+      console.log('File data length:', fileData.length);
 
       // Build vehicle display string
       const vehicleParts = [
@@ -883,7 +1296,7 @@ export default function FilesScreen() {
   );
 
   const renderOrderCard = (order: Order) => {
-    const statusInfo = getStatusInfo(order.status, language);
+    const statusInfo = getStatusInfo(order.status, language, order.statusLabel);
     const isExpanded = expandedOrder === order.id;
 
     return (
@@ -1006,13 +1419,28 @@ export default function FilesScreen() {
           </Text>
         </View>
       ) : (
-        orders.map(renderOrderCard)
+        orders.map((order) => (
+          <React.Fragment key={order.id || order.orderNumber}>
+            {renderOrderCard(order)}
+          </React.Fragment>
+        ))
       )}
     </View>
   );
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView 
+      style={styles.container} 
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={['#bd1f22']}
+          tintColor="#bd1f22"
+        />
+      }
+    >
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>

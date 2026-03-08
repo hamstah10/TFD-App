@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { getOrders, getTickets, Order, Ticket } from '../../src/services/api';
@@ -67,6 +68,7 @@ const getProgressFromStatus = (status: string): number => {
 export default function CustomerDashboard() {
   const { language } = useLanguage();
   const { user, getAccessToken } = useAuth();
+  const router = useRouter();
   const [orders, setOrders] = useState<DashboardOrder[]>([]);
   const [openTickets, setOpenTickets] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -150,7 +152,7 @@ export default function CustomerDashboard() {
           <Text style={styles.sectionTitle}>
             {language === 'de' ? 'Aktuelle Aufträge' : 'Current Orders'}
           </Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/customer/files')}>
             <Text style={styles.viewAllText}>
               {language === 'de' ? 'Alle anzeigen' : 'View All'}
             </Text>
@@ -169,10 +171,10 @@ export default function CustomerDashboard() {
             </Text>
           </View>
         ) : (
-          activeOrders.map((order) => {
+          activeOrders.map((order, index) => {
             const statusInfo = getStatusInfo(order.status, language);
             return (
-              <View key={order.id} style={styles.orderCard}>
+              <View key={order.id || order.orderNumber || `order-${index}`} style={styles.orderCard}>
                 <View style={styles.orderHeader}>
                   <View>
                     <Text style={styles.orderId}>{order.orderNumber}</Text>

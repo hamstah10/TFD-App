@@ -1,6 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { authLogin, authRefresh, authLogout, LoginResponse } from '../services/api';
+import { 
+  registerForPushNotificationsAsync, 
+  registerPushTokenWithBackend,
+  unregisterPushToken 
+} from '../services/notifications';
 
 interface User {
   id: number;
@@ -30,8 +37,34 @@ const STORAGE_KEYS = {
   USER: 'auth_user',
 };
 
+// Helper functions for cross-platform storage
+const storage = {
+  async setItem(key: string, value: string) {
+    if (Platform.OS === 'web') {
+      await AsyncStorage.setItem(key, value);
+    } else {
+      await SecureStore.setItemAsync(key, value);
+    }
+  },
+  async getItem(key: string): Promise<string | null> {
+    if (Platform.OS === 'web') {
+      return await AsyncStorage.getItem(key);
+    } else {
+      return await SecureStore.getItemAsync(key);
+    }
+  },
+  async removeItem(key: string) {
+    if (Platform.OS === 'web') {
+      await AsyncStorage.removeItem(key);
+    } else {
+      await SecureStore.deleteItemAsync(key);
+    }
+  },
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [currentToken, setCurrentToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Load stored auth state on mount
@@ -41,13 +74,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadStoredAuth = async () => {
     try {
-      const storedUser = await AsyncStorage.getItem(STORAGE_KEYS.USER);
-      const accessToken = await AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
-      const refreshToken = await AsyncStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
-      const accessExpires = await AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES);
+      const storedUser = await storage.getItem(STORAGE_KEYS.USER);
+      const accessToken = await storage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+      const refreshToken = await storage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+      const accessExpires = await storage.getItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES);
 
       if (storedUser && accessToken) {
         const parsedUser = JSON.parse(storedUser);
+        setCurrentToken(accessToken);
         
         // Check if access token is expired
         if (accessExpires && new Date(accessExpires) < new Date()) {
@@ -70,40 +104,68 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const storeAuthData = async (response: LoginResponse) => {
-    const userData: User = {
-      id: response.customer.id,
-      email: response.customer.email,
-      name: response.customer.username,
-      company: response.customer.companyName,
-    };
+    try {
+      const userData: User = {
+        id: response.customer.id,
+        email: response.customer.email,
+        name: response.customer.username,
+        company: response.customer.companyName,
+      };
 
-    // Use individual setItem calls for web compatibility
-    await AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, response.accessToken);
-    await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, response.refreshToken);
-    await AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, response.accessTokenExpiresAt);
-    await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_EXPIRES, response.refreshTokenExpiresAt);
-    await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
+      await storage.setItem(STORAGE_KEYS.ACCESS_TOKEN, response.accessToken);
+      await storage.setItem(STORAGE_KEYS.REFRESH_TOKEN, response.refreshToken);
+      await storage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, response.accessTokenExpiresAt);
+      await storage.setItem(STORAGE_KEYS.REFRESH_TOKEN_EXPIRES, response.refreshTokenExpiresAt);
+      await storage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
 
-    setUser(userData);
+      // Also store in state for immediate access (fixes iOS SecureStore async issues)
+      setCurrentToken(response.accessToken);
+      setUser(userData);
+      console.log('Auth data stored successfully, token set in state');
+    } catch (error) {
+      console.error('Error storing auth data:', error);
+      throw error;
+    }
   };
 
   const clearAuthData = async () => {
-    // Use individual removeItem calls for web compatibility
-    await AsyncStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-    await AsyncStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-    await AsyncStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES);
-    await AsyncStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN_EXPIRES);
-    await AsyncStorage.removeItem(STORAGE_KEYS.USER);
-    setUser(null);
+    try {
+      await storage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+      await storage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+      await storage.removeItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES);
+      await storage.removeItem(STORAGE_KEYS.REFRESH_TOKEN_EXPIRES);
+      await storage.removeItem(STORAGE_KEYS.USER);
+      setCurrentToken(null);
+      setUser(null);
+    } catch (error) {
+      console.error('Error clearing auth data:', error);
+    }
   };
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
+      console.log('Attempting login for:', email);
       const response = await authLogin(email, password);
+      console.log('Login successful');
       await storeAuthData(response);
+      
+      // Register for push notifications after successful login
+      try {
+        const expoPushToken = await registerForPushNotificationsAsync();
+        if (expoPushToken && response.accessToken) {
+          await registerPushTokenWithBackend(response.accessToken, expoPushToken);
+          console.log('Push notifications registered');
+        }
+      } catch (pushError) {
+        // Don't fail login if push registration fails
+        console.warn('Push notification registration failed:', pushError);
+      }
+      
       return { success: true };
     } catch (error: any) {
       console.error('Login error:', error);
+      console.error('Error message:', error.message);
+      console.error('Error response:', error.response?.data);
       
       let errorMessage = 'Anmeldung fehlgeschlagen';
       
@@ -115,6 +177,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         errorMessage = 'Server nicht erreichbar. Bitte später erneut versuchen.';
       } else if (error.response?.data?.detail) {
         errorMessage = error.response.data.detail;
+      } else if (error.message?.includes('Network Error')) {
+        errorMessage = 'Netzwerkfehler. Bitte Internetverbindung prüfen.';
+      } else if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Zeitüberschreitung. Bitte erneut versuchen.';
       }
       
       return { success: false, error: errorMessage };
@@ -123,8 +189,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      const accessToken = await AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+      // Use currentToken from state first, fallback to storage
+      const accessToken = currentToken || await storage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
       if (accessToken) {
+        // Unregister push notifications before logout
+        try {
+          await unregisterPushToken(accessToken);
+        } catch (pushError) {
+          console.warn('Push token unregister failed:', pushError);
+        }
         await authLogout(accessToken);
       }
     } catch (error) {
@@ -137,18 +210,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshTokens = async (): Promise<boolean> => {
     try {
-      const refreshToken = await AsyncStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+      const refreshToken = await storage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
       if (!refreshToken) {
         return false;
       }
 
       const response = await authRefresh(refreshToken);
       
-      // Use individual setItem calls for web compatibility
-      await AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, response.accessToken);
-      await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, response.refreshToken);
-      await AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, response.accessTokenExpiresAt);
-      await AsyncStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN_EXPIRES, response.refreshTokenExpiresAt);
+      await storage.setItem(STORAGE_KEYS.ACCESS_TOKEN, response.accessToken);
+      await storage.setItem(STORAGE_KEYS.REFRESH_TOKEN, response.refreshToken);
+      await storage.setItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES, response.accessTokenExpiresAt);
+      await storage.setItem(STORAGE_KEYS.REFRESH_TOKEN_EXPIRES, response.refreshTokenExpiresAt);
+
+      // Update state with new token
+      setCurrentToken(response.accessToken);
+      console.log('Token refreshed and stored in state');
 
       return true;
     } catch (error) {
@@ -159,19 +235,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const getAccessToken = async (): Promise<string | null> => {
-    const accessToken = await AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
-    const accessExpires = await AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES);
+    // First try to get from state (more reliable on iOS)
+    if (currentToken) {
+      const accessExpires = await storage.getItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES);
+      // Check if token is expired
+      if (accessExpires && new Date(accessExpires) < new Date()) {
+        // Try to refresh
+        const refreshed = await refreshTokens();
+        if (refreshed) {
+          // After refresh, currentToken should be updated
+          return currentToken;
+        }
+        return null;
+      }
+      console.log('getAccessToken: returning token from state');
+      return currentToken;
+    }
+    
+    // Fallback to storage
+    const accessToken = await storage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+    const accessExpires = await storage.getItem(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES);
     
     // Check if token is expired
     if (accessExpires && new Date(accessExpires) < new Date()) {
       // Try to refresh
       const refreshed = await refreshTokens();
       if (refreshed) {
-        return await AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+        return currentToken || await storage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
       }
       return null;
     }
     
+    // Update state with the token from storage
+    if (accessToken && !currentToken) {
+      setCurrentToken(accessToken);
+    }
+    
+    console.log('getAccessToken: returning token from storage');
     return accessToken;
   };
 
@@ -181,7 +281,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         isAuthenticated: !!user,
         isLoading,
-        accessToken: null, // We use getAccessToken() for fresh token
+        accessToken: currentToken, // Expose current token directly
         login,
         logout,
         refreshTokens,

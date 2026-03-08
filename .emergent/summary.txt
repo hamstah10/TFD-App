@@ -1,5 +1,4 @@
-<analysis>
-<original_problem_statement>
+<analysis>**original_problem_statement:**
 The user wants to build a mobile app for a chiptuning database, based on the website .
 
 **Initial Product Requirements:**
@@ -11,137 +10,137 @@ The user wants to build a mobile app for a chiptuning database, based on the web
 6.  An admin area to manage content.
 
 **Feature Requests added during development:**
-1.  Change app's color scheme.
-2.  Incorporate a company logo and update it.
-3.  Redesign the vehicle configurator to an animated, sliding grid layout.
-4.  Create a global header with logo and language switch.
-5.  Implement a customer login area with a dashboard.
-6.  Implement an AI assistant in the configurator.
-7.  Add a Fotos (Photos) section for users to upload/take photos.
-8.  Implement a Vehicle Registration Certificate scanner using  API. The flow should be: scan -> see data -> see a matching vehicle stage.
-9.  Make the logo's color dynamic: the -Downloads.com part should turn green when the business is open.
-10. Connect the configurator to the live chiptuning API.
-11. Redesign the Stages view in the configurator to be a detailed table.
-12. Ensure ECU options are displayed correctly.
-13. Implement a multi-step wizard in the Files section of the customer area for uploading tuning files.
-14. Add an Order Overview tab next to the new file upload wizard.
-15. Make UI/UX adjustments: standardize padding, change customer dashboard navigation to icons-only, and finally move it to a fixed bottom tab bar.
-</original_problem_statement>
+1.  Change app's color scheme and incorporate a company logo.
+2.  Redesign the vehicle configurator.
+3.  Create a global header with a dynamic logo and language switch.
+4.  Implement a customer login area with a dashboard, using a real CRM API () for authentication.
+5.  Implement an AI assistant in the configurator.
+6.  Add a Fotos (Photos) section for users to upload/take photos, associated with their account.
+7.  Implement a Vehicle Registration Certificate scanner, saving the scans to the user's account.
+8.  Implement a Tickets system for customer support.
+9.  Implement a multi-step wizard for uploading tuning files, which should create an order in both the local database and the user's external CRM.
+10. Add an Order Overview tab.
+11. Redesign customer navigation to a fixed bottom tab bar.
+12. Add a dynamic clock icon to the header indicating business hours (open/closed).
+13. Adjust opening hours start time to 5:00 AM.
 
 **User's preferred language**: The user primarily communicates in German. The next agent MUST respond in German.
 
 **what currently exists?**
-A full-stack Expo (React Native) and FastAPI application.
-- **Frontend**: An Expo app with .
-    - **Home Page**: Displays welcome message, feature cards, and dynamic opening hours status.
-    - **Configurator**: A multi-step grid-based UI for vehicle selection, now connected to a **live external API**. It includes a detailed Stages view with a comparison table, and displays ECUs and their options.
-    - **Customer Portal**: A protected area with login.
-        - **Dashboard**: Navigation has been changed to icons-only and is being moved to the bottom.
-        - **Files**: A tabbed view with a multi-step New Order wizard for file uploads and a mock Order Overview list.
-        - **Photos**: A page for uploading and viewing photos.
-        - **Scanner**: A page to scan a vehicle registration certificate, which proxies the request to an external API and displays the results. It has a mock data fallback.
-    - **Global Layout**: A persistent header with the company logo (which changes color based on business hours) is present on all main screens.
+A full-stack Expo (React Native) and FastAPI application connected to a MongoDB database.
+- **Frontend**: An Expo app using .
+    - **Authentication**: A complete, real authentication flow is implemented against the user's external CRM API (). It uses  to persist access and refresh tokens.
+    - **Customer Portal**: A protected area for logged-in users with a fixed bottom tab bar for navigation.
+        - **Dashboard**: Displays real, user-specific data (orders, files, tickets) fetched from the backend.
+        - **Files**: A tabbed view with a multi-step New Order wizard for file uploads and an Order Overview list showing real orders from the DB.
+        - **Photos**: Allows users to upload and view photos associated with their account.
+        - **Scanner**: Allows users to scan vehicle registration certificates, with scans being saved to their account.
+        - **Tickets**: A functional ticket system where users can create tickets and view them.
+    - **Global Header**: A persistent header with a dynamic logo, a dynamic clock icon indicating business hours, and a language switcher is present on all screens.
 - **Backend**: A FastAPI server with endpoints for:
-    - Proxying requests to the live chiptuning API, adding the necessary IP and token headers.
-    - Proxying requests to the vehicle registration scanner API.
-    - Managing users, blog posts, and photos.
+    - Proxying requests to the  chiptuning API.
+    - Proxying authentication requests (, , , ) to the user's CRM API.
+    - Providing user-specific CRUD operations for , , , and , storing data in MongoDB.
+    - **Forwarding newly created orders to the user's CRM API.**
 
 **Last working item**:
-- Last item agent was working: The user requested to change the customer area's side navigation into a fixed navigation bar at the bottom of the screen.
+- Last item agent was working: The agent was debugging why newly created orders are not being saved in the user's external CRM. The app's backend receives the order creation request but gets a  error when trying to forward it to the CRM API, even though other authenticated requests (like ) work fine. This issue appears to be specific to requests originating from the iOS Expo Go app.
 - Status: IN PROGRESS
 - Agent Testing Done: N
-- Which testing method agent to use? screenshot tool
+- Which testing method agent to use? manual testing by curl
 - User Testing Done: N
 
 **All Pending/In progress Issue list**:
-- Issue 1: (P0) Finalize and test the customer dashboard bottom navigation.
-- Issue 2: (P1) The logout functionality was reported broken. A hook-related error was fixed, but the logout process itself was not re-tested or confirmed to be working.
-- Issue 3: (P2) The chiptuning API connection is fragile. The server's public IP address has changed during development, requiring the user to re-whitelist it. This is a recurring operational risk.
-- Issue 4: (P3) The file upload wizard and order overview are UI-only. The send button does not trigger any backend action, and the order list is mock data.
-- Issue 5: (P4) Deployment readiness check failed with 4 blockers in a previous session. This was never addressed.
+- Issue 1: (P0) Order submission to external CRM fails with .
+- Issue 2: (P1) Login fails on iOS with passwords containing special characters.
+- Issue 3: (P2) The chiptuning API connection is fragile due to the server's dynamic IP address.
+- Issue 4: (P3) Deployment readiness check failed with 4 blockers in a previous session and was never addressed.
 
-Issues Detail:
-- **Issue 1: Customer Dashboard Bottom Navigation**
-    - Attempted fixes: The agent modified  to move the navigation  to the bottom and applied , .
+**Issues Detail:**
+- **Issue 1: CRM Order Submission Failure**
+    - Attempted fixes: The agent added extensive logging and confirmed that for , the  header seems to be missing or invalid when the request originates from the iOS device. The agent suspected an issue with  from  on iOS for POST requests and was planning to work around it by storing the token in the React state as well.
     - Next debug checklist:
-        1. Restart the frontend and take a screenshot of a customer area page (e.g., ).
-        2. Verify that the navigation bar is fixed at the bottom and doesn't scroll with the content.
-        3. Ensure the content area has appropriate padding at the bottom to avoid being obscured by the new nav bar.
-        4. Test navigation between the customer area tabs.
-    - Why fix this issue and what will be achieved with the fix?: This implements a direct user request for a more mobile-native UI in the customer portal.
+        1. Review the proposed fix in  to also store the token in the state.
+        2. Apply the fix and test the order creation flow again from the iOS device.
+        3. Add more client-side logging in  inside the  function to log the exact token being sent.
+        4. Verify that the  header is correctly formatted and present in the failing request.
+    - Why fix this issue and what will be achieved with the fix?: This is a critical part of the user's workflow. Fixing it will complete the order management feature.
     - Status: IN PROGRESS
-    - Is recurring issue?: N
-    - Should Test frontend/backend/both after fix?: Frontend
+    - Is recurring issue?: Y
+    - Should Test frontend/backend/both after fix?: Both
     - Blocked on other issue: None
 
-- **Issue 2: Logout Functionality Verification**
-    - Attempted fixes: The agent fixed a Rendered more hooks than during the previous render error in  by moving the  hook call.
+- **Issue 2: iOS Login with Special Characters Fails**
+    - Attempted fixes: The user confirmed the issue by changing their password to one without special characters, which then worked. The agent suspected an encoding issue with special characters () on the iPhone. No code fix was attempted.
     - Next debug checklist:
-        1.  Log into the app.
-        2.  Click the Logout button.
-        3.  Verify that the user is redirected to the login screen ().
-        4.  Verify that the auth token is cleared and accessing a protected route (e.g., ) redirects back to login.
-    - Why fix this issue and what will be achieved with the fix?: A non-working logout is a critical bug in the authentication flow.
-    - Status: TESTING PENDING
+        1. In , within the  function, explicitly log the  and  being sent in the request body.
+        2. Compare the logged password from an iOS device with the one from the web preview to identify any encoding differences.
+        3. Ensure the  header is correctly set to  for the login request.
+        4. If it's an encoding issue, investigate if the request body needs to be manually stringified or handled differently for native builds.
+    - Why fix this issue and what will be achieved with the fix?: Allows users to use secure passwords, which is a basic security requirement.
+    - Status: NOT STARTED
     - Is recurring issue?: N
     - Should Test frontend/backend/both after fix?: Frontend
     - Blocked on other issue: None
 
 - **Issue 3: Chiptuning API IP Fragility**
-    - Attempted fixes: When the API failed, the agent checked its IP, found it had changed, and asked the user to whitelist the new one (). This resolved the issue for now.
-    - Next debug checklist: This is not a code issue but an operational one. The agent should be aware that if the configurator appears empty, the first step is to run 35.225.230.28 and verify the IP against the one the user has whitelisted.
-    - Why fix this issue and what will be achieved with the fix?: Mitigates the main point of failure for the app's core feature. A more permanent solution would involve a static IP for the server, which is outside the agent's control.
+    - Attempted fixes: The agent identified the new IP () and informed the user to whitelist it. This is a recurring manual process.
+    - Next debug checklist: This is an operational issue. The agent should always run 35.184.53.215 as the first step if the vehicle configurator is reported to be empty.
+    - Why fix this issue and what will be achieved with the fix?: Awareness of this issue allows for quick resolution of the app's core feature failing. A permanent fix (static IP) is outside the agent's scope.
     - Status: RESOLVED (for now)
     - Is recurring issue?: Y
     - Should Test frontend/backend/both after fix?: Backend
     - Blocked on other issue: None
 
-- **Issue 4: File Upload Wizard Backend**
-    - Attempted fixes: None. The wizard was created as a UI-only feature.
-    - Next debug checklist:
-        1.  Define a new backend endpoint (e.g., ).
-        2.  The endpoint should accept the file and all the wizard data (tuning tool, method, slave/master, selected vehicle).
-        3.  Update  with a function to call this new endpoint.
-        4.  In , implement the  function to gather all state and call the API service.
-        5.  Implement backend logic to store the order and the file.
-    - Why fix this issue and what will be achieved with the fix?: This will make the file upload wizard a functional feature, which is a key requirement for the customer portal.
+- **Issue 4: Deployment Blockers**
+    - Attempted fixes: None in this or the previous session.
+    - Next debug checklist: Re-run  with  and fix the reported issues.
+    - Why fix this issue and what will be achieved with the fix?: To make the app deployable and allow the user to share a stable version.
     - Status: NOT STARTED
     - Is recurring issue?: N
     - Should Test frontend/backend/both after fix?: Both
     - Blocked on other issue: None
 
 **In progress Task List**:
-- Task 1: (P0) Refactor customer dashboard navigation to a fixed bottom tab bar.
-    - Where to resume: . Test the changes made.
-    - What will be achieved with this?: A more intuitive, mobile-friendly navigation for the customer area.
+- **Task 1: (P0) Fix CRM Order Submission**
+    - Where to resume: . The agent was about to modify the context to hold the access token in the state, as retrieving it from  seems to fail for the order creation POST request on iOS.
+    - What will be achieved with this?: A fully functional order creation process where orders are saved both locally and in the user's external CRM.
     - Status: IN PROGRESS
-    - Should Test frontend/backend/both after fix?: Frontend
+    - Should Test frontend/backend/both after fix?: Both
     - Blocked on something: None
 
 **Upcoming and Future Tasks**
 - **Upcoming Tasks**:
-    - (P0) Implement backend functionality for the New Order file upload wizard (see Issue 4).
-    - (P1) Implement a backend endpoint to fetch real data for the Order Overview tab.
+    - (P1) Fix the iOS login issue with special characters (see Issue 2).
     - (P2) Connect the contact form on the contact page to a backend endpoint.
 - **Future Tasks**:
-    - (P3) Address deployment blockers identified by the .
+    - (P3) Address the 4 deployment blockers (see Issue 4).
+    - (P4) Refactor the monolithic  into smaller, manageable routers.
+    - (P5) Refactor the large  component.
 
 **Completed work in this session**
 - **Recently completed:**
-  - Connected vehicle configurator to the live  API. (DONE)
-  - Implemented Vehicle Registration Certificate Scanner feature. (DONE)
-  - Replaced app logo and made its color dynamic based on business hours. (DONE)
-  - Standardized padding and margins across all pages. (DONE)
-  - Redesigned the Stages view in the configurator with a detailed table. (DONE)
-  - Fixed display of ECU options in the configurator. (DONE)
-  - Resolved a React Hook error that broke the customer area. (DONE)
-  - Implemented a multi-step wizard UI for file uploads. (DONE)
-  - Added a tabbed UI for New Order and Order Overview. (DONE)
-  - Changed customer dashboard navigation to use icons instead of text. (DONE)
+  - **Full CRM Authentication**: Replaced the mock login with a real authentication flow against the user's CRM API (), including token storage with . (DONE)
+  - **User-Specific Data**: Associated all major features (Orders, Photos, Scans, Tickets) with the logged-in user. (DONE)
+  - **Live Dashboard**: The customer dashboard now displays real-time, user-specific data from the database. (DONE)
+  - **Tickets & Scans Backend**: Implemented backend endpoints and frontend logic to create and view support tickets and vehicle scans. (DONE)
+  - **CRM Order Forwarding**: Implemented the backend logic to forward new orders to the user's CRM API (currently failing with a 401 error). (IN PROGRESS)
+  - **UI/UX Refinements**:
+    - Finalized and tested the customer area's bottom tab navigation. (DONE)
+    - Moved the logout button next to the user's name. (DONE)
+    - Added a dynamic clock icon to all main headers to show open/closed status. (DONE)
+    - Unified all red accent colors to match the logo's red (). (DONE)
+    - Changed opening hours to start at 5:00 AM. (DONE)
+    - Fixed the Alle anzeigen button on the dashboard to navigate correctly. (DONE)
+  - **Bug Fixes**:
+    - Fixed and verified the main logout functionality. (DONE)
+    - Fixed a  error on the Photos page. (DONE)
+    - Fixed a backend  import error. (DONE)
+    - Fixed an issue where  was sent as a string instead of an integer to the CRM. (DONE)
 
 **Earlier issues found/mentioned but not fixed**
 - **Issue 1: Deployment Blockers**
-    - The  previously found 4 issues preventing deployment. This task was superseded by feature requests and never completed.
+    - The  previously found 4 issues preventing deployment. This task was never addressed.
     - Debug checklist: Re-run  with  and fix the reported issues.
     - Why to solve this issue and what will be achieved with this?: To make the app deployable.
     - Should Test frontend/backend/both after fix: Both.
@@ -149,8 +148,8 @@ Issues Detail:
 
 **Known issue recurrence from previous fork**
 - **Issue recurrence in previous fork**: The chiptuning API is blocked due to the server's IP not being whitelisted.
-- **Recurrence count**: 2 (at least once in the previous session, and once in this session).
-- **Status**: RESOLVED (for now). The agent is aware of the cause.
+- **Recurrence count**: 3+
+- **Status**: RESOLVED (for now). The current IP is .
 
 **Code Architecture**
 
@@ -159,90 +158,90 @@ Issues Detail:
 - **Frontend**: React Native, Expo, Expo Router, TypeScript
 - **Backend**: Python, FastAPI
 - **Database**: MongoDB
-- **State Management**: React Context API (Auth, Language)
-- **Image Handling**: , , base64 encoding.
-- **SVG**:  to render the complex new logo.
-- **API Integration**: Backend acts as a proxy to add authentication headers (, custom , ) to requests for third-party APIs.
+- **Authentication**: JWT (Access + Refresh Tokens) managed via a proxy to an external CRM API.
+- **Secure Storage**:  is used for persisting auth tokens on the client.
+- **API Integration**:
+    - Backend proxies to the chiptuning API.
+    - Backend proxies to the CRM API for auth.
+    - Backend makes direct calls to the CRM API to submit new orders.
 
 **key DB schema**
-- : { , , ... }
-- : { , , ... }
+- : (Implicitly managed via CRM)
+- : { , , , , , , , ,  }
 - : { , ,  }
-- : (Hardcoded in , not in DB)
+- : { , ,  }
+- : { , , , ,  }
 
 **changes in tech stack**
-- Added  and  to the frontend.
+-  added to replace  for token management due to issues on iOS.
 
 **All files of reference**
-*   : **Last modified file**. Contains the navigation for the customer area, which is being refactored.
-*   : Contains the new file upload wizard and order overview UI.
-*   : Contains the new vehicle registration scanner UI.
-*   : New component for the dynamic SVG logo.
-*   : New custom hook for checking business hours.
-*   : Heavily modified to connect to the live API and render the new Stages table.
-*   : Heavily modified to proxy requests to the live chiptuning API and the scanner API.
+*   : Heavily modified. Contains all new endpoints for user-specific data (orders, tickets, scans) and the logic to post orders to the external CRM.
+*   : Completely refactored for the real CRM authentication flow, using . **This is a key file for debugging the current  issue.**
+*   : Updated with all new API functions for orders, tickets, scans, and photos. **This is also a key file for debugging.**
+*   : The file upload wizard. The  function is where the  API call is initiated.
+*   : The dashboard, now displays live data.
+*    & : Contain the new clock icon logic.
 
 **Areas that need refactoring**:
-- The file upload wizard () is a very large component with over 500 lines of code. It contains state management, multiple steps, and complex UI logic. It should be broken down into smaller components for each step of the wizard.
-- Mock data for the order overview should be removed once a real backend is implemented.
+- ****: This file has become a large monolith (over 600 lines) and should be broken down into separate routers for auth, user data, and proxies.
+- ****: This component is still very large (over 600 lines) and manages the state for the entire multi-step wizard. It should be broken down into smaller sub-components.
 
 **key api endpoints**
-- : AI assistant.
-- : Mocked customer login.
-- , : Photo storage.
-- : Proxies requests to .
-- : Proxies requests to chiptuning API.
-- : Proxies requests to chiptuning API.
--  (all other configurator endpoints, now live proxies).
+- : Proxies to CRM for login.
+- : Proxies to CRM to refresh token.
+- : Proxies to CRM for logout.
+- : Proxies to CRM to get user info.
+- : Manages user-specific orders in MongoDB and forwards new orders to the CRM.
+- : Manages user-specific photos.
+- : Manages user-specific vehicle scans.
+- : Manages user-specific support tickets.
 
 **Critical Info for New Agent**
-- **Task Priority**: The immediate task is to finish the customer dashboard navigation refactor (moving it to the bottom). After that, verifying the logout functionality and then implementing the backend for the file upload wizard are the highest priorities.
-- **API IP Whitelisting**: The chiptuning API is the app's core feature and is dependent on the server's public IP ( at last check) being whitelisted by the provider. If the configurator is empty, this is the first thing to check.
-- **Incomplete Features**: The file upload wizard is UI-only. It does not save or send data anywhere.
-- **Logout Bug**: A bug was reported with the logout button. The agent fixed a related hook error, but you must verify if the logout itself now works as expected.
-- **Language**: All communication with the user must be in German.
+- **Top Priority**: The absolute highest priority is fixing the  error when creating an order from an iOS device. The agent suspects an issue with  and was about to implement a workaround in .
+- **iOS Specific Issues**: There are two known issues specific to the iOS Expo Go app: the P0 order submission failure, and the P1 login failure with special characters in passwords. Debugging should focus on the mobile environment.
+- **API IP Whitelisting**: The chiptuning API depends on the server's public IP ( at last check) being whitelisted. If the configurator is empty, check this first.
+- **CRM API URL**: The correct base URL for the user's CRM is .
+- **Language**: All user communication MUST be in German.
 
-**documents created in this job**
-- None.  was not used.
+**documents and test reports created in this job**
+- 
 
 **Last 10 User Messages and any pending HUMAN messages**
-10.  (Request to move customer nav to a fixed bottom bar). (In Progress)
-9.   (Request for a mock data fallback for the scanner). (Completed)
-8.   (Request to remove text from customer nav icons). (Completed)
-7.   (Request to implement a specific multi-step flow for the scanner). (Completed)
-6.   (Request to add an order overview tab). (Completed)
-5.   (Request to add more options to the file upload wizard). (Completed)
-4.   (Request to create a multi-step file upload wizard). (Completed)
-3.   (User reported the configurator was empty, which led to fixing the API connection). (Completed)
-2.   (User reported the logout was broken). (Testing Pending)
-1.   (User reported missing ECU options in the configurator). (Completed)
+10.  (User reports that the test order did not arrive in the CRM after the agent's first fix). (In Progress)
+9.   (User confirms the CRM API endpoint for orders is ready and specifies auth requirements). (Completed)
+8.   (User confirms the iOS login password issue is resolved by using a simpler password and requests to integrate order submission with the CRM). (Completed)
+7.   (User reports that after the  error, the order is not being saved in the app either). (In Progress)
+6.   (User asks for logs regarding the failing order submission). (In Progress)
+5.   (User confirms they are logged in, in response to the agent asking if their session was valid). (In Progress)
+4.   (User reports order not in CRM). (In Progress)
+3.   (User reports order not in CRM after another fix attempt). (In Progress)
+2.   (User asks for the server IP to whitelist it). (Completed)
+1.   (User confirms to change the opening hours). (Completed)
 
 **Project Health Check:**
 - **Broken**:
-    - Logout functionality (needs verification).
+    - Order submission to the external CRM API from iOS clients ().
+    - Login from iOS clients using passwords with special characters.
 - **Mocked**:
-    - Customer authentication (/).
-    - The entire New Order submission process.
-    - The Order Overview list.
-    - Vehicle registration scanner has a mock data fallback.
+    - The application has largely moved away from mocked data. Core features are now connected to either the internal backend/DB or external APIs.
 
 **3rd Party Integrations**
-- **OpenAI GPT-4o**: Used for the AI assistant in the configurator. Uses Emergent LLM Key.
+- ** API**: User's external CRM. Used for customer authentication and for receiving new tuning orders. Requires a customer's Bearer Token.
 - ** API**: The core chiptuning database. Requires a user-provided Bearer Token and IP whitelisting.
 - ** API**: Used for the vehicle registration scanner. Requires a user-provided .
+- **OpenAI GPT-4o**: Used for the AI assistant in the configurator. Uses Emergent LLM Key.
 
 **Testing status**
 - Testing agent used after significant changes: NO
 - Troubleshoot agent used after agent stuck in loop: NO
 - Test files created: []
-- Known regressions: The logout functionality might still be broken.
+- Known regressions: Order submission was working locally in the DB but is now failing at the point of forwarding to the external CRM.
 
 **Credentials to test flow:**
-- Customer Login:
-    - Username: 
-    - Password: 
-(This is mocked in ).
+- **Customer Login:**
+    - Email: 
+    - Password:  (Note: Fails on iOS due to special characters. Use  which was a temporary password that worked).
 
 **What agent forgot to execute**
-- The agent never went back to address the 4 deployment blockers identified by the  in a previous session. This task has been pending for a long time.
-</analysis>
+- The agent has not addressed the deployment blockers identified in a previous session. This task remains in the backlog.</analysis>

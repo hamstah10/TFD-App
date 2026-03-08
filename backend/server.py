@@ -338,12 +338,12 @@ class ContactMessageCreate(BaseModel):
 
 # Opening Hours Model
 class OpeningHours(BaseModel):
-    monday: str = "08:00-18:00"
-    tuesday: str = "08:00-18:00"
-    wednesday: str = "08:00-18:00"
-    thursday: str = "08:00-18:00"
-    friday: str = "08:00-18:00"
-    saturday: str = "09:00-13:00"
+    monday: str = "05:00-18:00"
+    tuesday: str = "05:00-18:00"
+    wednesday: str = "05:00-18:00"
+    thursday: str = "05:00-18:00"
+    friday: str = "05:00-18:00"
+    saturday: str = "05:00-13:00"
     sunday: str = "geschlossen"
 
 # Auth Models for CRM API
@@ -397,7 +397,11 @@ async def verify_token_and_get_customer(authorization: str) -> dict:
             response = await http_client.get(url, headers={"Authorization": authorization})
             if response.status_code == 200:
                 result = response.json()
-                # CRM API returns data in a "data" wrapper
+                logger.info(f"CRM /auth/me response: {result}")
+                # CRM API returns data in a "customer" wrapper
+                if "customer" in result:
+                    return result["customer"]
+                # Fallback for "data" wrapper
                 if "data" in result:
                     return result["data"]
                 return result
@@ -1065,22 +1069,38 @@ async def logout(request: Request):
 
 @api_router.post("/orders")
 async def create_order(order: OrderCreate, request: Request):
-    """Create a new order for the authenticated user"""
+    """Create a new order for the authenticated user and forward to CRM"""
     auth_header = request.headers.get("Authorization")
+    logger.info(f"POST /orders - Authorization header present: {bool(auth_header)}")
+    if auth_header:
+        logger.info(f"POST /orders - Auth header format: {auth_header[:30]}..." if len(auth_header) > 30 else f"POST /orders - Auth header: {auth_header}")
+    else:
+        logger.error("POST /orders - No Authorization header received!")
+    
+    # Log incoming fileData status
+    fileData_length = len(order.fileData) if order.fileData else 0
+    logger.info(f"POST /orders - fileData length: {fileData_length}, fileName: {order.fileName}")
+    
     customer = await verify_token_and_get_customer(auth_header)
     customer_id = customer.get("id")
+    logger.info(f"POST /orders - Customer ID: {customer_id}, Email: {customer.get('email')}")
+    
+    if not customer_id:
+        raise HTTPException(status_code=401, detail="Kunde nicht gefunden")
     
     # Generate order number
     order_count = await db.orders.count_documents({"customerId": customer_id})
     order_number = f"TFD-{customer_id}-{order_count + 1:04d}"
     
-    # Create order document
+    created_at = datetime.now(timezone.utc).isoformat()
+    
+    # Create order document for local storage
     order_doc = {
         "orderNumber": order_number,
         "customerId": customer_id,
         "customerEmail": customer.get("email"),
         "companyName": customer.get("companyName"),
-        "createdAt": datetime.now(timezone.utc).isoformat(),
+        "createdAt": created_at,
         "status": "pending",
         "fileName": order.fileName,
         "fileSize": order.fileSize,
@@ -1097,12 +1117,75 @@ async def create_order(order: OrderCreate, request: Request):
         "slaveOrMaster": order.slaveOrMaster,
     }
     
+    # Forward order to CRM API
+    crm_order_payload = {
+        "customerId": int(customer_id),  # Ensure it's an integer
+        "customerEmail": customer.get("email"),
+        "fileName": order.fileName,
+        "fileData": order.fileData,
+        "fileSize": int(order.fileSize),  # Ensure it's an integer
+        "vehicleType": order.vehicleType,
+        "manufacturer": order.manufacturer,
+        "model": order.model,
+        "built": order.built,
+        "engine": order.engine,
+        "vehicleDisplay": order.vehicleDisplay or "Unbekannt",
+        "tuningTool": order.tuningTool,
+        "method": order.method,
+        "slaveOrMaster": order.slaveOrMaster,
+        "stage": order.stage,
+        "createdAt": created_at,
+        "deviceName": "tuningfiles-app",
+    }
+    
+    crm_order_id = None
+    crm_error = None
+    
+    try:
+        logger.info(f"Forwarding order to CRM: {CRM_API_BASE}/orders")
+        logger.info(f"CRM payload customerId: {crm_order_payload.get('customerId')}, fileName: {crm_order_payload.get('fileName')}")
+        
+        async with httpx.AsyncClient(timeout=60.0) as http_client:
+            crm_response = await http_client.post(
+                f"{CRM_API_BASE}/orders",
+                json=crm_order_payload,
+                headers={
+                    "Authorization": auth_header,
+                    "Content-Type": "application/json"
+                }
+            )
+            
+            logger.info(f"CRM response status: {crm_response.status_code}")
+            
+            if crm_response.status_code in [200, 201]:
+                crm_data = crm_response.json()
+                crm_order_id = crm_data.get("id") or crm_data.get("orderId")
+                order_doc["crmOrderId"] = crm_order_id
+                order_doc["crmSynced"] = True
+                logger.info(f"Order successfully sent to CRM: {crm_order_id}")
+            else:
+                crm_error = f"CRM API returned {crm_response.status_code}: {crm_response.text}"
+                order_doc["crmSynced"] = False
+                order_doc["crmError"] = crm_error
+                logger.error(f"CRM API error: {crm_error}")
+                
+    except httpx.RequestError as e:
+        crm_error = f"CRM API request failed: {str(e)}"
+        order_doc["crmSynced"] = False
+        order_doc["crmError"] = crm_error
+        logger.error(crm_error)
+    
+    # Save to local database
     result = await db.orders.insert_one(order_doc)
     order_doc["id"] = str(result.inserted_id)
     
     # Remove _id and fileData from response
     order_doc.pop("_id", None)
     order_doc.pop("fileData", None)
+    
+    # Add CRM sync status to response
+    if crm_order_id:
+        order_doc["crmOrderId"] = crm_order_id
     
     return order_doc
 
@@ -1395,6 +1478,343 @@ async def reply_to_ticket(ticket_id: str, reply: TicketMessageCreate, request: R
         raise HTTPException(status_code=404, detail="Ticket nicht gefunden")
     
     return {"message": "Antwort gesendet", "createdAt": now}
+
+# ============== PUSH NOTIFICATIONS ==============
+
+from exponent_server_sdk import PushClient, PushMessage, PushServerError, DeviceNotRegisteredError
+import hmac
+import hashlib
+
+# Webhook signing secret (configure in CRM)
+WEBHOOK_SIGNING_SECRET = os.environ.get('WEBHOOK_SIGNING_SECRET', '')
+
+class PushTokenRegister(BaseModel):
+    expoPushToken: str
+
+class WebhookOrderCreated(BaseModel):
+    event: str
+    sentAt: str
+    data: dict
+
+async def send_push_notification(
+    push_token: str,
+    title: str,
+    body: str,
+    data: dict = None,
+    channel_id: str = "default"
+) -> bool:
+    """Send a push notification via Expo"""
+    if not push_token or not push_token.startswith("ExponentPushToken"):
+        logger.warning(f"Invalid push token: {push_token}")
+        return False
+    
+    try:
+        message = PushMessage(
+            to=push_token,
+            title=title,
+            body=body,
+            data=data or {},
+            sound="default",
+            priority="high",
+            channel_id=channel_id,
+        )
+        
+        response = PushClient().publish(message)
+        
+        if response.status == "ok":
+            logger.info(f"Push notification sent successfully to {push_token[:30]}...")
+            return True
+        else:
+            logger.error(f"Push notification failed: {response}")
+            return False
+            
+    except DeviceNotRegisteredError:
+        logger.warning(f"Device not registered, removing token: {push_token[:30]}...")
+        # Mark token as inactive
+        await db.push_tokens.update_one(
+            {"expoPushToken": push_token},
+            {"$set": {"isActive": False}}
+        )
+        return False
+    except PushServerError as e:
+        logger.error(f"Expo push server error: {e}")
+        return False
+    except Exception as e:
+        logger.error(f"Push notification error: {e}")
+        return False
+
+async def send_push_to_customer(customer_id: int, title: str, body: str, data: dict = None, channel_id: str = "default"):
+    """Send push notification to all devices of a customer"""
+    tokens = await db.push_tokens.find({
+        "customerId": customer_id,
+        "isActive": True
+    }).to_list(10)
+    
+    results = []
+    for token_doc in tokens:
+        success = await send_push_notification(
+            token_doc["expoPushToken"],
+            title,
+            body,
+            data,
+            channel_id
+        )
+        results.append(success)
+    
+    return any(results)
+
+@api_router.post("/push/register")
+async def register_push_token(token_data: PushTokenRegister, request: Request):
+    """Register a push token for the authenticated user"""
+    auth_header = request.headers.get("Authorization")
+    customer = await verify_token_and_get_customer(auth_header)
+    customer_id = customer.get("id")
+    
+    if not customer_id:
+        raise HTTPException(status_code=401, detail="Kunde nicht gefunden")
+    
+    # Validate token format
+    if not token_data.expoPushToken.startswith("ExponentPushToken"):
+        raise HTTPException(status_code=400, detail="Ungültiges Token-Format")
+    
+    # Check if token already exists
+    existing = await db.push_tokens.find_one({"expoPushToken": token_data.expoPushToken})
+    
+    if existing:
+        # Update existing token
+        await db.push_tokens.update_one(
+            {"expoPushToken": token_data.expoPushToken},
+            {"$set": {
+                "customerId": customer_id,
+                "customerEmail": customer.get("email"),
+                "isActive": True,
+                "updatedAt": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        logger.info(f"Updated push token for customer {customer_id}")
+    else:
+        # Insert new token
+        await db.push_tokens.insert_one({
+            "customerId": customer_id,
+            "customerEmail": customer.get("email"),
+            "expoPushToken": token_data.expoPushToken,
+            "isActive": True,
+            "createdAt": datetime.now(timezone.utc).isoformat(),
+            "updatedAt": datetime.now(timezone.utc).isoformat()
+        })
+        logger.info(f"Registered new push token for customer {customer_id}")
+    
+    return {"message": "Push-Token registriert", "customerId": customer_id}
+
+@api_router.post("/push/unregister")
+async def unregister_push_token(request: Request):
+    """Unregister push tokens for the authenticated user"""
+    auth_header = request.headers.get("Authorization")
+    customer = await verify_token_and_get_customer(auth_header)
+    customer_id = customer.get("id")
+    
+    if not customer_id:
+        raise HTTPException(status_code=401, detail="Kunde nicht gefunden")
+    
+    # Mark all tokens for this customer as inactive
+    result = await db.push_tokens.update_many(
+        {"customerId": customer_id},
+        {"$set": {"isActive": False, "updatedAt": datetime.now(timezone.utc).isoformat()}}
+    )
+    
+    logger.info(f"Unregistered {result.modified_count} push tokens for customer {customer_id}")
+    return {"message": "Push-Tokens deaktiviert", "count": result.modified_count}
+
+def verify_webhook_signature(timestamp: str, payload: bytes, signature: str) -> bool:
+    """Verify the webhook signature from CRM"""
+    if not WEBHOOK_SIGNING_SECRET:
+        logger.warning("No webhook signing secret configured, skipping verification")
+        return True
+    
+    # Build the signed payload: <timestamp>.<raw_json_payload>
+    signed_payload = f"{timestamp}.{payload.decode('utf-8')}"
+    
+    # Calculate expected signature
+    expected = hmac.new(
+        WEBHOOK_SIGNING_SECRET.encode(),
+        signed_payload.encode(),
+        hashlib.sha256
+    ).hexdigest()
+    
+    # Extract signature from header (format: sha256=<hmac>)
+    if signature.startswith("sha256="):
+        signature = signature[7:]
+    
+    return hmac.compare_digest(expected, signature)
+
+@api_router.post("/webhooks/crm/order")
+async def webhook_order_created(request: Request):
+    """
+    Webhook endpoint for CRM order events.
+    Configure this URL in CRM: Verwaltung -> Webhooks
+    URL: https://your-domain.com/api/webhooks/crm/order
+    """
+    # Get raw body for signature verification
+    body = await request.body()
+    
+    # Verify signature if secret is configured
+    timestamp = request.headers.get("X-Webhook-Timestamp", "")
+    signature = request.headers.get("X-Webhook-Signature", "")
+    
+    if WEBHOOK_SIGNING_SECRET and signature:
+        if not verify_webhook_signature(timestamp, body, signature):
+            logger.error("Invalid webhook signature")
+            raise HTTPException(status_code=401, detail="Ungültige Webhook-Signatur")
+    
+    # Parse the payload
+    try:
+        import json
+        payload = json.loads(body)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Ungültiges JSON")
+    
+    event = payload.get("event")
+    data = payload.get("data", {})
+    
+    logger.info(f"Received webhook: {event}")
+    logger.info(f"Webhook data: {data}")
+    
+    if event == "order.created":
+        customer_id = data.get("customerId")
+        order_id = data.get("orderId")
+        file_name = data.get("fileName", "Datei")
+        
+        if customer_id:
+            # Send push notification
+            await send_push_to_customer(
+                customer_id=customer_id,
+                title="Neuer Auftrag erstellt",
+                body=f"Auftrag #{order_id} wurde erfolgreich angelegt.",
+                data={
+                    "type": "order_update",
+                    "orderId": str(order_id),
+                    "status": "created"
+                },
+                channel_id="orders"
+            )
+            logger.info(f"Sent push notification for order {order_id} to customer {customer_id}")
+    
+    elif event == "order.status_changed":
+        customer_id = data.get("customerId")
+        order_id = data.get("orderId")
+        # Use correct field names from CRM
+        old_status = data.get("previousStatus", "")
+        old_status_label = data.get("previousStatusLabel", "")
+        new_status = data.get("status", "")
+        new_status_label = data.get("statusLabel", "")
+        changed_at = data.get("changedAt", "")
+        source = data.get("source", "")
+        
+        # Use the label for display (more user-friendly)
+        status_display = new_status_label or new_status or "aktualisiert"
+        
+        logger.info(f"Status change: Order {order_id} from '{old_status_label}' to '{new_status_label}' (source: {source})")
+        
+        if customer_id:
+            await send_push_to_customer(
+                customer_id=customer_id,
+                title="Auftragsstatus geändert",
+                body=f"Auftrag #{order_id} ist jetzt: {status_display}",
+                data={
+                    "type": "order_update",
+                    "orderId": str(order_id),
+                    "previousStatus": old_status,
+                    "status": new_status,
+                    "statusLabel": new_status_label,
+                    "changedAt": changed_at
+                },
+                channel_id="orders"
+            )
+            logger.info(f"Sent status change notification for order {order_id} to customer {customer_id}: {status_display}")
+            
+            # Also update local order if it exists
+            try:
+                await db.orders.update_one(
+                    {"crmOrderId": order_id},
+                    {"$set": {
+                        "status": new_status,
+                        "statusLabel": new_status_label,
+                        "updatedAt": changed_at or datetime.now(timezone.utc).isoformat()
+                    }}
+                )
+            except Exception as e:
+                logger.warning(f"Could not update local order status: {e}")
+    
+    return {"status": "ok", "event": event}
+
+@api_router.post("/webhooks/crm/ticket")
+async def webhook_ticket_reply(request: Request):
+    """
+    Webhook endpoint for CRM ticket events.
+    (For future use when CRM supports ticket webhooks)
+    """
+    body = await request.body()
+    
+    # Verify signature
+    timestamp = request.headers.get("X-Webhook-Timestamp", "")
+    signature = request.headers.get("X-Webhook-Signature", "")
+    
+    if WEBHOOK_SIGNING_SECRET and signature:
+        if not verify_webhook_signature(timestamp, body, signature):
+            raise HTTPException(status_code=401, detail="Ungültige Webhook-Signatur")
+    
+    try:
+        import json
+        payload = json.loads(body)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Ungültiges JSON")
+    
+    event = payload.get("event")
+    data = payload.get("data", {})
+    
+    logger.info(f"Received ticket webhook: {event}")
+    
+    if event == "ticket.reply":
+        customer_id = data.get("customerId")
+        ticket_number = data.get("ticketNumber")
+        
+        if customer_id:
+            await send_push_to_customer(
+                customer_id=customer_id,
+                title="Neue Ticket-Antwort",
+                body=f"Sie haben eine neue Antwort zu Ticket {ticket_number}.",
+                data={
+                    "type": "ticket_reply",
+                    "ticketNumber": ticket_number
+                },
+                channel_id="tickets"
+            )
+    
+    return {"status": "ok", "event": event}
+
+# Test endpoint to send a push notification (for debugging)
+@api_router.post("/push/test")
+async def test_push_notification(request: Request):
+    """Test endpoint to verify push notifications work"""
+    auth_header = request.headers.get("Authorization")
+    customer = await verify_token_and_get_customer(auth_header)
+    customer_id = customer.get("id")
+    
+    if not customer_id:
+        raise HTTPException(status_code=401, detail="Kunde nicht gefunden")
+    
+    success = await send_push_to_customer(
+        customer_id=customer_id,
+        title="Test-Benachrichtigung",
+        body="Push-Notifications funktionieren!",
+        data={"type": "test"},
+        channel_id="default"
+    )
+    
+    if success:
+        return {"message": "Test-Benachrichtigung gesendet"}
+    else:
+        raise HTTPException(status_code=404, detail="Kein aktives Push-Token gefunden")
 
 # Include the router in the main app
 app.include_router(api_router)
