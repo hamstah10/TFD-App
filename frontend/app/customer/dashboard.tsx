@@ -190,14 +190,6 @@ export default function CustomerDashboard() {
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Welcome Section */}
-      <View style={styles.welcomeSection}>
-        <Text style={styles.welcomeText}>
-          {language === 'de' ? 'Willkommen zurück,' : 'Welcome back,'}
-        </Text>
-        <Text style={styles.welcomeName}>{user?.name}!</Text>
-      </View>
-
       {/* Stats Cards */}
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
