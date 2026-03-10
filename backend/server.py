@@ -903,55 +903,126 @@ class FahrzeugscheinScanResponse(BaseModel):
     data: Optional[dict] = None
     error: Optional[str] = None
 
+# Import for AI-powered Fahrzeugschein parsing
+from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+import json
+import uuid
+
 @api_router.post("/scan-fahrzeugschein", response_model=FahrzeugscheinScanResponse)
 async def scan_fahrzeugschein(request: FahrzeugscheinScanRequest):
-    """Scan a vehicle registration document (Fahrzeugschein) and extract data"""
-    url = f"{FAHRZEUGSCHEIN_API_BASE}/generic-json"
-    headers = {
-        "Content-Type": "application/json",
-        "access_key": FAHRZEUGSCHEIN_ACCESS_KEY
-    }
+    """Scan a vehicle registration document (Fahrzeugschein) using GPT-4o Vision"""
     
-    payload = {
-        "image": request.image,
-        "show_cuts": request.show_cuts
-    }
+    # Get the Emergent LLM Key
+    api_key = os.environ.get("EMERGENT_LLM_KEY")
+    if not api_key:
+        logger.error("EMERGENT_LLM_KEY not configured")
+        return FahrzeugscheinScanResponse(
+            success=False,
+            error="AI-Service nicht konfiguriert"
+        )
     
-    async with httpx.AsyncClient(timeout=60.0) as http_client:
+    try:
+        # Initialize GPT-4o Vision chat
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"fahrzeugschein-{uuid.uuid4()}",
+            system_message="""Du bist ein Experte für deutsche Fahrzeugscheine (Zulassungsbescheinigung Teil 1).
+Analysiere das Bild und extrahiere ALLE verfügbaren Fahrzeugdaten.
+Antworte NUR mit einem JSON-Objekt im folgenden Format, ohne weitere Erklärungen:
+{
+    "D.1": "Marke (z.B. Audi, BMW, VW)",
+    "D.2": "Typ/Variante/Version",
+    "D.3": "Handelsbezeichnung (Modellname)",
+    "E": "Fahrzeug-Identifizierungsnummer (FIN/VIN)",
+    "B": "Datum der Erstzulassung (TT.MM.JJJJ)",
+    "P.1": "Hubraum in cm³",
+    "P.2": "Nennleistung in kW",
+    "P.3": "Kraftstoffart oder Energiequelle",
+    "P.4": "Nenndrehzahl in min⁻¹",
+    "V.9": "Schadstoffklasse (Euro-Norm)",
+    "14": "Motorcode",
+    "2": "Hersteller-Schlüsselnummer (HSN)",
+    "3": "Typ-Schlüsselnummer (TSN)",
+    "I": "Datum der Zulassung",
+    "J": "Fahrzeugklasse",
+    "4": "Aufbauart"
+}
+Wenn ein Feld nicht lesbar oder nicht vorhanden ist, setze den Wert auf null.
+Extrahiere so viele Daten wie möglich aus dem Bild."""
+        ).with_model("openai", "gpt-4o")
+        
+        # Create image content from base64
+        image_content = ImageContent(
+            image_base64=request.image
+        )
+        
+        # Send image for analysis
+        user_message = UserMessage(
+            text="Analysiere diesen deutschen Fahrzeugschein und extrahiere alle Fahrzeugdaten als JSON.",
+            image_contents=[image_content]
+        )
+        
+        response = await chat.send_message(user_message)
+        logger.info(f"GPT-4o Vision response: {response[:500]}...")
+        
+        # Parse the JSON response
+        # Try to extract JSON from the response
+        json_str = response
+        if "```json" in response:
+            json_str = response.split("```json")[1].split("```")[0].strip()
+        elif "```" in response:
+            json_str = response.split("```")[1].split("```")[0].strip()
+        
         try:
-            response = await http_client.post(url, json=payload, headers=headers)
-            response.raise_for_status()
-            result = response.json()
-            
-            return FahrzeugscheinScanResponse(
-                success=True,
-                country_code=result.get("country_code"),
-                data=result.get("data")
-            )
-        except httpx.HTTPStatusError as e:
-            logger.error(f"Fahrzeugschein API HTTP error: {e.response.status_code} - {e.response.text}")
-            error_detail = "API Fehler"
-            try:
-                error_json = e.response.json()
-                error_detail = error_json.get("message", str(e.response.status_code))
-            except:
-                error_detail = f"HTTP {e.response.status_code}"
-            return FahrzeugscheinScanResponse(
-                success=False,
-                error=error_detail
-            )
-        except httpx.RequestError as e:
-            logger.error(f"Fahrzeugschein API request error: {str(e)}")
-            return FahrzeugscheinScanResponse(
-                success=False,
-                error=f"Verbindungsfehler: {str(e)}"
-            )
-        except Exception as e:
-            logger.error(f"Fahrzeugschein scan error: {str(e)}")
-            return FahrzeugscheinScanResponse(
-                success=False,
-                error=f"Unbekannter Fehler: {str(e)}"
-            )
+            parsed_data = json.loads(json_str)
+        except json.JSONDecodeError:
+            # Try to find JSON object in response
+            import re
+            json_match = re.search(r'\{[^{}]*\}', response, re.DOTALL)
+            if json_match:
+                parsed_data = json.loads(json_match.group())
+            else:
+                logger.error(f"Could not parse JSON from response: {response}")
+                return FahrzeugscheinScanResponse(
+                    success=False,
+                    error="Konnte Fahrzeugdaten nicht auslesen"
+                )
+        
+        # Transform to friendly format
+        friendly_data = {
+            "manufacturer": parsed_data.get("D.1"),
+            "model": parsed_data.get("D.3") or parsed_data.get("D.2"),
+            "type_variant": parsed_data.get("D.2"),
+            "vin": parsed_data.get("E"),
+            "firstRegistration": parsed_data.get("B") or parsed_data.get("I"),
+            "displacement": parsed_data.get("P.1"),
+            "power": f"{parsed_data.get('P.2')} kW" if parsed_data.get("P.2") else None,
+            "fuelType": parsed_data.get("P.3"),
+            "engineSpeed": parsed_data.get("P.4"),
+            "emissionClass": parsed_data.get("V.9"),
+            "engineCode": parsed_data.get("14"),
+            "hsn": parsed_data.get("2"),
+            "tsn": parsed_data.get("3"),
+            "vehicleClass": parsed_data.get("J"),
+            "bodyType": parsed_data.get("4"),
+            "raw": parsed_data
+        }
+        
+        # Remove None values
+        friendly_data = {k: v for k, v in friendly_data.items() if v is not None}
+        
+        return FahrzeugscheinScanResponse(
+            success=True,
+            country_code="DE",
+            data=friendly_data
+        )
+        
+    except Exception as e:
+        logger.error(f"Fahrzeugschein AI scan error: {str(e)}")
+        return FahrzeugscheinScanResponse(
+            success=False,
+            error=f"AI-Analyse fehlgeschlagen: {str(e)}"
+        )
 
 # ============== AUTH ROUTES (CRM API Proxy) ==============
 

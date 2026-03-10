@@ -152,18 +152,33 @@ export interface FahrzeugscheinData {
   ez_string?: string;
   hsn?: string;
   tsn?: string;
-  d1?: string;  // Marke
-  d3?: string;  // Handelsbezeichnung
+  d1?: string;  // Marke (alte API)
+  d3?: string;  // Handelsbezeichnung (alte API)
   name?: string;
   firstname?: string;
   address1?: string;
   address2?: string;
-  p1?: string;  // Hubraum
-  p3?: string;  // Kraftstoff
+  p1?: string;  // Hubraum (alte API)
+  p2_p4?: string;  // Leistung (alte API)
+  p3?: string;  // Kraftstoff (alte API)
   field_14?: string;  // Emissionsklasse
   g?: string;  // Leergewicht
   f1?: string;  // Zulässige Gesamtmasse
   j?: string;  // Fahrzeugklasse
+  // Neue AI-geparste Felder
+  manufacturer?: string;  // Marke (AI)
+  model?: string;  // Modell (AI)
+  type_variant?: string;  // Typ/Variante (AI)
+  firstRegistration?: string;  // Erstzulassung (AI)
+  displacement?: string;  // Hubraum (AI)
+  power?: string;  // Leistung in kW (AI)
+  fuelType?: string;  // Kraftstoffart (AI)
+  engineSpeed?: string;  // Nenndrehzahl (AI)
+  emissionClass?: string;  // Schadstoffklasse (AI)
+  engineCode?: string;  // Motorcode (AI)
+  vehicleClass?: string;  // Fahrzeugklasse (AI)
+  bodyType?: string;  // Aufbauart (AI)
+  raw?: Record<string, any>;  // Rohe AI-Antwort
   [key: string]: any;
 }
 

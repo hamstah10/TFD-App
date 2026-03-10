@@ -65,16 +65,28 @@ const MOCK_FAHRZEUGSCHEIN_DATA: FahrzeugscheinData = {
 
 type ScreenStep = 'scan' | 'data' | 'vehicle';
 
-// Mock vehicle data based on scanned info
+// Get vehicle data from scanned info (now using AI-parsed data)
 const getMockVehicle = (data: FahrzeugscheinData): MockVehicle => {
-  // Extract power from scanned data if available
-  const orgHp = data.p2_p4 ? parseInt(data.p2_p4) : 150;
+  // AI returns data with keys like 'manufacturer', 'model', 'power'
+  // But also keeps backwards compatibility with old d1, d3, p2_p4 keys
+  
+  // Extract power - AI returns "XX kW" or just the number
+  let orgHp = 150; // default
+  const powerStr = data.power || data.p2_p4;
+  if (powerStr) {
+    const kwMatch = powerStr.toString().match(/(\d+)/);
+    if (kwMatch) {
+      const kw = parseInt(kwMatch[1]);
+      // Convert kW to HP (1 kW ≈ 1.36 HP)
+      orgHp = Math.round(kw * 1.36);
+    }
+  }
   
   return {
-    manufacturer: data.d1 || 'Unbekannt',
-    model: data.d3 || 'Unbekannt',
-    engine: data.p1 ? `${data.p1} cm³` : '2.0 TDI',
-    year: data.ez_string || data.ez || '2020',
+    manufacturer: data.manufacturer || data.d1 || 'Unbekannt',
+    model: data.model || data.d3 || 'Unbekannt',
+    engine: data.displacement || data.p1 ? `${data.displacement || data.p1} cm³` : '2.0',
+    year: data.firstRegistration || data.ez_string || data.ez || '2020',
     stages: [
       {
         id: 'stage1',
