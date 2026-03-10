@@ -14,72 +14,73 @@ Notifications.setNotificationHandler({
 });
 
 export async function registerForPushNotificationsAsync(): Promise<string | null> {
-  // Push notifications don't work on web
-  if (Platform.OS === 'web') {
-    console.log('Push notifications are not supported on web');
-    return null;
-  }
-
-  // Only works on physical devices
-  if (!Device.isDevice) {
-    console.warn('Push notifications only work on physical devices');
-    return null;
-  }
-
-  // Check existing permissions
-  const { status: existingStatus } = await Notifications.getPermissionsAsync();
-  let finalStatus = existingStatus;
-
-  // Request permissions if not already granted
-  if (existingStatus !== 'granted') {
-    const { status } = await Notifications.requestPermissionsAsync({
-      ios: {
-        allowAlert: true,
-        allowBadge: true,
-        allowSound: true,
-      },
-    });
-    finalStatus = status;
-  }
-
-  if (finalStatus !== 'granted') {
-    console.error('Push notification permissions not granted');
-    return null;
-  }
-
-  // Set up Android notification channel
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'Default',
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#bd1f22',
-    });
-
-    await Notifications.setNotificationChannelAsync('orders', {
-      name: 'Aufträge',
-      description: 'Benachrichtigungen über Auftragsänderungen',
-      importance: Notifications.AndroidImportance.HIGH,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#4caf50',
-    });
-
-    await Notifications.setNotificationChannelAsync('tickets', {
-      name: 'Support-Tickets',
-      description: 'Benachrichtigungen über neue Ticket-Nachrichten',
-      importance: Notifications.AndroidImportance.HIGH,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#2196f3',
-    });
-  }
-
-  // Get Expo push token
   try {
+    // Push notifications don't work on web
+    if (Platform.OS === 'web') {
+      console.log('Push notifications are not supported on web');
+      return null;
+    }
+
+    // Only works on physical devices
+    if (!Device.isDevice) {
+      console.log('Push notifications only work on physical devices');
+      return null;
+    }
+
+    // Check existing permissions
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+
+    // Request permissions if not already granted
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync({
+        ios: {
+          allowAlert: true,
+          allowBadge: true,
+          allowSound: true,
+        },
+      });
+      finalStatus = status;
+    }
+
+    if (finalStatus !== 'granted') {
+      console.log('Push notification permissions not granted');
+      return null;
+    }
+
+    // Set up Android notification channel
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'Default',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#bd1f22',
+      });
+
+      await Notifications.setNotificationChannelAsync('orders', {
+        name: 'Aufträge',
+        description: 'Benachrichtigungen über Auftragsänderungen',
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#4caf50',
+      });
+
+      await Notifications.setNotificationChannelAsync('tickets', {
+        name: 'Support-Tickets',
+        description: 'Benachrichtigungen über neue Ticket-Nachrichten',
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#2196f3',
+      });
+    }
+
+    // Get Expo push token
     const { data: token } = await Notifications.getExpoPushTokenAsync();
     console.log('Expo push token obtained:', token);
     return token;
   } catch (error) {
-    console.error('Failed to get Expo push token:', error);
+    // Silently fail for push token errors - this is expected on web/simulators
+    console.log('Push notifications not available:', (error as Error).message);
     return null;
   }
 }
