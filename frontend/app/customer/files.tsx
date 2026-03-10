@@ -164,6 +164,7 @@ export default function FilesScreen() {
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   // Order data
   const [orderData, setOrderData] = useState<OrderData>({
@@ -792,7 +793,7 @@ export default function FilesScreen() {
       const vehicleDisplay = vehicleParts.join(' ') || 'Unbekannt';
 
       // Create order
-      await createOrder(token, {
+      const result = await createOrder(token, {
         fileName: orderData.file.name,
         fileData: fileData,
         fileSize: orderData.file.size,
@@ -808,32 +809,35 @@ export default function FilesScreen() {
         vehicleDisplay: vehicleDisplay,
       });
 
-      Alert.alert(
-        language === 'de' ? 'Erfolgreich!' : 'Success!',
-        language === 'de' 
-          ? 'Ihre Bestellung wurde erfolgreich übermittelt. Sie erhalten in Kürze eine Bestätigung.' 
-          : 'Your order has been submitted successfully. You will receive a confirmation shortly.',
-        [{ text: 'OK', onPress: () => {
-          // Reset form
-          setCurrentStep(1);
-          setOrderData({
-            file: null,
-            tuningTool: null,
-            method: null,
-            slaveOrMaster: null,
-            vehicleType: null,
-            manufacturer: null,
-            model: null,
-            built: null,
-            engine: null,
-            stage: null,
-          });
-          // Reload orders
-          loadOrders();
-          // Switch to orders view
-          setViewMode('orders');
-        }}]
-      );
+      console.log('Order created successfully:', result);
+
+      // Reset form first
+      setCurrentStep(1);
+      setOrderData({
+        file: null,
+        tuningTool: null,
+        method: null,
+        slaveOrMaster: null,
+        vehicleType: null,
+        manufacturer: null,
+        model: null,
+        built: null,
+        engine: null,
+        stage: null,
+      });
+      
+      // Show success message and switch to orders view
+      setShowSuccessMessage(true);
+      setViewMode('orders');
+      
+      // Reload orders to show the new one
+      await loadOrders();
+      
+      // Hide success message after 5 seconds
+      setTimeout(() => {
+        setShowSuccessMessage(false);
+      }, 5000);
+      
     } catch (error: any) {
       console.error('Order submission error:', error);
       Alert.alert(
@@ -1479,6 +1483,24 @@ export default function FilesScreen() {
       </View>
 
       {/* Content based on view mode */}
+      {showSuccessMessage && (
+        <View style={styles.successBanner}>
+          <Ionicons name="checkmark-circle" size={24} color="#4caf50" />
+          <View style={styles.successTextContainer}>
+            <Text style={styles.successTitle}>
+              {language === 'de' ? 'Bestellung erfolgreich!' : 'Order Successful!'}
+            </Text>
+            <Text style={styles.successMessage}>
+              {language === 'de' 
+                ? 'Ihre Bestellung wurde übermittelt. Sie erhalten in Kürze eine Bestätigung.' 
+                : 'Your order has been submitted. You will receive a confirmation shortly.'}
+            </Text>
+          </View>
+          <TouchableOpacity onPress={() => setShowSuccessMessage(false)}>
+            <Ionicons name="close" size={20} color="#8b8b8b" />
+          </TouchableOpacity>
+        </View>
+      )}
       {viewMode === 'orders' && renderOrdersOverview()}
 
       {viewMode === 'newOrder' && (
@@ -1528,6 +1550,30 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#171717',
     paddingHorizontal: 20,
+  },
+  successBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1a3320',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#4caf50',
+    gap: 12,
+  },
+  successTextContainer: {
+    flex: 1,
+  },
+  successTitle: {
+    color: '#4caf50',
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  successMessage: {
+    color: '#a5d6a7',
+    fontSize: 14,
   },
   header: {
     paddingTop: 16,
