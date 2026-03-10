@@ -297,7 +297,7 @@ export default function CustomerDashboard() {
           <Text style={styles.sectionTitle}>
             {language === 'de' ? 'Gescannte Fahrzeugscheine' : 'Scanned Vehicle Documents'}
           </Text>
-          <TouchableOpacity onPress={() => router.push('/customer/scanner')}>
+          <TouchableOpacity onPress={() => router.push('/customer/fahrzeugschein')}>
             <Text style={styles.viewAllText}>
               {language === 'de' ? 'Scanner öffnen' : 'Open Scanner'}
             </Text>
@@ -316,7 +316,7 @@ export default function CustomerDashboard() {
             </Text>
             <TouchableOpacity 
               style={styles.scanButton}
-              onPress={() => router.push('/customer/scanner')}
+              onPress={() => router.push('/customer/fahrzeugschein')}
             >
               <Ionicons name="scan" size={18} color="#ffffff" />
               <Text style={styles.scanButtonText}>
