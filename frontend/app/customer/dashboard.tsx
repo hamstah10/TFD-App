@@ -251,7 +251,13 @@ export default function CustomerDashboard() {
           activeOrders.map((order, index) => {
             const statusInfo = getStatusInfo(order.status, language);
             return (
-              <View key={order.id || order.orderNumber || `order-${index}`} style={styles.orderCard}>
+              <TouchableOpacity 
+                key={order.id || order.orderNumber || `order-${index}`} 
+                style={styles.orderCard}
+                onPress={() => router.push(`/customer/order/${order.orderNumber}`)}
+                activeOpacity={0.8}
+                data-testid={`dashboard-order-${order.orderNumber}`}
+              >
                 <View style={styles.orderHeader}>
                   <View>
                     <Text style={styles.orderId}>{order.orderNumber}</Text>
@@ -281,7 +287,11 @@ export default function CustomerDashboard() {
                   </View>
                   <Text style={styles.progressText}>{order.progress}%</Text>
                 </View>
-              </View>
+                
+                <View style={styles.orderArrowIndicator}>
+                  <Ionicons name="chevron-forward" size={18} color="#8b8b8b" />
+                </View>
+              </TouchableOpacity>
             );
           })
         )}
@@ -463,7 +473,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#121212',
     borderRadius: 8,
     padding: 16,
+    paddingRight: 36,
     marginBottom: 12,
+    position: 'relative',
+  },
+  orderArrowIndicator: {
+    position: 'absolute',
+    right: 12,
+    top: '50%',
+    transform: [{ translateY: -9 }],
   },
   orderHeader: {
     flexDirection: 'row',

@@ -15,7 +15,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { useAuth } from '../../src/contexts/AuthContext';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import {
   getVehicleTypes,
   getManufacturers,
@@ -154,6 +154,7 @@ const getStatusInfo = (status: string, language: string, statusLabel?: string) =
 };
 
 export default function FilesScreen() {
+  const router = useRouter();
   const { language } = useLanguage();
   const { getAccessToken } = useAuth();
   const [viewMode, setViewMode] = useState<ViewMode>('orders');
@@ -1303,14 +1304,14 @@ export default function FilesScreen() {
 
   const renderOrderCard = (order: Order) => {
     const statusInfo = getStatusInfo(order.status, language, order.statusLabel);
-    const isExpanded = expandedOrder === order.id;
 
     return (
       <TouchableOpacity
         key={order.id}
         style={styles.orderCard}
-        onPress={() => setExpandedOrder(isExpanded ? null : order.id)}
+        onPress={() => router.push(`/customer/order/${order.orderNumber}`)}
         activeOpacity={0.8}
+        data-testid={`order-card-${order.orderNumber}`}
       >
         <View style={styles.orderHeader}>
           <View style={styles.orderNumberContainer}>
@@ -1338,43 +1339,11 @@ export default function FilesScreen() {
 
         <View style={styles.orderFile}>
           <Ionicons name="document" size={16} color="#8b8b8b" />
-          <Text style={styles.orderFileText}>{order.fileName}</Text>
+          <Text style={styles.orderFileText} numberOfLines={1}>{order.fileName}</Text>
         </View>
 
-        {isExpanded && (
-          <View style={styles.orderDetails}>
-            <View style={styles.orderDetailRow}>
-              <Text style={styles.orderDetailLabel}>Tool:</Text>
-              <Text style={styles.orderDetailValue}>{order.tuningTool}</Text>
-            </View>
-            <View style={styles.orderDetailRow}>
-              <Text style={styles.orderDetailLabel}>
-                {language === 'de' ? 'Methode:' : 'Method:'}
-              </Text>
-              <Text style={styles.orderDetailValue}>{order.method}</Text>
-            </View>
-            <View style={styles.orderDetailRow}>
-              <Text style={styles.orderDetailLabel}>Slave/Master:</Text>
-              <Text style={styles.orderDetailValue}>{order.slaveOrMaster}</Text>
-            </View>
-            
-            {order.status === 'completed' && (
-              <TouchableOpacity style={styles.downloadButton}>
-                <Ionicons name="download" size={18} color="#ffffff" />
-                <Text style={styles.downloadButtonText}>
-                  {language === 'de' ? 'Datei herunterladen' : 'Download File'}
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
-
-        <View style={styles.expandIndicator}>
-          <Ionicons
-            name={isExpanded ? 'chevron-up' : 'chevron-down'}
-            size={20}
-            color="#8b8b8b"
-          />
+        <View style={styles.orderArrow}>
+          <Ionicons name="chevron-forward" size={20} color="#8b8b8b" />
         </View>
       </TouchableOpacity>
     );
@@ -2073,10 +2042,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    flex: 1,
   },
   orderFileText: {
     color: '#8b8b8b',
     fontSize: 13,
+    flex: 1,
+  },
+  orderArrow: {
+    position: 'absolute',
+    right: 12,
+    top: '50%',
+    transform: [{ translateY: -10 }],
   },
   orderDetails: {
     marginTop: 16,
