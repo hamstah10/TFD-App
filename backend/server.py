@@ -1270,7 +1270,7 @@ async def create_order(order: OrderCreate, request: Request):
 
 @api_router.get("/orders")
 async def get_orders(request: Request):
-    """Get all orders for the authenticated user - syncs status from CRM"""
+    """Get all orders for the authenticated user - status updates come via webhooks"""
     auth_header = request.headers.get("Authorization")
     customer = await verify_token_and_get_customer(auth_header)
     customer_id = customer.get("id")
@@ -1287,55 +1287,6 @@ async def get_orders(request: Request):
         if "_id" in order:
             order["id"] = str(order["_id"])
             del order["_id"]
-    
-    # Try to fetch latest order status from CRM
-    try:
-        async with httpx.AsyncClient(timeout=10.0) as http_client:
-            crm_response = await http_client.get(
-                f"{CRM_API_BASE}/orders",
-                headers={"Authorization": auth_header},
-                params={"limit": 100}
-            )
-            
-            if crm_response.status_code == 200:
-                crm_orders = crm_response.json()
-                # Handle both list and dict with 'data' key
-                if isinstance(crm_orders, dict) and "data" in crm_orders:
-                    crm_orders = crm_orders["data"]
-                
-                # Create a map of CRM order IDs to their status
-                crm_status_map = {}
-                for crm_order in crm_orders:
-                    crm_id = crm_order.get("id")
-                    if crm_id:
-                        crm_status_map[crm_id] = {
-                            "status": crm_order.get("status"),
-                            "statusLabel": crm_order.get("statusLabel"),
-                            "statusColor": crm_order.get("statusColor"),
-                        }
-                
-                # Update local orders with CRM status
-                for order in orders:
-                    crm_order_id = order.get("crmOrderId")
-                    if crm_order_id and crm_order_id in crm_status_map:
-                        crm_status = crm_status_map[crm_order_id]
-                        order["status"] = crm_status.get("status") or order.get("status")
-                        order["statusLabel"] = crm_status.get("statusLabel") or order.get("statusLabel")
-                        if crm_status.get("statusColor"):
-                            order["statusColor"] = crm_status["statusColor"]
-                        
-                        # Also update in database for caching
-                        await db.orders.update_one(
-                            {"orderNumber": order.get("orderNumber")},
-                            {"$set": {
-                                "status": order["status"],
-                                "statusLabel": order.get("statusLabel"),
-                                "statusColor": order.get("statusColor"),
-                            }}
-                        )
-    except Exception as e:
-        logger.warning(f"Failed to fetch CRM order status: {str(e)}")
-        # Continue with local data if CRM fetch fails
     
     return orders
 
