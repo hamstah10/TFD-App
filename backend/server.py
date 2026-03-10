@@ -1483,18 +1483,19 @@ async def create_ticket(ticket: TicketCreate, request: Request):
         "crmTicketId": None,
     }
     
-    # Forward ticket to CRM
+    # Forward ticket to CRM using the correct API format
+    # CRM API: POST /api/tickets
+    # With Customer-Token, customerId is automatically set from the token
     crm_ticket_payload = {
-        "customerId": customer_id,
-        "customerEmail": customer.get("email"),
         "subject": ticket.subject,
         "message": ticket.message,
         "priority": ticket.priority,
-        "createdAt": now,
+        "senderName": customer.get("email") or customer.get("companyName"),
     }
     
     try:
         logger.info(f"Forwarding ticket to CRM: {CRM_API_BASE}/tickets")
+        logger.info(f"CRM ticket payload: {crm_ticket_payload}")
         
         async with httpx.AsyncClient(timeout=30.0) as http_client:
             crm_response = await http_client.post(
@@ -1507,13 +1508,16 @@ async def create_ticket(ticket: TicketCreate, request: Request):
             )
             
             logger.info(f"CRM tickets response status: {crm_response.status_code}")
+            logger.info(f"CRM tickets response body: {crm_response.text[:500]}")
             
             if crm_response.status_code in [200, 201]:
                 crm_data = crm_response.json()
-                crm_ticket_id = crm_data.get("id") or crm_data.get("ticketId")
+                crm_ticket_id = crm_data.get("id")
+                crm_ticket_number = crm_data.get("ticketNumber")
                 ticket_doc["crmTicketId"] = crm_ticket_id
+                ticket_doc["crmTicketNumber"] = crm_ticket_number
                 ticket_doc["crmSynced"] = True
-                logger.info(f"Ticket successfully sent to CRM: {crm_ticket_id}")
+                logger.info(f"Ticket successfully sent to CRM: id={crm_ticket_id}, number={crm_ticket_number}")
             else:
                 crm_error = f"CRM API returned {crm_response.status_code}: {crm_response.text}"
                 ticket_doc["crmError"] = crm_error
@@ -1572,12 +1576,25 @@ async def get_ticket(ticket_id: str, request: Request):
 
 @api_router.post("/customer/tickets/{ticket_id}/reply")
 async def reply_to_ticket(ticket_id: str, reply: TicketMessageCreate, request: Request):
-    """Add a reply to a ticket"""
+    """Add a reply to a ticket and forward to CRM if synced"""
     auth_header = request.headers.get("Authorization")
     customer = await verify_token_and_get_customer(auth_header)
     customer_id = customer.get("id")
     
     now = datetime.now(timezone.utc).isoformat()
+    
+    # First, get the ticket to check if it's CRM synced
+    ticket = await db.customer_tickets.find_one({
+        "ticketNumber": ticket_id,
+        "customerId": customer_id
+    })
+    
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket nicht gefunden")
+    
+    # Check if ticket is closed
+    if ticket.get("status") == "closed":
+        raise HTTPException(status_code=409, detail="Ticket ist geschlossen")
     
     new_message = {
         "sender": "customer",
@@ -1586,6 +1603,41 @@ async def reply_to_ticket(ticket_id: str, reply: TicketMessageCreate, request: R
         "createdAt": now,
     }
     
+    # Forward reply to CRM if the ticket was synced
+    crm_ticket_id = ticket.get("crmTicketId")
+    if crm_ticket_id:
+        try:
+            crm_reply_payload = {
+                "message": reply.message,
+                "senderName": customer.get("email") or customer.get("companyName"),
+            }
+            
+            logger.info(f"Forwarding reply to CRM: {CRM_API_BASE}/tickets/{crm_ticket_id}/messages")
+            
+            async with httpx.AsyncClient(timeout=30.0) as http_client:
+                crm_response = await http_client.post(
+                    f"{CRM_API_BASE}/tickets/{crm_ticket_id}/messages",
+                    json=crm_reply_payload,
+                    headers={
+                        "Authorization": auth_header,
+                        "Content-Type": "application/json"
+                    }
+                )
+                
+                logger.info(f"CRM reply response status: {crm_response.status_code}")
+                
+                if crm_response.status_code == 200:
+                    logger.info("Reply successfully forwarded to CRM")
+                elif crm_response.status_code == 409:
+                    # Ticket is closed in CRM
+                    logger.warning("Ticket is closed in CRM")
+                else:
+                    logger.error(f"CRM reply error: {crm_response.text}")
+                    
+        except Exception as e:
+            logger.error(f"Failed to forward reply to CRM: {str(e)}")
+    
+    # Update local ticket
     result = await db.customer_tickets.update_one(
         {"ticketNumber": ticket_id, "customerId": customer_id},
         {

@@ -89,7 +89,7 @@ Mobile app for a chiptuning database based on tuningfiles-download.com website. 
 - [x] **Fixed logout using wrong storage API** - Now uses consistent `storage` helper
 
 ### Push Notification System (NEW)
-**Webhook URL for CRM**: `https://ios-auth-fix-1.preview.emergentagent.com/api/webhooks/crm/order`
+**Webhook URL for CRM**: `https://configurator-preview.preview.emergentagent.com/api/webhooks/crm/order`
 
 **Supported Events**:
 - `order.created` - Sends push notification when new order is created

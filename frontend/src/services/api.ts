@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://ios-auth-fix-1.preview.emergentagent.com';
+const API_BASE = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://configurator-preview.preview.emergentagent.com';
 
 const api = axios.create({
   baseURL: `${API_BASE}/api`,

@@ -34,7 +34,7 @@
   "seed_data_creation": "Test push tokens created and cleaned up during tests",
   "retest_needed": false,
   "should_main_agent_self_test": false,
-  "context_for_next_testing_agent": "Push notification backend tests are in /app/backend/tests/test_push_notifications.py. All endpoints tested: POST /api/push/register, POST /api/push/unregister, POST /api/webhooks/crm/order, POST /api/webhooks/crm/ticket, POST /api/push/test. Auth flow (login) verified working. CRM webhook URL: https://ios-auth-fix-1.preview.emergentagent.com/api/webhooks/crm/order",
+  "context_for_next_testing_agent": "Push notification backend tests are in /app/backend/tests/test_push_notifications.py. All endpoints tested: POST /api/push/register, POST /api/push/unregister, POST /api/webhooks/crm/order, POST /api/webhooks/crm/ticket, POST /api/push/test. Auth flow (login) verified working. CRM webhook URL: https://configurator-preview.preview.emergentagent.com/api/webhooks/crm/order",
   "tests_executed": [
     "TestAuthFlow::test_login_success - PASSED",
     "TestAuthFlow::test_login_invalid_credentials - PASSED",

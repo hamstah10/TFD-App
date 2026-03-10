@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { useAuth } from '../../src/contexts/AuthContext';
@@ -42,6 +43,7 @@ const getPriorityInfo = (priority: string, language: string) => {
 };
 
 export default function TicketsScreen() {
+  const router = useRouter();
   const { language } = useLanguage();
   const { getAccessToken } = useAuth();
   const [showNewTicket, setShowNewTicket] = useState(false);
@@ -67,6 +69,10 @@ export default function TicketsScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const openTicketDetail = (ticket: Ticket) => {
+    router.push(`/customer/ticket/${ticket.ticketNumber}`);
   };
 
   const handleCreateTicket = async () => {
@@ -227,7 +233,12 @@ export default function TicketsScreen() {
             const lastReplyDate = ticket.lastReply ? new Date(ticket.lastReply).toLocaleString('de-DE') : '';
             
             return (
-              <TouchableOpacity key={ticket.id} style={styles.ticketCard}>
+              <TouchableOpacity 
+                key={ticket.id} 
+                style={styles.ticketCard}
+                onPress={() => openTicketDetail(ticket)}
+                data-testid={`ticket-card-${ticket.ticketNumber}`}
+              >
                 <View style={styles.ticketHeader}>
                   <View style={styles.ticketIdContainer}>
                     <Text style={styles.ticketId}>{ticket.ticketNumber}</Text>
