@@ -14,6 +14,12 @@ Notifications.setNotificationHandler({
 });
 
 export async function registerForPushNotificationsAsync(): Promise<string | null> {
+  // Push notifications don't work on web
+  if (Platform.OS === 'web') {
+    console.log('Push notifications are not supported on web');
+    return null;
+  }
+
   // Only works on physical devices
   if (!Device.isDevice) {
     console.warn('Push notifications only work on physical devices');
@@ -69,9 +75,7 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
 
   // Get Expo push token
   try {
-    const { data: token } = await Notifications.getExpoPushTokenAsync({
-      projectId: undefined, // Will use the project ID from app.json
-    });
+    const { data: token } = await Notifications.getExpoPushTokenAsync();
     console.log('Expo push token obtained:', token);
     return token;
   } catch (error) {
