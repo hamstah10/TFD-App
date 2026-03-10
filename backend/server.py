@@ -906,55 +906,65 @@ class FahrzeugscheinScanResponse(BaseModel):
 # Import for AI-powered Fahrzeugschein parsing
 import json
 import base64
-from emergentintegrations.llm.chat import LlmChat, UserMessage
+import openai
 
 @api_router.post("/scan-fahrzeugschein", response_model=FahrzeugscheinScanResponse)
 async def scan_fahrzeugschein(request: FahrzeugscheinScanRequest):
     """Scan a vehicle registration document (Fahrzeugschein) using GPT-4o Vision"""
     
-    # Get the Emergent LLM Key
-    api_key = os.environ.get("EMERGENT_LLM_KEY")
+    # Get the OpenAI API Key
+    api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
-        logger.error("EMERGENT_LLM_KEY not configured")
+        logger.error("OPENAI_API_KEY not configured")
         return FahrzeugscheinScanResponse(
             success=False,
             error="AI-Service nicht konfiguriert"
         )
     
     try:
-        # Create image data URL for embedding in message
+        client = openai.OpenAI(api_key=api_key)
+        
+        # Prepare the image data URL
         image_data_url = f"data:image/jpeg;base64,{request.image}"
         
-        # Create prompt with embedded image reference
-        prompt = f"""Analysiere das folgende Bild eines deutschen Fahrzeugscheins.
-
-[BILD: {image_data_url[:100]}... (Base64 image data)]
-
-Extrahiere alle Fahrzeugdaten und antworte NUR mit einem JSON-Objekt:
-{{"D.1": "Marke", "D.2": "Typ", "D.3": "Modell", "E": "FIN", "B": "Erstzulassung DD.MM.YYYY", "P.1": "Hubraum cm³", "P.2": "Leistung kW", "P.3": "Kraftstoff", "V.9": "Schadstoffklasse", "14": "Motorcode", "2": "HSN", "3": "TSN"}}"""
-
-        chat = LlmChat(
-            api_key=api_key,
-            session_id=f"fahrzeugschein-scan",
-            system_message="""Du bist ein Experte für deutsche Fahrzeugscheine (Zulassungsbescheinigung Teil 1).
-Wenn der Benutzer dir ein Bild beschreibt, analysiere es und extrahiere die Fahrzeugdaten.
-Antworte NUR mit einem validen JSON-Objekt ohne weitere Erklärungen."""
-        ).with_model("openai", "gpt-4o")
+        logger.info("Calling GPT-4o Vision for Fahrzeugschein analysis...")
         
-        logger.info("Calling GPT-4o for Fahrzeugschein analysis...")
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                    "role": "system",
+                    "content": """Du bist ein Experte für deutsche Fahrzeugscheine (Zulassungsbescheinigung Teil 1).
+Analysiere das Bild und extrahiere ALLE verfügbaren Fahrzeugdaten.
+Antworte NUR mit einem JSON-Objekt ohne Markdown-Formatierung:
+{"D.1": "Marke", "D.2": "Typ/Variante", "D.3": "Handelsbezeichnung", "E": "FIN", "B": "Erstzulassung", "P.1": "Hubraum cm³", "P.2": "Leistung kW", "P.3": "Kraftstoff", "V.9": "Schadstoffklasse", "14": "Motorcode", "2": "HSN", "3": "TSN"}
+Setze null für nicht lesbare oder nicht vorhandene Felder."""
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Analysiere diesen deutschen Fahrzeugschein und extrahiere alle Fahrzeugdaten als JSON:"
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": image_data_url,
+                                "detail": "high"
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens=500
+        )
         
-        msg = UserMessage(text=prompt)
-        response = await chat.send_message(msg)
+        ai_response = response.choices[0].message.content
+        logger.info(f"GPT-4o Vision response: {ai_response[:300]}...")
         
-        logger.info(f"GPT-4o response: {response[:300]}...")
-        
-        # Since we can't send actual images, we'll return a parsing error
-        # and let the frontend use the mock data
-        # This is a known limitation - the emergentintegrations library
-        # doesn't properly support vision/image analysis yet
-        
-        # Try to parse JSON from response
-        json_str = response.strip()
+        # Parse the JSON response
+        json_str = ai_response.strip()
         if "```json" in json_str:
             json_str = json_str.split("```json")[1].split("```")[0].strip()
         elif "```" in json_str:
@@ -964,22 +974,15 @@ Antworte NUR mit einem validen JSON-Objekt ohne weitere Erklärungen."""
             parsed_data = json.loads(json_str)
         except json.JSONDecodeError:
             import re
-            json_match = re.search(r'\{[^{}]+\}', response, re.DOTALL)
+            json_match = re.search(r'\{[^{}]+\}', ai_response, re.DOTALL)
             if json_match:
                 parsed_data = json.loads(json_match.group())
             else:
-                logger.warning("GPT-4o did not return valid JSON - Vision not supported via this method")
+                logger.error(f"Could not parse JSON: {ai_response}")
                 return FahrzeugscheinScanResponse(
                     success=False,
-                    error="Bildanalyse nicht verfügbar - bitte Daten manuell eingeben"
+                    error="Konnte Fahrzeugdaten nicht auslesen"
                 )
-        
-        # Check if we got real data or placeholder
-        if all(v is None or v == "null" for v in parsed_data.values()):
-            return FahrzeugscheinScanResponse(
-                success=False,
-                error="Keine Fahrzeugdaten erkannt"
-            )
         
         # Transform to friendly format
         friendly_data = {
@@ -995,6 +998,13 @@ Antworte NUR mit einem validen JSON-Objekt ohne weitere Erklärungen."""
             "engineCode": parsed_data.get("14"),
             "hsn": parsed_data.get("2"),
             "tsn": parsed_data.get("3"),
+            # Also include the old field names for compatibility
+            "d1": parsed_data.get("D.1"),
+            "d3": parsed_data.get("D.3"),
+            "p1": parsed_data.get("P.1"),
+            "p2_p4": parsed_data.get("P.2"),
+            "p3": parsed_data.get("P.3"),
+            "ez_string": parsed_data.get("B"),
             "raw": parsed_data
         }
         
@@ -1009,6 +1019,12 @@ Antworte NUR mit einem validen JSON-Objekt ohne weitere Erklärungen."""
             data=friendly_data
         )
         
+    except openai.APIError as e:
+        logger.error(f"OpenAI API error: {str(e)}")
+        return FahrzeugscheinScanResponse(
+            success=False,
+            error=f"OpenAI API Fehler: {str(e)}"
+        )
     except Exception as e:
         logger.error(f"Fahrzeugschein AI scan error: {str(e)}")
         return FahrzeugscheinScanResponse(
