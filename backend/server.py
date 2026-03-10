@@ -923,7 +923,7 @@ async def scan_fahrzeugschein(request: FahrzeugscheinScanRequest):
     
     try:
         # Use OpenAI API directly with the Emergent proxy
-        proxy_url = "https://integrations.emergentmethods.ai/openai/v1/chat/completions"
+        proxy_url = "https://integrations.emergentagent.com/openai/v1/chat/completions"
         
         # Prepare the image data URL
         image_data = f"data:image/jpeg;base64,{request.image}"
