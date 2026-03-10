@@ -15,7 +15,7 @@ import { useAuth } from '../../../src/contexts/AuthContext';
 import { getOrders, Order } from '../../../src/services/api';
 
 const getStatusInfo = (status: string, statusLabel?: string) => {
-  const statusMap: { [key: string]: { label: string; color: string; icon: string } } = {
+  const statusMap: { [key: string]: { label: string; color: string; icon: keyof typeof Ionicons.glyphMap } } = {
     pending: { label: 'Ausstehend', color: '#ff9800', icon: 'time' },
     eingegangen: { label: 'Eingegangen', color: '#2196f3', icon: 'mail' },
     in_bearbeitung: { label: 'In Bearbeitung', color: '#9c27b0', icon: 'construct' },
