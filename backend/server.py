@@ -1556,11 +1556,12 @@ async def get_tickets(request: Request):
 
 @api_router.get("/customer/tickets/{ticket_id}")
 async def get_ticket(ticket_id: str, request: Request):
-    """Get a specific ticket with messages"""
+    """Get a specific ticket with messages - fetches from CRM if synced"""
     auth_header = request.headers.get("Authorization")
     customer = await verify_token_and_get_customer(auth_header)
     customer_id = customer.get("id")
     
+    # First get local ticket
     ticket = await db.customer_tickets.find_one({
         "ticketNumber": ticket_id,
         "customerId": customer_id
@@ -1571,6 +1572,58 @@ async def get_ticket(ticket_id: str, request: Request):
     
     ticket["id"] = str(ticket["_id"])
     del ticket["_id"]
+    
+    # If ticket is synced with CRM, fetch latest messages from CRM
+    crm_ticket_id = ticket.get("crmTicketId")
+    if crm_ticket_id:
+        try:
+            logger.info(f"Fetching ticket {crm_ticket_id} from CRM")
+            async with httpx.AsyncClient(timeout=30.0) as http_client:
+                crm_response = await http_client.get(
+                    f"{CRM_API_BASE}/tickets/{crm_ticket_id}",
+                    headers={
+                        "Authorization": auth_header,
+                    }
+                )
+                
+                if crm_response.status_code == 200:
+                    crm_ticket = crm_response.json()
+                    logger.info(f"CRM ticket fetched: {crm_ticket.get('ticketNumber')}, messages: {len(crm_ticket.get('messages', []))}")
+                    
+                    # Update local ticket with CRM data
+                    crm_messages = crm_ticket.get("messages", [])
+                    
+                    # Transform CRM messages to our format
+                    transformed_messages = []
+                    for msg in crm_messages:
+                        sender_type = msg.get("senderType", "customer")
+                        transformed_messages.append({
+                            "sender": sender_type,
+                            "senderName": msg.get("senderName", "Support" if sender_type != "customer" else customer.get("email")),
+                            "message": msg.get("message", ""),
+                            "createdAt": msg.get("createdAt", ""),
+                        })
+                    
+                    # Update ticket with CRM data
+                    ticket["messages"] = transformed_messages
+                    ticket["status"] = crm_ticket.get("status", ticket.get("status"))
+                    ticket["lastReply"] = crm_ticket.get("lastMessageAt", ticket.get("lastReply"))
+                    ticket["messageCount"] = len(transformed_messages)
+                    
+                    # Also update local database with latest status
+                    await db.customer_tickets.update_one(
+                        {"ticketNumber": ticket_id},
+                        {"$set": {
+                            "status": ticket["status"],
+                            "lastReply": ticket["lastReply"],
+                            "messages": transformed_messages
+                        }}
+                    )
+                else:
+                    logger.warning(f"Failed to fetch CRM ticket: {crm_response.status_code}")
+        except Exception as e:
+            logger.error(f"Error fetching CRM ticket: {str(e)}")
+            # Continue with local data if CRM fetch fails
     
     return ticket
 
