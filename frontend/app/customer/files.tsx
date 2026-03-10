@@ -811,7 +811,12 @@ export default function FilesScreen() {
 
       console.log('Order created successfully:', result);
 
-      // Reset form first
+      // Show success message and switch to orders view
+      console.log('Setting showSuccessMessage to true');
+      setShowSuccessMessage(true);
+      setViewMode('orders');
+      
+      // Reset form
       setCurrentStep(1);
       setOrderData({
         file: null,
@@ -826,15 +831,12 @@ export default function FilesScreen() {
         stage: null,
       });
       
-      // Show success message and switch to orders view
-      setShowSuccessMessage(true);
-      setViewMode('orders');
-      
       // Reload orders to show the new one
       await loadOrders();
       
       // Hide success message after 5 seconds
       setTimeout(() => {
+        console.log('Hiding success message');
         setShowSuccessMessage(false);
       }, 5000);
       
@@ -1482,10 +1484,10 @@ export default function FilesScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Content based on view mode */}
+      {/* Success Banner - Always visible at top when shown */}
       {showSuccessMessage && (
-        <View style={styles.successBanner}>
-          <Ionicons name="checkmark-circle" size={24} color="#4caf50" />
+        <View style={styles.successBanner} data-testid="order-success-banner">
+          <Ionicons name="checkmark-circle" size={28} color="#4caf50" />
           <View style={styles.successTextContainer}>
             <Text style={styles.successTitle}>
               {language === 'de' ? 'Bestellung erfolgreich!' : 'Order Successful!'}
@@ -1496,8 +1498,8 @@ export default function FilesScreen() {
                 : 'Your order has been submitted. You will receive a confirmation shortly.'}
             </Text>
           </View>
-          <TouchableOpacity onPress={() => setShowSuccessMessage(false)}>
-            <Ionicons name="close" size={20} color="#8b8b8b" />
+          <TouchableOpacity onPress={() => setShowSuccessMessage(false)} style={styles.successCloseBtn}>
+            <Ionicons name="close-circle" size={24} color="#ffffff" />
           </TouchableOpacity>
         </View>
       )}
@@ -1554,26 +1556,35 @@ const styles = StyleSheet.create({
   successBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1a3320',
+    backgroundColor: '#1a472a',
     borderRadius: 12,
     padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
+    marginBottom: 20,
+    borderWidth: 2,
     borderColor: '#4caf50',
     gap: 12,
+    shadowColor: '#4caf50',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 5,
   },
   successTextContainer: {
     flex: 1,
   },
   successTitle: {
-    color: '#4caf50',
-    fontSize: 16,
+    color: '#ffffff',
+    fontSize: 18,
     fontWeight: '700',
     marginBottom: 4,
   },
   successMessage: {
     color: '#a5d6a7',
     fontSize: 14,
+    lineHeight: 20,
+  },
+  successCloseBtn: {
+    padding: 4,
   },
   header: {
     paddingTop: 16,
