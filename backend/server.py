@@ -1450,7 +1450,7 @@ class TicketMessageCreate(BaseModel):
 
 @api_router.post("/customer/tickets")
 async def create_ticket(ticket: TicketCreate, request: Request):
-    """Create a new ticket for the authenticated user"""
+    """Create a new ticket for the authenticated user and forward to CRM"""
     auth_header = request.headers.get("Authorization")
     customer = await verify_token_and_get_customer(auth_header)
     customer_id = customer.get("id")
@@ -1479,7 +1479,48 @@ async def create_ticket(ticket: TicketCreate, request: Request):
                 "createdAt": now,
             }
         ],
+        "crmSynced": False,
+        "crmTicketId": None,
     }
+    
+    # Forward ticket to CRM
+    crm_ticket_payload = {
+        "customerId": customer_id,
+        "customerEmail": customer.get("email"),
+        "subject": ticket.subject,
+        "message": ticket.message,
+        "priority": ticket.priority,
+        "createdAt": now,
+    }
+    
+    try:
+        logger.info(f"Forwarding ticket to CRM: {CRM_API_BASE}/tickets")
+        
+        async with httpx.AsyncClient(timeout=30.0) as http_client:
+            crm_response = await http_client.post(
+                f"{CRM_API_BASE}/tickets",
+                json=crm_ticket_payload,
+                headers={
+                    "Authorization": auth_header,
+                    "Content-Type": "application/json"
+                }
+            )
+            
+            logger.info(f"CRM tickets response status: {crm_response.status_code}")
+            
+            if crm_response.status_code in [200, 201]:
+                crm_data = crm_response.json()
+                crm_ticket_id = crm_data.get("id") or crm_data.get("ticketId")
+                ticket_doc["crmTicketId"] = crm_ticket_id
+                ticket_doc["crmSynced"] = True
+                logger.info(f"Ticket successfully sent to CRM: {crm_ticket_id}")
+            else:
+                crm_error = f"CRM API returned {crm_response.status_code}: {crm_response.text}"
+                ticket_doc["crmError"] = crm_error
+                logger.error(f"CRM tickets API error: {crm_error}")
+    except Exception as e:
+        logger.error(f"Failed to forward ticket to CRM: {str(e)}")
+        ticket_doc["crmError"] = str(e)
     
     result = await db.customer_tickets.insert_one(ticket_doc)
     ticket_doc["id"] = str(result.inserted_id)
