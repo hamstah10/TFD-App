@@ -89,7 +89,7 @@ export default function LoginScreen() {
         <View style={styles.content}>
           {/* Login Icon */}
           <View style={styles.iconContainer}>
-            <Ionicons name="person-circle" size={80} color="#f5a623" />
+            <Ionicons name="person-circle" size={80} color="#bbcf4e" />
           </View>
 
           <Text style={styles.title}>
@@ -240,14 +240,14 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   forgotText: {
-    color: '#f5a623',
+    color: '#bbcf4e',
     fontSize: 14,
   },
   loginButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
     borderRadius: 12,
     padding: 16,
     gap: 8,

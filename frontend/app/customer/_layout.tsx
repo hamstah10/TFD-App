@@ -61,7 +61,7 @@ export default function CustomerLayout() {
       <View style={styles.header}>
         <Logo width={160} height={50} isOpen={isOpen} />
         <View style={styles.headerRight}>
-          <Ionicons name="time" size={24} color={isOpen ? '#4caf50' : '#f5a623'} />
+          <Ionicons name="time" size={24} color={isOpen ? '#4caf50' : '#bbcf4e'} />
           <LanguageSwitch />
         </View>
       </View>
@@ -69,7 +69,7 @@ export default function CustomerLayout() {
       {/* User Info Bar */}
       <View style={styles.userBar}>
         <View style={styles.userInfo}>
-          <Ionicons name="person-circle" size={32} color="#f5a623" />
+          <Ionicons name="person-circle" size={32} color="#bbcf4e" />
           <View style={styles.userText}>
             <Text style={styles.userName}>{user?.name}</Text>
             <Text style={styles.userCompany}>{user?.company}</Text>
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     padding: 8,
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
     borderRadius: 8,
   },
   userBar: {
@@ -221,6 +221,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   navTabActive: {
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
   },
 });

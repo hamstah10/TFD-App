@@ -161,7 +161,7 @@ export default function ContactScreen() {
           {companyInfo && (
             <View style={styles.infoCard}>
               <View style={styles.infoRow}>
-                <Ionicons name="location" size={20} color="#f5a623" />
+                <Ionicons name="location" size={20} color="#bbcf4e" />
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>{t('address')}</Text>
                   <Text style={styles.infoText}>{companyInfo.address.street}</Text>
@@ -172,7 +172,7 @@ export default function ContactScreen() {
               </View>
 
               <View style={styles.infoRow}>
-                <Ionicons name="call" size={20} color="#f5a623" />
+                <Ionicons name="call" size={20} color="#bbcf4e" />
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>Telefon</Text>
                   <Text style={styles.infoText}>{companyInfo.phone}</Text>
@@ -180,7 +180,7 @@ export default function ContactScreen() {
               </View>
 
               <View style={styles.infoRow}>
-                <Ionicons name="mail" size={20} color="#f5a623" />
+                <Ionicons name="mail" size={20} color="#bbcf4e" />
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>E-Mail</Text>
                   <Text style={styles.infoText}>{companyInfo.email}</Text>
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
     paddingTop: 14,
   },
   submitButton: {
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',

@@ -168,7 +168,7 @@ export function ChatAssistant({ onVehicleSuggestion, isVisible, onClose }: ChatA
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <View style={styles.avatarContainer}>
-            <Ionicons name="chatbubbles" size={24} color="#f5a623" />
+            <Ionicons name="chatbubbles" size={24} color="#bbcf4e" />
           </View>
           <View>
             <Text style={styles.headerTitle}>
@@ -207,7 +207,7 @@ export function ChatAssistant({ onVehicleSuggestion, isVisible, onClose }: ChatA
           >
             {!message.isUser && (
               <View style={styles.botAvatar}>
-                <Ionicons name="car-sport" size={16} color="#f5a623" />
+                <Ionicons name="car-sport" size={16} color="#bbcf4e" />
               </View>
             )}
             <View style={[
@@ -227,10 +227,10 @@ export function ChatAssistant({ onVehicleSuggestion, isVisible, onClose }: ChatA
         {loading && (
           <View style={[styles.messageBubble, styles.botBubble]}>
             <View style={styles.botAvatar}>
-              <Ionicons name="car-sport" size={16} color="#f5a623" />
+              <Ionicons name="car-sport" size={16} color="#bbcf4e" />
             </View>
             <View style={[styles.messageContent, styles.botContent, styles.loadingContent]}>
-              <ActivityIndicator color="#f5a623" size="small" />
+              <ActivityIndicator color="#bbcf4e" size="small" />
               <Text style={styles.loadingText}>
                 {language === 'de' ? 'Denke nach...' : 'Thinking...'}
               </Text>
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     padding: 8,
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
     borderRadius: 20,
   },
   messagesContainer: {
@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
   },
   userContent: {
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
     borderBottomRightRadius: 4,
   },
   botContent: {
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
     justifyContent: 'center',
     alignItems: 'center',
   },

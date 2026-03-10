@@ -87,7 +87,7 @@ export default function OrderDetailScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#f5a623" />
+        <ActivityIndicator size="large" color="#bbcf4e" />
       </View>
     );
   }
@@ -95,7 +95,7 @@ export default function OrderDetailScreen() {
   if (!order) {
     return (
       <View style={styles.errorContainer}>
-        <Ionicons name="alert-circle" size={64} color="#f5a623" />
+        <Ionicons name="alert-circle" size={64} color="#bbcf4e" />
         <Text style={styles.errorText}>
           {language === 'de' ? 'Auftrag nicht gefunden' : 'Order not found'}
         </Text>
@@ -138,15 +138,15 @@ export default function OrderDetailScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#f5a623"
-            colors={['#f5a623']}
+            tintColor="#bbcf4e"
+            colors={['#bbcf4e']}
           />
         }
       >
         {/* Vehicle Info */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="car-sport" size={20} color="#f5a623" />
+            <Ionicons name="car-sport" size={20} color="#bbcf4e" />
             <Text style={styles.sectionTitle}>
               {language === 'de' ? 'Fahrzeug' : 'Vehicle'}
             </Text>
@@ -191,7 +191,7 @@ export default function OrderDetailScreen() {
         {/* Tuning Info */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="speedometer" size={20} color="#f5a623" />
+            <Ionicons name="speedometer" size={20} color="#bbcf4e" />
             <Text style={styles.sectionTitle}>
               {language === 'de' ? 'Tuning' : 'Tuning'}
             </Text>
@@ -228,14 +228,14 @@ export default function OrderDetailScreen() {
         {/* File Info */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="document" size={20} color="#f5a623" />
+            <Ionicons name="document" size={20} color="#bbcf4e" />
             <Text style={styles.sectionTitle}>
               {language === 'de' ? 'Datei' : 'File'}
             </Text>
           </View>
           <View style={styles.card}>
             <View style={styles.fileInfo}>
-              <Ionicons name="document-attach" size={32} color="#f5a623" />
+              <Ionicons name="document-attach" size={32} color="#bbcf4e" />
               <View style={styles.fileDetails}>
                 <Text style={styles.fileName} numberOfLines={2}>{order.fileName}</Text>
                 {order.fileSize && (
@@ -249,7 +249,7 @@ export default function OrderDetailScreen() {
         {/* Order Meta */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="information-circle" size={20} color="#f5a623" />
+            <Ionicons name="information-circle" size={20} color="#bbcf4e" />
             <Text style={styles.sectionTitle}>
               {language === 'de' ? 'Details' : 'Details'}
             </Text>
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   backButton: {
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 10,
@@ -332,7 +332,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   orderNumber: {
-    color: '#f5a623',
+    color: '#bbcf4e',
     fontSize: 16,
     fontWeight: '700',
   },
@@ -401,7 +401,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   stageBadge: {
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
     alignSelf: 'flex-start',
     paddingHorizontal: 16,
     paddingVertical: 8,

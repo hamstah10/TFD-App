@@ -100,7 +100,7 @@ export default function BlogEditorScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['bottom']}>
         <View style={styles.centerLoading}>
-          <ActivityIndicator color="#f5a623" size="large" />
+          <ActivityIndicator color="#bbcf4e" size="large" />
         </View>
       </SafeAreaView>
     );
@@ -216,7 +216,7 @@ export default function BlogEditorScreen() {
               <Switch
                 value={published}
                 onValueChange={setPublished}
-                trackColor={{ false: '#162040', true: '#f5a623' }}
+                trackColor={{ false: '#162040', true: '#bbcf4e' }}
                 thumbColor={published ? '#ffffff' : '#8b8b8b'}
               />
             </View>
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
   saveButton: {
     flex: 2,
     flexDirection: 'row',
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',

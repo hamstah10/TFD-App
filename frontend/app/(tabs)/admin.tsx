@@ -149,7 +149,7 @@ export default function AdminScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#f5a623"
+            tintColor="#bbcf4e"
           />
         }
       >
@@ -203,7 +203,7 @@ export default function AdminScreen() {
 
         {loading ? (
           <View style={styles.centerLoading}>
-            <ActivityIndicator color="#f5a623" size="large" />
+            <ActivityIndicator color="#bbcf4e" size="large" />
           </View>
         ) : activeTab === 'blog' ? (
           <View style={styles.contentContainer}>
@@ -247,7 +247,7 @@ export default function AdminScreen() {
                       })
                     }
                   >
-                    <Ionicons name="pencil" size={20} color="#f5a623" />
+                    <Ionicons name="pencil" size={20} color="#bbcf4e" />
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.actionButton}
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   activeTab: {
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
   },
   tabIconContainer: {
     position: 'relative',
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
     borderRadius: 12,
     padding: 16,
     gap: 10,
@@ -466,7 +466,7 @@ const styles = StyleSheet.create({
   },
   unreadCard: {
     borderLeftWidth: 4,
-    borderLeftColor: '#f5a623',
+    borderLeftColor: '#bbcf4e',
   },
   messageHeader: {
     flexDirection: 'row',
@@ -480,7 +480,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   unreadBadge: {
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
@@ -496,7 +496,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   messageSubject: {
-    color: '#f5a623',
+    color: '#bbcf4e',
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 8,

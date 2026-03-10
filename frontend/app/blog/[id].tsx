@@ -59,7 +59,7 @@ export default function BlogDetailScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['bottom']}>
         <View style={styles.centerLoading}>
-          <ActivityIndicator color="#f5a623" size="large" />
+          <ActivityIndicator color="#bbcf4e" size="large" />
         </View>
       </SafeAreaView>
     );

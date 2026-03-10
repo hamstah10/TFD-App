@@ -14,7 +14,7 @@ function CustomHeader() {
     <View style={styles.headerContainer}>
       <Logo width={180} height={55} isOpen={isOpen} />
       <View style={styles.headerRight}>
-        <Ionicons name="time" size={24} color={isOpen ? '#4caf50' : '#f5a623'} />
+        <Ionicons name="time" size={24} color={isOpen ? '#4caf50' : '#bbcf4e'} />
         <LanguageSwitch />
       </View>
     </View>
@@ -27,7 +27,7 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#f5a623',
+        tabBarActiveTintColor: '#bbcf4e',
         tabBarInactiveTintColor: '#8b8b8b',
         tabBarStyle: {
           backgroundColor: '#0d1526',

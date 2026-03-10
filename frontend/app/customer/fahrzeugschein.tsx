@@ -306,7 +306,7 @@ export default function FahrzeugscheinScreen() {
       {/* Scanning indicator */}
       {scanning && (
         <View style={styles.scanningContainer}>
-          <ActivityIndicator color="#f5a623" size="large" />
+          <ActivityIndicator color="#bbcf4e" size="large" />
           <Text style={styles.scanningText}>
             {language === 'de' ? 'Dokument wird analysiert...' : 'Analyzing document...'}
           </Text>
@@ -318,7 +318,7 @@ export default function FahrzeugscheinScreen() {
         <View style={styles.actionsContainer}>
           <TouchableOpacity style={styles.mainActionButton} onPress={openCamera}>
             <View style={styles.mainActionIcon}>
-              <Ionicons name="camera" size={40} color="#f5a623" />
+              <Ionicons name="camera" size={40} color="#bbcf4e" />
             </View>
             <Text style={styles.mainActionTitle}>
               {language === 'de' ? 'Fahrzeugschein fotografieren' : 'Take Photo of Registration'}
@@ -331,7 +331,7 @@ export default function FahrzeugscheinScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.secondaryActionButton} onPress={pickImage}>
-            <Ionicons name="images" size={24} color="#f5a623" />
+            <Ionicons name="images" size={24} color="#bbcf4e" />
             <Text style={styles.secondaryActionText}>
               {language === 'de' ? 'Bild aus Galerie wählen' : 'Choose from Gallery'}
             </Text>
@@ -412,7 +412,7 @@ export default function FahrzeugscheinScreen() {
       {/* Vehicle Info Card */}
       <View style={styles.vehicleCard}>
         <View style={styles.vehicleHeader}>
-          <Ionicons name="car-sport" size={28} color="#f5a623" />
+          <Ionicons name="car-sport" size={28} color="#bbcf4e" />
           <View style={styles.vehicleInfo}>
             <Text style={styles.vehicleName}>
               {mockVehicle?.manufacturer} {mockVehicle?.model}
@@ -440,7 +440,7 @@ export default function FahrzeugscheinScreen() {
         >
           {/* Stage Header */}
           <View style={styles.stageHeader}>
-            <Ionicons name="flash" size={24} color={selectedStage?.id === stage.id ? '#ffffff' : '#f5a623'} />
+            <Ionicons name="flash" size={24} color={selectedStage?.id === stage.id ? '#ffffff' : '#bbcf4e'} />
             <Text style={[styles.stageName, selectedStage?.id === stage.id && styles.stageNameSelected]}>
               {stage.name}
             </Text>
@@ -457,7 +457,7 @@ export default function FahrzeugscheinScreen() {
               <Text style={styles.tableHeaderCell}>Original</Text>
               <Text style={styles.tableHeaderCell}>{stage.name}</Text>
               <View style={styles.tableHeaderIconCell}>
-                <Ionicons name="trending-up" size={18} color={selectedStage?.id === stage.id ? '#ffffff' : '#f5a623'} />
+                <Ionicons name="trending-up" size={18} color={selectedStage?.id === stage.id ? '#ffffff' : '#bbcf4e'} />
               </View>
             </View>
             
@@ -507,7 +507,7 @@ export default function FahrzeugscheinScreen() {
       </View>
 
       <TouchableOpacity style={styles.resetButton} onPress={resetScan}>
-        <Ionicons name="refresh" size={18} color="#f5a623" />
+        <Ionicons name="refresh" size={18} color="#bbcf4e" />
         <Text style={styles.resetButtonText}>
           {language === 'de' ? 'Neuen Scan starten' : 'Start New Scan'}
         </Text>
@@ -635,7 +635,7 @@ export default function FahrzeugscheinScreen() {
                 disabled={capturing}
               >
                 {capturing ? (
-                  <ActivityIndicator color="#f5a623" size="large" />
+                  <ActivityIndicator color="#bbcf4e" size="large" />
                 ) : (
                   <View style={styles.captureButtonInner} />
                 )}
@@ -691,8 +691,8 @@ const styles = StyleSheet.create({
     borderColor: '#1a2d5a',
   },
   stepCircleActive: {
-    backgroundColor: '#f5a623',
-    borderColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
+    borderColor: '#bbcf4e',
   },
   stepCircleCurrent: {
     borderColor: '#ffffff',
@@ -712,7 +712,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
   },
   stepLineActive: {
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
   },
   // Scan Step
   imageContainer: {
@@ -734,7 +734,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   scanningText: {
-    color: '#f5a623',
+    color: '#bbcf4e',
     fontSize: 16,
     fontWeight: '600',
     marginTop: 16,
@@ -749,7 +749,7 @@ const styles = StyleSheet.create({
     padding: 24,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#f5a623',
+    borderColor: '#bbcf4e',
     borderStyle: 'dashed',
   },
   mainActionIcon: {
@@ -897,8 +897,8 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   stageCardSelected: {
-    backgroundColor: '#f5a623',
-    borderColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
+    borderColor: '#bbcf4e',
   },
   stageHeader: {
     flexDirection: 'row',
@@ -968,7 +968,7 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   tunedValue: {
-    color: '#f5a623',
+    color: '#bbcf4e',
     fontWeight: '700',
   },
   tunedValueSelected: {
@@ -1011,7 +1011,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
     borderRadius: 12,
     paddingVertical: 14,
     gap: 8,
@@ -1026,7 +1026,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
     borderRadius: 12,
     paddingVertical: 14,
     gap: 8,
@@ -1047,7 +1047,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   resetButtonText: {
-    color: '#f5a623',
+    color: '#bbcf4e',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -1100,7 +1100,7 @@ const styles = StyleSheet.create({
     height: 40,
     borderTopWidth: 4,
     borderLeftWidth: 4,
-    borderColor: '#f5a623',
+    borderColor: '#bbcf4e',
   },
   guideCornerTopRight: {
     top: 0,

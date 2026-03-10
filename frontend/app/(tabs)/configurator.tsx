@@ -383,7 +383,7 @@ export default function ConfiguratorScreen() {
       activeOpacity={0.7}
     >
       <Text style={styles.gridItemText}>{item.name}</Text>
-      <Ionicons name="chevron-forward" size={20} color="#f5a623" />
+      <Ionicons name="chevron-forward" size={20} color="#bbcf4e" />
     </TouchableOpacity>
   );
 
@@ -399,7 +399,7 @@ export default function ConfiguratorScreen() {
     <View key={stage.id} style={styles.stageCard}>
       {/* Stage Name */}
       <View style={styles.stageHeader}>
-        <Ionicons name="flash" size={24} color="#f5a623" />
+        <Ionicons name="flash" size={24} color="#bbcf4e" />
         <Text style={styles.stageName}>{stage.name}</Text>
       </View>
       
@@ -411,7 +411,7 @@ export default function ConfiguratorScreen() {
           <Text style={styles.tableHeaderCell}>Original</Text>
           <Text style={styles.tableHeaderCell}>{stage.name}</Text>
           <View style={styles.tableHeaderIconCell}>
-            <Ionicons name="trending-up" size={18} color="#f5a623" />
+            <Ionicons name="trending-up" size={18} color="#bbcf4e" />
           </View>
         </View>
         
@@ -472,7 +472,7 @@ export default function ConfiguratorScreen() {
         {language === 'de' ? 'Verfügbare Optionen' : 'Available Options'}
       </Text>
       {loadingOptions ? (
-        <ActivityIndicator color="#f5a623" size="small" style={{ marginTop: 16 }} />
+        <ActivityIndicator color="#bbcf4e" size="small" style={{ marginTop: 16 }} />
       ) : options.length > 0 ? (
         <View style={styles.optionsGrid}>
           {options.map((option) => (
@@ -544,7 +544,7 @@ export default function ConfiguratorScreen() {
             {getSelectionPath()}
           </Text>
           <TouchableOpacity onPress={resetConfigurator} style={styles.resetButton}>
-            <Ionicons name="refresh" size={18} color="#f5a623" />
+            <Ionicons name="refresh" size={18} color="#bbcf4e" />
           </TouchableOpacity>
         </View>
       )}
@@ -552,7 +552,7 @@ export default function ConfiguratorScreen() {
       {/* Loading Overlay */}
       {loading && (
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator color="#f5a623" size="large" />
+          <ActivityIndicator color="#bbcf4e" size="large" />
           <Text style={styles.loadingText}>{t('loading')}</Text>
         </View>
       )}
@@ -653,13 +653,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#333333',
   },
   progressDotActive: {
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
     width: 12,
     height: 12,
     borderRadius: 6,
   },
   progressDotCompleted: {
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
     opacity: 0.5,
   },
   pathContainer: {
@@ -804,7 +804,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   tunedValue: {
-    color: '#f5a623',
+    color: '#bbcf4e',
     fontWeight: '700',
   },
   ecuSection: {
@@ -833,8 +833,8 @@ const styles = StyleSheet.create({
     borderColor: '#1a2d5a',
   },
   ecuButtonActive: {
-    backgroundColor: '#f5a623',
-    borderColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
+    borderColor: '#bbcf4e',
   },
   ecuButtonText: {
     color: '#ffffff',
@@ -875,7 +875,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   quoteButton: {
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
@@ -892,7 +892,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',

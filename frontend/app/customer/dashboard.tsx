@@ -95,12 +95,12 @@ const getStatusInfo = (status: string, language: string, statusLabel?: string) =
     },
     abgelehnt: {
       label: 'Abgelehnt',
-      color: '#f5a623',
+      color: '#bbcf4e',
       icon: 'close-circle-outline',
     },
     storniert: {
       label: 'Storniert',
-      color: '#f5a623',
+      color: '#bbcf4e',
       icon: 'close-circle-outline',
     },
   };
@@ -201,7 +201,7 @@ export default function CustomerDashboard() {
       {/* Stats Cards */}
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
-          <Ionicons name="document-text" size={28} color="#f5a623" />
+          <Ionicons name="document-text" size={28} color="#bbcf4e" />
           <Text style={styles.statNumber}>{loading ? '-' : activeOrders.length}</Text>
           <Text style={styles.statLabel}>
             {language === 'de' ? 'Aktive Aufträge' : 'Active Orders'}
@@ -238,7 +238,7 @@ export default function CustomerDashboard() {
 
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#f5a623" />
+            <ActivityIndicator size="large" color="#bbcf4e" />
           </View>
         ) : activeOrders.length === 0 ? (
           <View style={styles.emptyContainer}>
@@ -271,7 +271,7 @@ export default function CustomerDashboard() {
                 
                 <View style={styles.orderDetails}>
                   <View style={styles.detailItem}>
-                    <Ionicons name="flash" size={16} color="#f5a623" />
+                    <Ionicons name="flash" size={16} color="#bbcf4e" />
                     <Text style={styles.detailText}>{order.stage}</Text>
                   </View>
                   <View style={styles.detailItem}>
@@ -323,7 +323,7 @@ export default function CustomerDashboard() {
 
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#f5a623" />
+            <ActivityIndicator size="large" color="#bbcf4e" />
           </View>
         ) : scans.length === 0 ? (
           <View style={styles.emptyContainer}>
@@ -346,7 +346,7 @@ export default function CustomerDashboard() {
             <View key={scan.id || `scan-${index}`} style={styles.scanCard}>
               <View style={styles.scanHeader}>
                 <View style={styles.scanIconContainer}>
-                  <Ionicons name="car" size={24} color="#f5a623" />
+                  <Ionicons name="car" size={24} color="#bbcf4e" />
                 </View>
                 <View style={styles.scanMainInfo}>
                   <Text style={styles.scanVehicle}>
@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   viewAllText: {
-    color: '#f5a623',
+    color: '#bbcf4e',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -490,7 +490,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   orderId: {
-    color: '#f5a623',
+    color: '#bbcf4e',
     fontSize: 12,
     fontWeight: '600',
   },
@@ -541,7 +541,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
     borderRadius: 3,
   },
   progressText: {
@@ -575,7 +575,7 @@ const styles = StyleSheet.create({
   scanButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,

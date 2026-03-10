@@ -105,7 +105,7 @@ const getStatusInfo = (status: string, language: string, statusLabel?: string) =
     },
     cancelled: {
       label: language === 'de' ? 'Storniert' : 'Cancelled',
-      color: '#f5a623',
+      color: '#bbcf4e',
       icon: 'close-circle',
     },
     // German/CRM statuses
@@ -131,12 +131,12 @@ const getStatusInfo = (status: string, language: string, statusLabel?: string) =
     },
     abgelehnt: {
       label: 'Abgelehnt',
-      color: '#f5a623',
+      color: '#bbcf4e',
       icon: 'close-circle',
     },
     storniert: {
       label: 'Storniert',
-      color: '#f5a623',
+      color: '#bbcf4e',
       icon: 'close-circle',
     },
   };
@@ -907,7 +907,7 @@ export default function FilesScreen() {
         ) : (
           <>
             <View style={styles.uploadIconLarge}>
-              <Ionicons name="cloud-upload" size={48} color="#f5a623" />
+              <Ionicons name="cloud-upload" size={48} color="#bbcf4e" />
             </View>
             <Text style={styles.uploadText}>
               {language === 'de' ? 'Datei auswählen' : 'Select File'}
@@ -1025,7 +1025,7 @@ export default function FilesScreen() {
       </Text>
 
       {loading && (
-        <ActivityIndicator color="#f5a623" size="large" style={{ marginVertical: 20 }} />
+        <ActivityIndicator color="#bbcf4e" size="large" style={{ marginVertical: 20 }} />
       )}
 
       {/* Vehicle Type */}
@@ -1053,7 +1053,7 @@ export default function FilesScreen() {
       {orderData.vehicleType && !orderData.manufacturer && !loading && (
         <View style={styles.selectionSection}>
           <TouchableOpacity style={styles.backSelection} onPress={() => setOrderData(prev => ({ ...prev, vehicleType: null }))}>
-            <Ionicons name="arrow-back" size={20} color="#f5a623" />
+            <Ionicons name="arrow-back" size={20} color="#bbcf4e" />
             <Text style={styles.backSelectionText}>{orderData.vehicleType.name}</Text>
           </TouchableOpacity>
           <Text style={styles.selectionLabel}>
@@ -1078,7 +1078,7 @@ export default function FilesScreen() {
       {orderData.manufacturer && !orderData.model && !loading && (
         <View style={styles.selectionSection}>
           <TouchableOpacity style={styles.backSelection} onPress={() => setOrderData(prev => ({ ...prev, manufacturer: null }))}>
-            <Ionicons name="arrow-back" size={20} color="#f5a623" />
+            <Ionicons name="arrow-back" size={20} color="#bbcf4e" />
             <Text style={styles.backSelectionText}>{orderData.manufacturer.name}</Text>
           </TouchableOpacity>
           <Text style={styles.selectionLabel}>
@@ -1103,7 +1103,7 @@ export default function FilesScreen() {
       {orderData.model && !orderData.built && !loading && (
         <View style={styles.selectionSection}>
           <TouchableOpacity style={styles.backSelection} onPress={() => setOrderData(prev => ({ ...prev, model: null }))}>
-            <Ionicons name="arrow-back" size={20} color="#f5a623" />
+            <Ionicons name="arrow-back" size={20} color="#bbcf4e" />
             <Text style={styles.backSelectionText}>{orderData.model.name}</Text>
           </TouchableOpacity>
           <Text style={styles.selectionLabel}>
@@ -1128,7 +1128,7 @@ export default function FilesScreen() {
       {orderData.built && !orderData.engine && !loading && (
         <View style={styles.selectionSection}>
           <TouchableOpacity style={styles.backSelection} onPress={() => setOrderData(prev => ({ ...prev, built: null }))}>
-            <Ionicons name="arrow-back" size={20} color="#f5a623" />
+            <Ionicons name="arrow-back" size={20} color="#bbcf4e" />
             <Text style={styles.backSelectionText}>{orderData.built.name}</Text>
           </TouchableOpacity>
           <Text style={styles.selectionLabel}>
@@ -1153,7 +1153,7 @@ export default function FilesScreen() {
       {orderData.engine && !loading && (
         <View style={styles.selectionSection}>
           <TouchableOpacity style={styles.backSelection} onPress={() => setOrderData(prev => ({ ...prev, engine: null }))}>
-            <Ionicons name="arrow-back" size={20} color="#f5a623" />
+            <Ionicons name="arrow-back" size={20} color="#bbcf4e" />
             <Text style={styles.backSelectionText}>{orderData.engine.name}</Text>
           </TouchableOpacity>
           <Text style={styles.selectionLabel}>
@@ -1170,7 +1170,7 @@ export default function FilesScreen() {
                 onPress={() => handleSelectStage(stage)}
               >
                 <View style={styles.stageHeader}>
-                  <Ionicons name="flash" size={20} color={orderData.stage?.id === stage.id ? '#ffffff' : '#f5a623'} />
+                  <Ionicons name="flash" size={20} color={orderData.stage?.id === stage.id ? '#ffffff' : '#bbcf4e'} />
                   <Text style={[
                     styles.stageName,
                     orderData.stage?.id === stage.id && styles.stageNameActive,
@@ -1216,7 +1216,7 @@ export default function FilesScreen() {
         {/* File */}
         <View style={styles.summaryRow}>
           <View style={styles.summaryIcon}>
-            <Ionicons name="document" size={24} color="#f5a623" />
+            <Ionicons name="document" size={24} color="#bbcf4e" />
           </View>
           <View style={styles.summaryInfo}>
             <Text style={styles.summaryLabel}>
@@ -1232,7 +1232,7 @@ export default function FilesScreen() {
         {/* Tool & Method */}
         <View style={styles.summaryRow}>
           <View style={styles.summaryIcon}>
-            <Ionicons name="construct" size={24} color="#f5a623" />
+            <Ionicons name="construct" size={24} color="#bbcf4e" />
           </View>
           <View style={styles.summaryInfo}>
             <Text style={styles.summaryLabel}>
@@ -1249,7 +1249,7 @@ export default function FilesScreen() {
         {/* Vehicle */}
         <View style={styles.summaryRow}>
           <View style={styles.summaryIcon}>
-            <Ionicons name="car" size={24} color="#f5a623" />
+            <Ionicons name="car" size={24} color="#bbcf4e" />
           </View>
           <View style={styles.summaryInfo}>
             <Text style={styles.summaryLabel}>
@@ -1269,7 +1269,7 @@ export default function FilesScreen() {
         {/* Stage */}
         <View style={styles.summaryRow}>
           <View style={styles.summaryIcon}>
-            <Ionicons name="flash" size={24} color="#f5a623" />
+            <Ionicons name="flash" size={24} color="#bbcf4e" />
           </View>
           <View style={styles.summaryInfo}>
             <Text style={styles.summaryLabel}>
@@ -1328,7 +1328,7 @@ export default function FilesScreen() {
 
         <View style={styles.orderMainInfo}>
           <View style={styles.orderVehicle}>
-            <Ionicons name="car" size={18} color="#f5a623" />
+            <Ionicons name="car" size={18} color="#bbcf4e" />
             <Text style={styles.orderVehicleText}>{order.vehicle}</Text>
           </View>
           <View style={styles.orderStage}>
@@ -1411,8 +1411,8 @@ export default function FilesScreen() {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          colors={['#f5a623']}
-          tintColor="#f5a623"
+          colors={['#bbcf4e']}
+          tintColor="#bbcf4e"
         />
       }
     >
@@ -1582,8 +1582,8 @@ const styles = StyleSheet.create({
     borderColor: '#1a2d5a',
   },
   stepCircleActive: {
-    backgroundColor: '#f5a623',
-    borderColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
+    borderColor: '#bbcf4e',
   },
   stepCircleCurrent: {
     borderColor: '#ffffff',
@@ -1603,7 +1603,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   stepLineActive: {
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
   },
   stepContent: {
     marginBottom: 20,
@@ -1678,7 +1678,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#162040',
   },
   changeFileText: {
-    color: '#f5a623',
+    color: '#bbcf4e',
     fontSize: 14,
     fontWeight: '500',
   },
@@ -1710,8 +1710,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   optionButtonActive: {
-    backgroundColor: '#f5a623',
-    borderColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
+    borderColor: '#bbcf4e',
   },
   optionButtonText: {
     color: '#ffffff',
@@ -1757,7 +1757,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   backSelectionText: {
-    color: '#f5a623',
+    color: '#bbcf4e',
     fontSize: 14,
     fontWeight: '500',
   },
@@ -1770,8 +1770,8 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   stageItemActive: {
-    backgroundColor: '#f5a623',
-    borderColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
+    borderColor: '#bbcf4e',
   },
   stageHeader: {
     flexDirection: 'row',
@@ -1856,7 +1856,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
     borderRadius: 12,
     paddingVertical: 16,
     gap: 10,
@@ -1895,7 +1895,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
     borderRadius: 12,
     paddingVertical: 14,
     gap: 8,
@@ -1929,7 +1929,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   tabActive: {
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
   },
   tabText: {
     color: '#8b8b8b',

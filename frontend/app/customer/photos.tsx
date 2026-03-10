@@ -208,7 +208,7 @@ export default function PhotosScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator color="#f5a623" size="large" />
+        <ActivityIndicator color="#bbcf4e" size="large" />
       </View>
     );
   }
@@ -222,7 +222,7 @@ export default function PhotosScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#f5a623"
+            tintColor="#bbcf4e"
           />
         }
       >
@@ -237,7 +237,7 @@ export default function PhotosScreen() {
         <View style={styles.actionsContainer}>
           <TouchableOpacity style={styles.actionButton} onPress={openCamera} disabled={saving}>
             <View style={styles.actionIcon}>
-              <Ionicons name="camera" size={28} color="#f5a623" />
+              <Ionicons name="camera" size={28} color="#bbcf4e" />
             </View>
             <Text style={styles.actionText}>
               {language === 'de' ? 'Foto aufnehmen' : 'Take Photo'}
@@ -246,7 +246,7 @@ export default function PhotosScreen() {
 
           <TouchableOpacity style={styles.actionButton} onPress={pickImage} disabled={saving}>
             <View style={styles.actionIcon}>
-              <Ionicons name="images" size={28} color="#f5a623" />
+              <Ionicons name="images" size={28} color="#bbcf4e" />
             </View>
             <Text style={styles.actionText}>
               {language === 'de' ? 'Aus Galerie' : 'From Gallery'}
@@ -257,7 +257,7 @@ export default function PhotosScreen() {
         {/* Saving Indicator */}
         {saving && (
           <View style={styles.savingContainer}>
-            <ActivityIndicator color="#f5a623" size="small" />
+            <ActivityIndicator color="#bbcf4e" size="small" />
             <Text style={styles.savingText}>
               {language === 'de' ? 'Foto wird gespeichert...' : 'Saving photo...'}
             </Text>
@@ -350,7 +350,7 @@ export default function PhotosScreen() {
                 disabled={capturing}
               >
                 {capturing ? (
-                  <ActivityIndicator color="#f5a623" size="large" />
+                  <ActivityIndicator color="#bbcf4e" size="large" />
                 ) : (
                   <View style={styles.captureButtonInner} />
                 )}
@@ -427,7 +427,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   savingText: {
-    color: '#f5a623',
+    color: '#bbcf4e',
     fontSize: 14,
     fontWeight: '600',
   },

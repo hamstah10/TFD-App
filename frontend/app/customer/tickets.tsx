@@ -36,7 +36,7 @@ const getPriorityInfo = (priority: string, language: string) => {
     },
     high: {
       label: language === 'de' ? 'Hoch' : 'High',
-      color: '#f5a623',
+      color: '#bbcf4e',
     },
   };
   return priorityMap[priority] || priorityMap.normal;
@@ -216,7 +216,7 @@ export default function TicketsScreen() {
 
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#f5a623" />
+            <ActivityIndicator size="large" color="#bbcf4e" />
           </View>
         ) : tickets.length === 0 ? (
           <View style={styles.emptyContainer}>
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
   newButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
     borderRadius: 10,
     padding: 14,
     gap: 8,
@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   ticketId: {
-    color: '#f5a623',
+    color: '#bbcf4e',
     fontSize: 12,
     fontWeight: '600',
   },

@@ -55,7 +55,7 @@ const getPriorityInfo = (priority: string, language: string) => {
     },
     urgent: {
       label: language === 'de' ? 'Dringend' : 'Urgent',
-      color: '#f5a623',
+      color: '#bbcf4e',
     },
   };
   return priorityMap[priority] || priorityMap.normal;
@@ -143,7 +143,7 @@ export default function TicketDetailScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#f5a623" />
+        <ActivityIndicator size="large" color="#bbcf4e" />
       </View>
     );
   }
@@ -151,7 +151,7 @@ export default function TicketDetailScreen() {
   if (!ticket) {
     return (
       <View style={styles.errorContainer}>
-        <Ionicons name="alert-circle" size={64} color="#f5a623" />
+        <Ionicons name="alert-circle" size={64} color="#bbcf4e" />
         <Text style={styles.errorText}>
           {language === 'de' ? 'Ticket nicht gefunden' : 'Ticket not found'}
         </Text>
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   backButton: {
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 10,
@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   ticketNumber: {
-    color: '#f5a623',
+    color: '#bbcf4e',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   senderName: {
-    color: '#f5a623',
+    color: '#bbcf4e',
     fontSize: 12,
     fontWeight: '600',
   },
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
     borderColor: '#1a2d5a',
   },
   sendButton: {
-    backgroundColor: '#f5a623',
+    backgroundColor: '#bbcf4e',
     width: 44,
     height: 44,
     borderRadius: 22,
