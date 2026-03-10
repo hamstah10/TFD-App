@@ -904,9 +904,9 @@ class FahrzeugscheinScanResponse(BaseModel):
     error: Optional[str] = None
 
 # Import for AI-powered Fahrzeugschein parsing
-from emergentintegrations.llm.chat import LlmChat, UserMessage, FileContent
 import json
 import uuid
+import httpx
 
 @api_router.post("/scan-fahrzeugschein", response_model=FahrzeugscheinScanResponse)
 async def scan_fahrzeugschein(request: FahrzeugscheinScanRequest):
@@ -922,11 +922,18 @@ async def scan_fahrzeugschein(request: FahrzeugscheinScanRequest):
         )
     
     try:
-        # Initialize GPT-4o Vision chat
-        chat = LlmChat(
-            api_key=api_key,
-            session_id=f"fahrzeugschein-{uuid.uuid4()}",
-            system_message="""Du bist ein Experte für deutsche Fahrzeugscheine (Zulassungsbescheinigung Teil 1).
+        # Use OpenAI API directly with the Emergent proxy
+        proxy_url = "https://integrations.emergentmethods.ai/openai/v1/chat/completions"
+        
+        # Prepare the image data URL
+        image_data = f"data:image/jpeg;base64,{request.image}"
+        
+        payload = {
+            "model": "gpt-4o",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": """Du bist ein Experte für deutsche Fahrzeugscheine (Zulassungsbescheinigung Teil 1).
 Analysiere das Bild und extrahiere ALLE verfügbaren Fahrzeugdaten.
 Antworte NUR mit einem JSON-Objekt im folgenden Format, ohne weitere Erklärungen:
 {
@@ -938,52 +945,67 @@ Antworte NUR mit einem JSON-Objekt im folgenden Format, ohne weitere Erklärunge
     "P.1": "Hubraum in cm³",
     "P.2": "Nennleistung in kW",
     "P.3": "Kraftstoffart oder Energiequelle",
-    "P.4": "Nenndrehzahl in min⁻¹",
     "V.9": "Schadstoffklasse (Euro-Norm)",
     "14": "Motorcode",
     "2": "Hersteller-Schlüsselnummer (HSN)",
-    "3": "Typ-Schlüsselnummer (TSN)",
-    "I": "Datum der Zulassung",
-    "J": "Fahrzeugklasse",
-    "4": "Aufbauart"
+    "3": "Typ-Schlüsselnummer (TSN)"
 }
-Wenn ein Feld nicht lesbar oder nicht vorhanden ist, setze den Wert auf null.
-Extrahiere so viele Daten wie möglich aus dem Bild."""
-        ).with_model("openai", "gpt-4o")
+Wenn ein Feld nicht lesbar oder nicht vorhanden ist, setze den Wert auf null."""
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Analysiere diesen deutschen Fahrzeugschein und extrahiere alle Fahrzeugdaten als JSON."
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": image_data
+                            }
+                        }
+                    ]
+                }
+            ],
+            "max_tokens": 1000
+        }
         
-        # Create file content from base64 image
-        file_content = FileContent(
-            content_type="image/jpeg",
-            file_content_base64=request.image
-        )
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}"
+        }
         
-        # Send image for analysis
-        user_message = UserMessage(
-            text="Analysiere diesen deutschen Fahrzeugschein und extrahiere alle Fahrzeugdaten als JSON.",
-            file_contents=[file_content]
-        )
-        
-        response = await chat.send_message(user_message)
-        logger.info(f"GPT-4o Vision response: {response[:500]}...")
+        async with httpx.AsyncClient(timeout=60.0) as http_client:
+            response = await http_client.post(proxy_url, json=payload, headers=headers)
+            
+            if response.status_code != 200:
+                logger.error(f"OpenAI API error: {response.status_code} - {response.text}")
+                return FahrzeugscheinScanResponse(
+                    success=False,
+                    error=f"AI-API Fehler: {response.status_code}"
+                )
+            
+            result = response.json()
+            ai_response = result["choices"][0]["message"]["content"]
+            logger.info(f"GPT-4o Vision response: {ai_response[:500]}...")
         
         # Parse the JSON response
-        # Try to extract JSON from the response
-        json_str = response
-        if "```json" in response:
-            json_str = response.split("```json")[1].split("```")[0].strip()
-        elif "```" in response:
-            json_str = response.split("```")[1].split("```")[0].strip()
+        json_str = ai_response
+        if "```json" in ai_response:
+            json_str = ai_response.split("```json")[1].split("```")[0].strip()
+        elif "```" in ai_response:
+            json_str = ai_response.split("```")[1].split("```")[0].strip()
         
         try:
             parsed_data = json.loads(json_str)
         except json.JSONDecodeError:
-            # Try to find JSON object in response
             import re
-            json_match = re.search(r'\{[^{}]*\}', response, re.DOTALL)
+            json_match = re.search(r'\{[^{}]*\}', ai_response, re.DOTALL)
             if json_match:
                 parsed_data = json.loads(json_match.group())
             else:
-                logger.error(f"Could not parse JSON from response: {response}")
+                logger.error(f"Could not parse JSON from response: {ai_response}")
                 return FahrzeugscheinScanResponse(
                     success=False,
                     error="Konnte Fahrzeugdaten nicht auslesen"
@@ -995,17 +1017,14 @@ Extrahiere so viele Daten wie möglich aus dem Bild."""
             "model": parsed_data.get("D.3") or parsed_data.get("D.2"),
             "type_variant": parsed_data.get("D.2"),
             "vin": parsed_data.get("E"),
-            "firstRegistration": parsed_data.get("B") or parsed_data.get("I"),
+            "firstRegistration": parsed_data.get("B"),
             "displacement": parsed_data.get("P.1"),
             "power": f"{parsed_data.get('P.2')} kW" if parsed_data.get("P.2") else None,
             "fuelType": parsed_data.get("P.3"),
-            "engineSpeed": parsed_data.get("P.4"),
             "emissionClass": parsed_data.get("V.9"),
             "engineCode": parsed_data.get("14"),
             "hsn": parsed_data.get("2"),
             "tsn": parsed_data.get("3"),
-            "vehicleClass": parsed_data.get("J"),
-            "bodyType": parsed_data.get("4"),
             "raw": parsed_data
         }
         
