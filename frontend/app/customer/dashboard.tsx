@@ -16,8 +16,15 @@ interface DashboardScan {
     power?: string;
     engineCode?: string;
     fuelType?: string;
+    // Old API fields
+    d1?: string;
+    d3?: string;
+    ez_string?: string;
+    p1?: string;
+    p2_p4?: string;
+    p3?: string;
   };
-  selectedStage?: string;
+  selectedStage?: string | { id: string; name: string; [key: string]: any };
   createdAt: string;
 }
 
@@ -333,7 +340,7 @@ export default function CustomerDashboard() {
                 </View>
                 <View style={styles.scanMainInfo}>
                   <Text style={styles.scanVehicle}>
-                    {scan.vehicleData.manufacturer || 'Unbekannt'} {scan.vehicleData.model || ''}
+                    {scan.vehicleData.manufacturer || scan.vehicleData.d1 || 'Unbekannt'} {scan.vehicleData.model || scan.vehicleData.d3 || ''}
                   </Text>
                   <Text style={styles.scanDate}>{scan.createdAt}</Text>
                 </View>
@@ -346,28 +353,28 @@ export default function CustomerDashboard() {
                     <Text style={styles.scanDetailValue}>{scan.vehicleData.vin}</Text>
                   </View>
                 )}
-                {scan.vehicleData.firstRegistration && (
+                {(scan.vehicleData.firstRegistration || scan.vehicleData.ez_string) && (
                   <View style={styles.scanDetailRow}>
                     <Text style={styles.scanDetailLabel}>Erstzulassung:</Text>
-                    <Text style={styles.scanDetailValue}>{scan.vehicleData.firstRegistration}</Text>
+                    <Text style={styles.scanDetailValue}>{scan.vehicleData.firstRegistration || scan.vehicleData.ez_string}</Text>
                   </View>
                 )}
-                {scan.vehicleData.power && (
+                {(scan.vehicleData.power || scan.vehicleData.p2_p4) && (
                   <View style={styles.scanDetailRow}>
                     <Text style={styles.scanDetailLabel}>Leistung:</Text>
-                    <Text style={styles.scanDetailValue}>{scan.vehicleData.power}</Text>
+                    <Text style={styles.scanDetailValue}>{scan.vehicleData.power || `${scan.vehicleData.p2_p4} kW`}</Text>
                   </View>
                 )}
-                {scan.vehicleData.engineCode && (
+                {(scan.vehicleData.engineCode || scan.vehicleData.p1) && (
                   <View style={styles.scanDetailRow}>
-                    <Text style={styles.scanDetailLabel}>Motorcode:</Text>
-                    <Text style={styles.scanDetailValue}>{scan.vehicleData.engineCode}</Text>
+                    <Text style={styles.scanDetailLabel}>{scan.vehicleData.engineCode ? 'Motorcode:' : 'Hubraum:'}</Text>
+                    <Text style={styles.scanDetailValue}>{scan.vehicleData.engineCode || `${scan.vehicleData.p1} cm³`}</Text>
                   </View>
                 )}
-                {scan.vehicleData.fuelType && (
+                {(scan.vehicleData.fuelType || scan.vehicleData.p3) && (
                   <View style={styles.scanDetailRow}>
                     <Text style={styles.scanDetailLabel}>Kraftstoff:</Text>
-                    <Text style={styles.scanDetailValue}>{scan.vehicleData.fuelType}</Text>
+                    <Text style={styles.scanDetailValue}>{scan.vehicleData.fuelType || scan.vehicleData.p3}</Text>
                   </View>
                 )}
               </View>
@@ -375,7 +382,9 @@ export default function CustomerDashboard() {
               {scan.selectedStage && (
                 <View style={styles.scanStage}>
                   <Ionicons name="flash" size={16} color="#4caf50" />
-                  <Text style={styles.scanStageText}>{scan.selectedStage}</Text>
+                  <Text style={styles.scanStageText}>
+                    {typeof scan.selectedStage === 'object' ? scan.selectedStage.name : scan.selectedStage}
+                  </Text>
                 </View>
               )}
             </View>

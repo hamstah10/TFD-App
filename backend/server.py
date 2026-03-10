@@ -904,7 +904,7 @@ class FahrzeugscheinScanResponse(BaseModel):
     error: Optional[str] = None
 
 # Import for AI-powered Fahrzeugschein parsing
-from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+from emergentintegrations.llm.chat import LlmChat, UserMessage, FileContent
 import json
 import uuid
 
@@ -951,15 +951,16 @@ Wenn ein Feld nicht lesbar oder nicht vorhanden ist, setze den Wert auf null.
 Extrahiere so viele Daten wie möglich aus dem Bild."""
         ).with_model("openai", "gpt-4o")
         
-        # Create image content from base64
-        image_content = ImageContent(
-            image_base64=request.image
+        # Create file content from base64 image
+        file_content = FileContent(
+            content_type="image/jpeg",
+            file_content_base64=request.image
         )
         
         # Send image for analysis
         user_message = UserMessage(
             text="Analysiere diesen deutschen Fahrzeugschein und extrahiere alle Fahrzeugdaten als JSON.",
-            image_contents=[image_content]
+            file_contents=[file_content]
         )
         
         response = await chat.send_message(user_message)
