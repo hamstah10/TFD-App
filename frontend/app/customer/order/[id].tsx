@@ -20,7 +20,7 @@ const getStatusInfo = (status: string, statusLabel?: string) => {
     eingegangen: { label: 'Eingegangen', color: '#2196f3', icon: 'mail' },
     in_bearbeitung: { label: 'In Bearbeitung', color: '#9c27b0', icon: 'construct' },
     abgeschlossen: { label: 'Abgeschlossen', color: '#4caf50', icon: 'checkmark-circle' },
-    abgelehnt: { label: 'Abgelehnt', color: '#f44336', icon: 'close-circle' },
+    abgelehnt: { label: 'Abgelehnt', color: '#bbcf4e', icon: 'close-circle' },
   };
   
   const info = statusMap[status] || statusMap.pending;
