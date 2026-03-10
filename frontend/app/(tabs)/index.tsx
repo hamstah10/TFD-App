@@ -40,7 +40,7 @@ export default function HomeScreen() {
         {/* Customer Portal Button */}
         <TouchableOpacity style={styles.portalButton} onPress={handleLogin}>
           <View style={styles.portalIconContainer}>
-            <Ionicons name="person" size={24} color="#bd1e22" />
+            <Ionicons name="person" size={24} color="#bbcf4e" />
           </View>
           <View style={styles.portalTextContainer}>
             <Text style={styles.portalTitle}>
@@ -50,7 +50,7 @@ export default function HomeScreen() {
               {language === 'de' ? 'Anmelden für Dashboard & Files' : 'Login for Dashboard & Files'}
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={24} color="#bd1e22" />
+          <Ionicons name="chevron-forward" size={24} color="#bbcf4e" />
         </TouchableOpacity>
 
         {/* Hero Section */}
@@ -68,17 +68,17 @@ export default function HomeScreen() {
         {/* Features */}
         <View style={styles.featuresContainer}>
           <View style={styles.featureCard}>
-            <Ionicons name="flash" size={32} color="#bd1e22" />
+            <Ionicons name="flash" size={32} color="#bbcf4e" />
             <Text style={styles.featureTitle}>Stage 1-3</Text>
             <Text style={styles.featureText}>ECU Tuning</Text>
           </View>
           <View style={styles.featureCard}>
-            <Ionicons name="shield-checkmark" size={32} color="#bd1e22" />
+            <Ionicons name="shield-checkmark" size={32} color="#bbcf4e" />
             <Text style={styles.featureTitle}>Garantie</Text>
             <Text style={styles.featureText}>Warranty</Text>
           </View>
           <View style={styles.featureCard}>
-            <Ionicons name="leaf" size={32} color="#bd1e22" />
+            <Ionicons name="leaf" size={32} color="#bbcf4e" />
             <Text style={styles.featureTitle}>Eco</Text>
             <Text style={styles.featureText}>Tuning</Text>
           </View>
@@ -91,7 +91,7 @@ export default function HomeScreen() {
         {companyInfo && (
           <View style={styles.contactCard}>
             <View style={styles.contactHeader}>
-              <Ionicons name="location" size={24} color="#bd1e22" />
+              <Ionicons name="location" size={24} color="#bbcf4e" />
               <Text style={styles.contactTitle}>{t('address')}</Text>
             </View>
             <Text style={styles.addressText}>{companyInfo.address.street}</Text>
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginTop: 16,
     borderWidth: 1,
-    borderColor: '#bd1e22',
+    borderColor: '#bbcf4e',
   },
   portalIconContainer: {
     width: 48,
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
   ctaButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#bd1e22',
+    backgroundColor: '#bbcf4e',
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 8,
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
   phoneButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#bd1e22',
+    backgroundColor: '#bbcf4e',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 20,
