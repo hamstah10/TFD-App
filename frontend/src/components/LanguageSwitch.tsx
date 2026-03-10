@@ -26,7 +26,7 @@ export function LanguageSwitch() {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#162040',
     borderRadius: 8,
     padding: 2,
   },
@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   activeButton: {
-    backgroundColor: '#bd1f22',
+    backgroundColor: '#f5a623',
   },
   buttonText: {
     color: '#8b8b8b',

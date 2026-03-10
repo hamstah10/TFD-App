@@ -55,7 +55,7 @@ const getPriorityInfo = (priority: string, language: string) => {
     },
     urgent: {
       label: language === 'de' ? 'Dringend' : 'Urgent',
-      color: '#bd1f22',
+      color: '#f5a623',
     },
   };
   return priorityMap[priority] || priorityMap.normal;
@@ -143,7 +143,7 @@ export default function TicketDetailScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#bd1f22" />
+        <ActivityIndicator size="large" color="#f5a623" />
       </View>
     );
   }
@@ -151,7 +151,7 @@ export default function TicketDetailScreen() {
   if (!ticket) {
     return (
       <View style={styles.errorContainer}>
-        <Ionicons name="alert-circle" size={64} color="#bd1f22" />
+        <Ionicons name="alert-circle" size={64} color="#f5a623" />
         <Text style={styles.errorText}>
           {language === 'de' ? 'Ticket nicht gefunden' : 'Ticket not found'}
         </Text>
@@ -285,17 +285,17 @@ export default function TicketDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#171717',
+    backgroundColor: '#111931',
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#171717',
+    backgroundColor: '#111931',
     justifyContent: 'center',
     alignItems: 'center',
   },
   errorContainer: {
     flex: 1,
-    backgroundColor: '#171717',
+    backgroundColor: '#111931',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   backButton: {
-    backgroundColor: '#bd1f22',
+    backgroundColor: '#f5a623',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 10,
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#2a2a2a',
+    borderBottomColor: '#1a2d5a',
   },
   backBtn: {
     padding: 8,
@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   ticketNumber: {
-    color: '#bd1f22',
+    color: '#f5a623',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
   ticketInfo: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#2a2a2a',
+    borderBottomColor: '#1a2d5a',
   },
   subject: {
     color: '#ffffff',
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
     marginLeft: '10%',
   },
   supportMessage: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: '#1a2d5a',
     alignSelf: 'flex-start',
     marginRight: '10%',
   },
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   senderName: {
-    color: '#bd1f22',
+    color: '#f5a623',
     fontSize: 12,
     fontWeight: '600',
   },
@@ -422,13 +422,13 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     padding: 12,
     borderTopWidth: 1,
-    borderTopColor: '#2a2a2a',
-    backgroundColor: '#121212',
+    borderTopColor: '#1a2d5a',
+    backgroundColor: '#0d1526',
     gap: 12,
   },
   replyInput: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#162040',
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -436,10 +436,10 @@ const styles = StyleSheet.create({
     fontSize: 15,
     maxHeight: 100,
     borderWidth: 1,
-    borderColor: '#2a2a2a',
+    borderColor: '#1a2d5a',
   },
   sendButton: {
-    backgroundColor: '#bd1f22',
+    backgroundColor: '#f5a623',
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -455,9 +455,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     padding: 16,
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderTopWidth: 1,
-    borderTopColor: '#2a2a2a',
+    borderTopColor: '#1a2d5a',
   },
   closedText: {
     color: '#8b8b8b',

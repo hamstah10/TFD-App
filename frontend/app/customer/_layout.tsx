@@ -61,7 +61,7 @@ export default function CustomerLayout() {
       <View style={styles.header}>
         <Logo width={160} height={50} isOpen={isOpen} />
         <View style={styles.headerRight}>
-          <Ionicons name="time" size={24} color={isOpen ? '#4caf50' : '#bd1f22'} />
+          <Ionicons name="time" size={24} color={isOpen ? '#4caf50' : '#f5a623'} />
           <LanguageSwitch />
         </View>
       </View>
@@ -69,7 +69,7 @@ export default function CustomerLayout() {
       {/* User Info Bar */}
       <View style={styles.userBar}>
         <View style={styles.userInfo}>
-          <Ionicons name="person-circle" size={32} color="#bd1f22" />
+          <Ionicons name="person-circle" size={32} color="#f5a623" />
           <View style={styles.userText}>
             <Text style={styles.userName}>{user?.name}</Text>
             <Text style={styles.userCompany}>{user?.company}</Text>
@@ -149,18 +149,18 @@ export default function CustomerLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#171717',
+    backgroundColor: '#111931',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'ios' ? 50 : 20,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#1a1a1a',
+    borderBottomColor: '#162040',
   },
   headerRight: {
     flexDirection: 'row',
@@ -169,15 +169,15 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     padding: 8,
-    backgroundColor: '#bd1f22',
+    backgroundColor: '#f5a623',
     borderRadius: 8,
   },
   userBar: {
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#1a1a1a',
+    borderBottomColor: '#162040',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -203,12 +203,12 @@ const styles = StyleSheet.create({
   },
   bottomNav: {
     flexDirection: 'row',
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     paddingVertical: 12,
     paddingHorizontal: 20,
     paddingBottom: Platform.OS === 'ios' ? 28 : 12,
     borderTopWidth: 1,
-    borderTopColor: '#1a1a1a',
+    borderTopColor: '#162040',
     justifyContent: 'space-around',
     alignItems: 'center',
   },
@@ -221,6 +221,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   navTabActive: {
-    backgroundColor: '#bd1f22',
+    backgroundColor: '#f5a623',
   },
 });

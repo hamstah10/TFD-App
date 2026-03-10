@@ -306,7 +306,7 @@ export default function FahrzeugscheinScreen() {
       {/* Scanning indicator */}
       {scanning && (
         <View style={styles.scanningContainer}>
-          <ActivityIndicator color="#bd1f22" size="large" />
+          <ActivityIndicator color="#f5a623" size="large" />
           <Text style={styles.scanningText}>
             {language === 'de' ? 'Dokument wird analysiert...' : 'Analyzing document...'}
           </Text>
@@ -318,7 +318,7 @@ export default function FahrzeugscheinScreen() {
         <View style={styles.actionsContainer}>
           <TouchableOpacity style={styles.mainActionButton} onPress={openCamera}>
             <View style={styles.mainActionIcon}>
-              <Ionicons name="camera" size={40} color="#bd1f22" />
+              <Ionicons name="camera" size={40} color="#f5a623" />
             </View>
             <Text style={styles.mainActionTitle}>
               {language === 'de' ? 'Fahrzeugschein fotografieren' : 'Take Photo of Registration'}
@@ -331,7 +331,7 @@ export default function FahrzeugscheinScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.secondaryActionButton} onPress={pickImage}>
-            <Ionicons name="images" size={24} color="#bd1f22" />
+            <Ionicons name="images" size={24} color="#f5a623" />
             <Text style={styles.secondaryActionText}>
               {language === 'de' ? 'Bild aus Galerie wählen' : 'Choose from Gallery'}
             </Text>
@@ -412,7 +412,7 @@ export default function FahrzeugscheinScreen() {
       {/* Vehicle Info Card */}
       <View style={styles.vehicleCard}>
         <View style={styles.vehicleHeader}>
-          <Ionicons name="car-sport" size={28} color="#bd1f22" />
+          <Ionicons name="car-sport" size={28} color="#f5a623" />
           <View style={styles.vehicleInfo}>
             <Text style={styles.vehicleName}>
               {mockVehicle?.manufacturer} {mockVehicle?.model}
@@ -440,7 +440,7 @@ export default function FahrzeugscheinScreen() {
         >
           {/* Stage Header */}
           <View style={styles.stageHeader}>
-            <Ionicons name="flash" size={24} color={selectedStage?.id === stage.id ? '#ffffff' : '#bd1f22'} />
+            <Ionicons name="flash" size={24} color={selectedStage?.id === stage.id ? '#ffffff' : '#f5a623'} />
             <Text style={[styles.stageName, selectedStage?.id === stage.id && styles.stageNameSelected]}>
               {stage.name}
             </Text>
@@ -457,7 +457,7 @@ export default function FahrzeugscheinScreen() {
               <Text style={styles.tableHeaderCell}>Original</Text>
               <Text style={styles.tableHeaderCell}>{stage.name}</Text>
               <View style={styles.tableHeaderIconCell}>
-                <Ionicons name="trending-up" size={18} color={selectedStage?.id === stage.id ? '#ffffff' : '#bd1f22'} />
+                <Ionicons name="trending-up" size={18} color={selectedStage?.id === stage.id ? '#ffffff' : '#f5a623'} />
               </View>
             </View>
             
@@ -507,7 +507,7 @@ export default function FahrzeugscheinScreen() {
       </View>
 
       <TouchableOpacity style={styles.resetButton} onPress={resetScan}>
-        <Ionicons name="refresh" size={18} color="#bd1f22" />
+        <Ionicons name="refresh" size={18} color="#f5a623" />
         <Text style={styles.resetButtonText}>
           {language === 'de' ? 'Neuen Scan starten' : 'Start New Scan'}
         </Text>
@@ -635,7 +635,7 @@ export default function FahrzeugscheinScreen() {
                 disabled={capturing}
               >
                 {capturing ? (
-                  <ActivityIndicator color="#bd1f22" size="large" />
+                  <ActivityIndicator color="#f5a623" size="large" />
                 ) : (
                   <View style={styles.captureButtonInner} />
                 )}
@@ -651,7 +651,7 @@ export default function FahrzeugscheinScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#171717',
+    backgroundColor: '#111931',
   },
   scrollView: {
     flex: 1,
@@ -684,15 +684,15 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#162040',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#2a2a2a',
+    borderColor: '#1a2d5a',
   },
   stepCircleActive: {
-    backgroundColor: '#bd1f22',
-    borderColor: '#bd1f22',
+    backgroundColor: '#f5a623',
+    borderColor: '#f5a623',
   },
   stepCircleCurrent: {
     borderColor: '#ffffff',
@@ -708,15 +708,15 @@ const styles = StyleSheet.create({
   stepLine: {
     width: 50,
     height: 2,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: '#1a2d5a',
     marginHorizontal: 8,
   },
   stepLineActive: {
-    backgroundColor: '#bd1f22',
+    backgroundColor: '#f5a623',
   },
   // Scan Step
   imageContainer: {
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 16,
     padding: 8,
     marginBottom: 16,
@@ -727,14 +727,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   scanningContainer: {
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 16,
     padding: 40,
     alignItems: 'center',
     marginBottom: 16,
   },
   scanningText: {
-    color: '#bd1f22',
+    color: '#f5a623',
     fontSize: 16,
     fontWeight: '600',
     marginTop: 16,
@@ -744,19 +744,19 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   mainActionButton: {
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 16,
     padding: 24,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#bd1f22',
+    borderColor: '#f5a623',
     borderStyle: 'dashed',
   },
   mainActionIcon: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#162040',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -777,7 +777,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 12,
     padding: 16,
     gap: 10,
@@ -788,7 +788,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   tipsContainer: {
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
@@ -825,7 +825,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   dataCard: {
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 16,
     overflow: 'hidden',
     marginBottom: 20,
@@ -837,10 +837,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#1a1a1a',
+    borderBottomColor: '#162040',
   },
   fieldRowAlt: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#162040',
   },
   fieldLabel: {
     color: '#8b8b8b',
@@ -859,7 +859,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   vehicleCard: {
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 16,
     padding: 20,
     marginBottom: 20,
@@ -889,7 +889,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   stageCard: {
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
@@ -897,8 +897,8 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   stageCardSelected: {
-    backgroundColor: '#bd1f22',
-    borderColor: '#bd1f22',
+    backgroundColor: '#f5a623',
+    borderColor: '#f5a623',
   },
   stageHeader: {
     flexDirection: 'row',
@@ -916,7 +916,7 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   stageTable: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#162040',
     borderRadius: 12,
     overflow: 'hidden',
   },
@@ -968,7 +968,7 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   tunedValue: {
-    color: '#bd1f22',
+    color: '#f5a623',
     fontWeight: '700',
   },
   tunedValueSelected: {
@@ -995,7 +995,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#162040',
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 20,
@@ -1011,7 +1011,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#bd1f22',
+    backgroundColor: '#f5a623',
     borderRadius: 12,
     paddingVertical: 14,
     gap: 8,
@@ -1026,7 +1026,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#bd1f22',
+    backgroundColor: '#f5a623',
     borderRadius: 12,
     paddingVertical: 14,
     gap: 8,
@@ -1047,7 +1047,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   resetButtonText: {
-    color: '#bd1f22',
+    color: '#f5a623',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -1100,7 +1100,7 @@ const styles = StyleSheet.create({
     height: 40,
     borderTopWidth: 4,
     borderLeftWidth: 4,
-    borderColor: '#bd1f22',
+    borderColor: '#f5a623',
   },
   guideCornerTopRight: {
     top: 0,

@@ -12,7 +12,7 @@ export default function RootLayout() {
         <Stack
           screenOptions={{
             headerShown: false,
-            contentStyle: { backgroundColor: '#171717' },
+            contentStyle: { backgroundColor: '#111931' },
           }}
         >
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -20,7 +20,7 @@ export default function RootLayout() {
             name="blog/[id]" 
             options={{ 
               headerShown: true,
-              headerStyle: { backgroundColor: '#121212' },
+              headerStyle: { backgroundColor: '#0d1526' },
               headerTintColor: '#ffffff',
               title: 'Blog'
             }} 
@@ -29,7 +29,7 @@ export default function RootLayout() {
             name="admin/blog-editor" 
             options={{ 
               headerShown: true,
-              headerStyle: { backgroundColor: '#121212' },
+              headerStyle: { backgroundColor: '#0d1526' },
               headerTintColor: '#ffffff',
               title: 'Blog Editor'
             }} 

@@ -161,7 +161,7 @@ export default function ContactScreen() {
           {companyInfo && (
             <View style={styles.infoCard}>
               <View style={styles.infoRow}>
-                <Ionicons name="location" size={20} color="#bd1f22" />
+                <Ionicons name="location" size={20} color="#f5a623" />
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>{t('address')}</Text>
                   <Text style={styles.infoText}>{companyInfo.address.street}</Text>
@@ -172,7 +172,7 @@ export default function ContactScreen() {
               </View>
 
               <View style={styles.infoRow}>
-                <Ionicons name="call" size={20} color="#bd1f22" />
+                <Ionicons name="call" size={20} color="#f5a623" />
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>Telefon</Text>
                   <Text style={styles.infoText}>{companyInfo.phone}</Text>
@@ -180,7 +180,7 @@ export default function ContactScreen() {
               </View>
 
               <View style={styles.infoRow}>
-                <Ionicons name="mail" size={20} color="#bd1f22" />
+                <Ionicons name="mail" size={20} color="#f5a623" />
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>E-Mail</Text>
                   <Text style={styles.infoText}>{companyInfo.email}</Text>
@@ -202,7 +202,7 @@ export default function ContactScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#171717',
+    backgroundColor: '#111931',
   },
   keyboardView: {
     flex: 1,
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   formContainer: {
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 16,
     padding: 20,
     marginBottom: 20,
@@ -233,20 +233,20 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#162040',
     borderRadius: 12,
     padding: 14,
     color: '#ffffff',
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#2a2a2a',
+    borderColor: '#1a2d5a',
   },
   textArea: {
     minHeight: 120,
     paddingTop: 14,
   },
   submitButton: {
-    backgroundColor: '#bd1f22',
+    backgroundColor: '#f5a623',
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   infoCard: {
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 16,
     padding: 20,
     marginBottom: 10,

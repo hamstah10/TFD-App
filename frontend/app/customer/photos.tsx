@@ -208,7 +208,7 @@ export default function PhotosScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator color="#bd1f22" size="large" />
+        <ActivityIndicator color="#f5a623" size="large" />
       </View>
     );
   }
@@ -222,7 +222,7 @@ export default function PhotosScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#bd1f22"
+            tintColor="#f5a623"
           />
         }
       >
@@ -237,7 +237,7 @@ export default function PhotosScreen() {
         <View style={styles.actionsContainer}>
           <TouchableOpacity style={styles.actionButton} onPress={openCamera} disabled={saving}>
             <View style={styles.actionIcon}>
-              <Ionicons name="camera" size={28} color="#bd1f22" />
+              <Ionicons name="camera" size={28} color="#f5a623" />
             </View>
             <Text style={styles.actionText}>
               {language === 'de' ? 'Foto aufnehmen' : 'Take Photo'}
@@ -246,7 +246,7 @@ export default function PhotosScreen() {
 
           <TouchableOpacity style={styles.actionButton} onPress={pickImage} disabled={saving}>
             <View style={styles.actionIcon}>
-              <Ionicons name="images" size={28} color="#bd1f22" />
+              <Ionicons name="images" size={28} color="#f5a623" />
             </View>
             <Text style={styles.actionText}>
               {language === 'de' ? 'Aus Galerie' : 'From Gallery'}
@@ -257,7 +257,7 @@ export default function PhotosScreen() {
         {/* Saving Indicator */}
         {saving && (
           <View style={styles.savingContainer}>
-            <ActivityIndicator color="#bd1f22" size="small" />
+            <ActivityIndicator color="#f5a623" size="small" />
             <Text style={styles.savingText}>
               {language === 'de' ? 'Foto wird gespeichert...' : 'Saving photo...'}
             </Text>
@@ -350,7 +350,7 @@ export default function PhotosScreen() {
                 disabled={capturing}
               >
                 {capturing ? (
-                  <ActivityIndicator color="#bd1f22" size="large" />
+                  <ActivityIndicator color="#f5a623" size="large" />
                 ) : (
                   <View style={styles.captureButtonInner} />
                 )}
@@ -366,11 +366,11 @@ export default function PhotosScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#171717',
+    backgroundColor: '#111931',
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#171717',
+    backgroundColor: '#111931',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -394,18 +394,18 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 16,
     padding: 20,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#1a1a1a',
+    borderColor: '#162040',
   },
   actionIcon: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#162040',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
@@ -420,14 +420,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
     gap: 12,
   },
   savingText: {
-    color: '#bd1f22',
+    color: '#f5a623',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
   emptyState: {
     alignItems: 'center',
     paddingVertical: 40,
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 16,
   },
   emptyText: {
@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
   },
   photoCard: {
     width: '48%',
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 12,
     overflow: 'hidden',
   },

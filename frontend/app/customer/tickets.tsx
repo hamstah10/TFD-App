@@ -36,7 +36,7 @@ const getPriorityInfo = (priority: string, language: string) => {
     },
     high: {
       label: language === 'de' ? 'Hoch' : 'High',
-      color: '#bd1f22',
+      color: '#f5a623',
     },
   };
   return priorityMap[priority] || priorityMap.normal;
@@ -216,7 +216,7 @@ export default function TicketsScreen() {
 
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#bd1f22" />
+            <ActivityIndicator size="large" color="#f5a623" />
           </View>
         ) : tickets.length === 0 ? (
           <View style={styles.emptyContainer}>
@@ -282,7 +282,7 @@ export default function TicketsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#171717',
+    backgroundColor: '#111931',
     paddingHorizontal: 20,
   },
   header: {
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
   newButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#bd1f22',
+    backgroundColor: '#f5a623',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   newTicketForm: {
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 12,
     padding: 20,
     marginBottom: 24,
@@ -333,13 +333,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#162040',
     borderRadius: 10,
     padding: 14,
     color: '#ffffff',
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#2a2a2a',
+    borderColor: '#1a2d5a',
   },
   textArea: {
     minHeight: 100,
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#bd1f22',
+    backgroundColor: '#f5a623',
     borderRadius: 10,
     padding: 14,
     gap: 8,
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -391,7 +391,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   ticketCard: {
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   ticketId: {
-    color: '#bd1f22',
+    color: '#f5a623',
     fontSize: 12,
     fontWeight: '600',
   },
@@ -453,7 +453,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#1a1a1a',
+    borderTopColor: '#162040',
   },
   lastReply: {
     color: '#8b8b8b',
@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
   emptyContainer: {
     padding: 40,
     alignItems: 'center',
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 12,
   },
   emptyText: {

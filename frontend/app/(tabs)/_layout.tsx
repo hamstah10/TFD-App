@@ -14,7 +14,7 @@ function CustomHeader() {
     <View style={styles.headerContainer}>
       <Logo width={180} height={55} isOpen={isOpen} />
       <View style={styles.headerRight}>
-        <Ionicons name="time" size={24} color={isOpen ? '#4caf50' : '#bd1f22'} />
+        <Ionicons name="time" size={24} color={isOpen ? '#4caf50' : '#f5a623'} />
         <LanguageSwitch />
       </View>
     </View>
@@ -27,18 +27,18 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#bd1f22',
+        tabBarActiveTintColor: '#f5a623',
         tabBarInactiveTintColor: '#8b8b8b',
         tabBarStyle: {
-          backgroundColor: '#121212',
-          borderTopColor: '#1a1a1a',
+          backgroundColor: '#0d1526',
+          borderTopColor: '#162040',
           borderTopWidth: 1,
           height: Platform.OS === 'ios' ? 90 : 70,
           paddingBottom: Platform.OS === 'ios' ? 30 : 10,
           paddingTop: 10,
         },
         headerStyle: {
-          backgroundColor: '#121212',
+          backgroundColor: '#0d1526',
           height: 80,
         },
         headerTintColor: '#ffffff',
@@ -102,12 +102,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'ios' ? 50 : 20,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#1a1a1a',
+    borderBottomColor: '#162040',
   },
   headerRight: {
     flexDirection: 'row',

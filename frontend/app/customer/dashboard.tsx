@@ -95,12 +95,12 @@ const getStatusInfo = (status: string, language: string, statusLabel?: string) =
     },
     abgelehnt: {
       label: 'Abgelehnt',
-      color: '#bd1f22',
+      color: '#f5a623',
       icon: 'close-circle-outline',
     },
     storniert: {
       label: 'Storniert',
-      color: '#bd1f22',
+      color: '#f5a623',
       icon: 'close-circle-outline',
     },
   };
@@ -201,7 +201,7 @@ export default function CustomerDashboard() {
       {/* Stats Cards */}
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
-          <Ionicons name="document-text" size={28} color="#bd1f22" />
+          <Ionicons name="document-text" size={28} color="#f5a623" />
           <Text style={styles.statNumber}>{loading ? '-' : activeOrders.length}</Text>
           <Text style={styles.statLabel}>
             {language === 'de' ? 'Aktive Aufträge' : 'Active Orders'}
@@ -238,7 +238,7 @@ export default function CustomerDashboard() {
 
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#bd1f22" />
+            <ActivityIndicator size="large" color="#f5a623" />
           </View>
         ) : activeOrders.length === 0 ? (
           <View style={styles.emptyContainer}>
@@ -271,7 +271,7 @@ export default function CustomerDashboard() {
                 
                 <View style={styles.orderDetails}>
                   <View style={styles.detailItem}>
-                    <Ionicons name="flash" size={16} color="#bd1f22" />
+                    <Ionicons name="flash" size={16} color="#f5a623" />
                     <Text style={styles.detailText}>{order.stage}</Text>
                   </View>
                   <View style={styles.detailItem}>
@@ -323,7 +323,7 @@ export default function CustomerDashboard() {
 
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#bd1f22" />
+            <ActivityIndicator size="large" color="#f5a623" />
           </View>
         ) : scans.length === 0 ? (
           <View style={styles.emptyContainer}>
@@ -346,7 +346,7 @@ export default function CustomerDashboard() {
             <View key={scan.id || `scan-${index}`} style={styles.scanCard}>
               <View style={styles.scanHeader}>
                 <View style={styles.scanIconContainer}>
-                  <Ionicons name="car" size={24} color="#bd1f22" />
+                  <Ionicons name="car" size={24} color="#f5a623" />
                 </View>
                 <View style={styles.scanMainInfo}>
                   <Text style={styles.scanVehicle}>
@@ -410,7 +410,7 @@ export default function CustomerDashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#171717',
+    backgroundColor: '#111931',
     paddingHorizontal: 20,
   },
   welcomeSection: {
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 8,
     padding: 16,
     alignItems: 'center',
@@ -465,12 +465,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   viewAllText: {
-    color: '#bd1f22',
+    color: '#f5a623',
     fontSize: 14,
     fontWeight: '600',
   },
   orderCard: {
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 8,
     padding: 16,
     paddingRight: 36,
@@ -490,7 +490,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   orderId: {
-    color: '#bd1f22',
+    color: '#f5a623',
     fontSize: 12,
     fontWeight: '600',
   },
@@ -535,13 +535,13 @@ const styles = StyleSheet.create({
   progressBar: {
     flex: 1,
     height: 6,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#162040',
     borderRadius: 3,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#bd1f22',
+    backgroundColor: '#f5a623',
     borderRadius: 3,
   },
   progressText: {
@@ -575,7 +575,7 @@ const styles = StyleSheet.create({
   scanButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#bd1f22',
+    backgroundColor: '#f5a623',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,

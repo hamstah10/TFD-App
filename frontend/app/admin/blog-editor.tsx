@@ -100,7 +100,7 @@ export default function BlogEditorScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['bottom']}>
         <View style={styles.centerLoading}>
-          <ActivityIndicator color="#bd1f22" size="large" />
+          <ActivityIndicator color="#f5a623" size="large" />
         </View>
       </SafeAreaView>
     );
@@ -216,7 +216,7 @@ export default function BlogEditorScreen() {
               <Switch
                 value={published}
                 onValueChange={setPublished}
-                trackColor={{ false: '#1a1a1a', true: '#bd1f22' }}
+                trackColor={{ false: '#162040', true: '#f5a623' }}
                 thumbColor={published ? '#ffffff' : '#8b8b8b'}
               />
             </View>
@@ -257,7 +257,7 @@ export default function BlogEditorScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#171717',
+    backgroundColor: '#111931',
   },
   keyboardView: {
     flex: 1,
@@ -283,13 +283,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 12,
     padding: 14,
     color: '#ffffff',
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#1a1a1a',
+    borderColor: '#162040',
   },
   textAreaSmall: {
     minHeight: 80,
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 12,
     padding: 14,
     marginBottom: 24,
@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#162040',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
   saveButton: {
     flex: 2,
     flexDirection: 'row',
-    backgroundColor: '#bd1f22',
+    backgroundColor: '#f5a623',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',

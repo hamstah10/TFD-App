@@ -89,7 +89,7 @@ export default function LoginScreen() {
         <View style={styles.content}>
           {/* Login Icon */}
           <View style={styles.iconContainer}>
-            <Ionicons name="person-circle" size={80} color="#bd1f22" />
+            <Ionicons name="person-circle" size={80} color="#f5a623" />
           </View>
 
           <Text style={styles.title}>
@@ -170,13 +170,13 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#171717',
+    backgroundColor: '#111931',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'ios' ? 50 : 20,
     paddingBottom: 12,
@@ -210,18 +210,18 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   form: {
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 16,
     padding: 24,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#162040',
     borderRadius: 12,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#2a2a2a',
+    borderColor: '#1a2d5a',
   },
   inputIcon: {
     marginLeft: 16,
@@ -240,14 +240,14 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   forgotText: {
-    color: '#bd1f22',
+    color: '#f5a623',
     fontSize: 14,
   },
   loginButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#bd1f22',
+    backgroundColor: '#f5a623',
     borderRadius: 12,
     padding: 16,
     gap: 8,

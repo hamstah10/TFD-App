@@ -105,7 +105,7 @@ const getStatusInfo = (status: string, language: string, statusLabel?: string) =
     },
     cancelled: {
       label: language === 'de' ? 'Storniert' : 'Cancelled',
-      color: '#bd1f22',
+      color: '#f5a623',
       icon: 'close-circle',
     },
     // German/CRM statuses
@@ -131,12 +131,12 @@ const getStatusInfo = (status: string, language: string, statusLabel?: string) =
     },
     abgelehnt: {
       label: 'Abgelehnt',
-      color: '#bd1f22',
+      color: '#f5a623',
       icon: 'close-circle',
     },
     storniert: {
       label: 'Storniert',
-      color: '#bd1f22',
+      color: '#f5a623',
       icon: 'close-circle',
     },
   };
@@ -907,7 +907,7 @@ export default function FilesScreen() {
         ) : (
           <>
             <View style={styles.uploadIconLarge}>
-              <Ionicons name="cloud-upload" size={48} color="#bd1f22" />
+              <Ionicons name="cloud-upload" size={48} color="#f5a623" />
             </View>
             <Text style={styles.uploadText}>
               {language === 'de' ? 'Datei auswählen' : 'Select File'}
@@ -1025,7 +1025,7 @@ export default function FilesScreen() {
       </Text>
 
       {loading && (
-        <ActivityIndicator color="#bd1f22" size="large" style={{ marginVertical: 20 }} />
+        <ActivityIndicator color="#f5a623" size="large" style={{ marginVertical: 20 }} />
       )}
 
       {/* Vehicle Type */}
@@ -1053,7 +1053,7 @@ export default function FilesScreen() {
       {orderData.vehicleType && !orderData.manufacturer && !loading && (
         <View style={styles.selectionSection}>
           <TouchableOpacity style={styles.backSelection} onPress={() => setOrderData(prev => ({ ...prev, vehicleType: null }))}>
-            <Ionicons name="arrow-back" size={20} color="#bd1f22" />
+            <Ionicons name="arrow-back" size={20} color="#f5a623" />
             <Text style={styles.backSelectionText}>{orderData.vehicleType.name}</Text>
           </TouchableOpacity>
           <Text style={styles.selectionLabel}>
@@ -1078,7 +1078,7 @@ export default function FilesScreen() {
       {orderData.manufacturer && !orderData.model && !loading && (
         <View style={styles.selectionSection}>
           <TouchableOpacity style={styles.backSelection} onPress={() => setOrderData(prev => ({ ...prev, manufacturer: null }))}>
-            <Ionicons name="arrow-back" size={20} color="#bd1f22" />
+            <Ionicons name="arrow-back" size={20} color="#f5a623" />
             <Text style={styles.backSelectionText}>{orderData.manufacturer.name}</Text>
           </TouchableOpacity>
           <Text style={styles.selectionLabel}>
@@ -1103,7 +1103,7 @@ export default function FilesScreen() {
       {orderData.model && !orderData.built && !loading && (
         <View style={styles.selectionSection}>
           <TouchableOpacity style={styles.backSelection} onPress={() => setOrderData(prev => ({ ...prev, model: null }))}>
-            <Ionicons name="arrow-back" size={20} color="#bd1f22" />
+            <Ionicons name="arrow-back" size={20} color="#f5a623" />
             <Text style={styles.backSelectionText}>{orderData.model.name}</Text>
           </TouchableOpacity>
           <Text style={styles.selectionLabel}>
@@ -1128,7 +1128,7 @@ export default function FilesScreen() {
       {orderData.built && !orderData.engine && !loading && (
         <View style={styles.selectionSection}>
           <TouchableOpacity style={styles.backSelection} onPress={() => setOrderData(prev => ({ ...prev, built: null }))}>
-            <Ionicons name="arrow-back" size={20} color="#bd1f22" />
+            <Ionicons name="arrow-back" size={20} color="#f5a623" />
             <Text style={styles.backSelectionText}>{orderData.built.name}</Text>
           </TouchableOpacity>
           <Text style={styles.selectionLabel}>
@@ -1153,7 +1153,7 @@ export default function FilesScreen() {
       {orderData.engine && !loading && (
         <View style={styles.selectionSection}>
           <TouchableOpacity style={styles.backSelection} onPress={() => setOrderData(prev => ({ ...prev, engine: null }))}>
-            <Ionicons name="arrow-back" size={20} color="#bd1f22" />
+            <Ionicons name="arrow-back" size={20} color="#f5a623" />
             <Text style={styles.backSelectionText}>{orderData.engine.name}</Text>
           </TouchableOpacity>
           <Text style={styles.selectionLabel}>
@@ -1170,7 +1170,7 @@ export default function FilesScreen() {
                 onPress={() => handleSelectStage(stage)}
               >
                 <View style={styles.stageHeader}>
-                  <Ionicons name="flash" size={20} color={orderData.stage?.id === stage.id ? '#ffffff' : '#bd1f22'} />
+                  <Ionicons name="flash" size={20} color={orderData.stage?.id === stage.id ? '#ffffff' : '#f5a623'} />
                   <Text style={[
                     styles.stageName,
                     orderData.stage?.id === stage.id && styles.stageNameActive,
@@ -1216,7 +1216,7 @@ export default function FilesScreen() {
         {/* File */}
         <View style={styles.summaryRow}>
           <View style={styles.summaryIcon}>
-            <Ionicons name="document" size={24} color="#bd1f22" />
+            <Ionicons name="document" size={24} color="#f5a623" />
           </View>
           <View style={styles.summaryInfo}>
             <Text style={styles.summaryLabel}>
@@ -1232,7 +1232,7 @@ export default function FilesScreen() {
         {/* Tool & Method */}
         <View style={styles.summaryRow}>
           <View style={styles.summaryIcon}>
-            <Ionicons name="construct" size={24} color="#bd1f22" />
+            <Ionicons name="construct" size={24} color="#f5a623" />
           </View>
           <View style={styles.summaryInfo}>
             <Text style={styles.summaryLabel}>
@@ -1249,7 +1249,7 @@ export default function FilesScreen() {
         {/* Vehicle */}
         <View style={styles.summaryRow}>
           <View style={styles.summaryIcon}>
-            <Ionicons name="car" size={24} color="#bd1f22" />
+            <Ionicons name="car" size={24} color="#f5a623" />
           </View>
           <View style={styles.summaryInfo}>
             <Text style={styles.summaryLabel}>
@@ -1269,7 +1269,7 @@ export default function FilesScreen() {
         {/* Stage */}
         <View style={styles.summaryRow}>
           <View style={styles.summaryIcon}>
-            <Ionicons name="flash" size={24} color="#bd1f22" />
+            <Ionicons name="flash" size={24} color="#f5a623" />
           </View>
           <View style={styles.summaryInfo}>
             <Text style={styles.summaryLabel}>
@@ -1328,7 +1328,7 @@ export default function FilesScreen() {
 
         <View style={styles.orderMainInfo}>
           <View style={styles.orderVehicle}>
-            <Ionicons name="car" size={18} color="#bd1f22" />
+            <Ionicons name="car" size={18} color="#f5a623" />
             <Text style={styles.orderVehicleText}>{order.vehicle}</Text>
           </View>
           <View style={styles.orderStage}>
@@ -1411,8 +1411,8 @@ export default function FilesScreen() {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          colors={['#bd1f22']}
-          tintColor="#bd1f22"
+          colors={['#f5a623']}
+          tintColor="#f5a623"
         />
       }
     >
@@ -1519,7 +1519,7 @@ export default function FilesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#171717',
+    backgroundColor: '#111931',
     paddingHorizontal: 20,
   },
   successBanner: {
@@ -1575,15 +1575,15 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#162040',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#2a2a2a',
+    borderColor: '#1a2d5a',
   },
   stepCircleActive: {
-    backgroundColor: '#bd1f22',
-    borderColor: '#bd1f22',
+    backgroundColor: '#f5a623',
+    borderColor: '#f5a623',
   },
   stepCircleCurrent: {
     borderColor: '#ffffff',
@@ -1599,11 +1599,11 @@ const styles = StyleSheet.create({
   stepLine: {
     width: 40,
     height: 2,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: '#1a2d5a',
     marginHorizontal: 4,
   },
   stepLineActive: {
-    backgroundColor: '#bd1f22',
+    backgroundColor: '#f5a623',
   },
   stepContent: {
     marginBottom: 20,
@@ -1620,19 +1620,19 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   uploadArea: {
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 16,
     padding: 40,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#2a2a2a',
+    borderColor: '#1a2d5a',
     borderStyle: 'dashed',
   },
   uploadIconLarge: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#162040',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -1675,10 +1675,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#162040',
   },
   changeFileText: {
-    color: '#bd1f22',
+    color: '#f5a623',
     fontSize: 14,
     fontWeight: '500',
   },
@@ -1697,12 +1697,12 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   optionButton: {
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 10,
     paddingVertical: 14,
     paddingHorizontal: 20,
     borderWidth: 1,
-    borderColor: '#2a2a2a',
+    borderColor: '#1a2d5a',
     minWidth: '22%',
     alignItems: 'center',
   },
@@ -1710,8 +1710,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   optionButtonActive: {
-    backgroundColor: '#bd1f22',
-    borderColor: '#bd1f22',
+    backgroundColor: '#f5a623',
+    borderColor: '#f5a623',
   },
   optionButtonText: {
     color: '#ffffff',
@@ -1740,7 +1740,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 10,
     padding: 16,
     marginBottom: 8,
@@ -1757,12 +1757,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   backSelectionText: {
-    color: '#bd1f22',
+    color: '#f5a623',
     fontSize: 14,
     fontWeight: '500',
   },
   stageItem: {
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 12,
     padding: 16,
     marginBottom: 10,
@@ -1770,8 +1770,8 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   stageItemActive: {
-    backgroundColor: '#bd1f22',
-    borderColor: '#bd1f22',
+    backgroundColor: '#f5a623',
+    borderColor: '#f5a623',
   },
   stageHeader: {
     flexDirection: 'row',
@@ -1811,7 +1811,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   summaryCard: {
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 16,
     padding: 20,
     marginBottom: 24,
@@ -1824,7 +1824,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 12,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#162040',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
@@ -1849,14 +1849,14 @@ const styles = StyleSheet.create({
   },
   summaryDivider: {
     height: 1,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#162040',
     marginVertical: 16,
   },
   submitButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#bd1f22',
+    backgroundColor: '#f5a623',
     borderRadius: 12,
     paddingVertical: 16,
     gap: 10,
@@ -1879,7 +1879,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#162040',
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 20,
@@ -1895,7 +1895,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#bd1f22',
+    backgroundColor: '#f5a623',
     borderRadius: 12,
     paddingVertical: 14,
     gap: 8,
@@ -1914,7 +1914,7 @@ const styles = StyleSheet.create({
   // Tab Styles
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 12,
     padding: 4,
     marginBottom: 20,
@@ -1929,7 +1929,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   tabActive: {
-    backgroundColor: '#bd1f22',
+    backgroundColor: '#f5a623',
   },
   tabText: {
     color: '#8b8b8b',
@@ -1950,7 +1950,7 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 12,
     padding: 12,
     alignItems: 'center',
@@ -1975,7 +1975,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   orderCard: {
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
@@ -2059,7 +2059,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: '#1a1a1a',
+    borderTopColor: '#162040',
   },
   orderDetailRow: {
     flexDirection: 'row',

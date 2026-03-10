@@ -114,7 +114,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#171717',
+    backgroundColor: '#111931',
   },
   scrollView: {
     flex: 1,
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
   portalButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 8,
     padding: 16,
     marginTop: 16,
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#162040',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
   },
   featureCard: {
     flex: 1,
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 16,
     padding: 16,
     alignItems: 'center',
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   contactCard: {
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderRadius: 16,
     padding: 20,
     marginVertical: 10,

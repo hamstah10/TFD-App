@@ -168,7 +168,7 @@ export function ChatAssistant({ onVehicleSuggestion, isVisible, onClose }: ChatA
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <View style={styles.avatarContainer}>
-            <Ionicons name="chatbubbles" size={24} color="#bd1f22" />
+            <Ionicons name="chatbubbles" size={24} color="#f5a623" />
           </View>
           <View>
             <Text style={styles.headerTitle}>
@@ -207,7 +207,7 @@ export function ChatAssistant({ onVehicleSuggestion, isVisible, onClose }: ChatA
           >
             {!message.isUser && (
               <View style={styles.botAvatar}>
-                <Ionicons name="car-sport" size={16} color="#bd1f22" />
+                <Ionicons name="car-sport" size={16} color="#f5a623" />
               </View>
             )}
             <View style={[
@@ -227,10 +227,10 @@ export function ChatAssistant({ onVehicleSuggestion, isVisible, onClose }: ChatA
         {loading && (
           <View style={[styles.messageBubble, styles.botBubble]}>
             <View style={styles.botAvatar}>
-              <Ionicons name="car-sport" size={16} color="#bd1f22" />
+              <Ionicons name="car-sport" size={16} color="#f5a623" />
             </View>
             <View style={[styles.messageContent, styles.botContent, styles.loadingContent]}>
-              <ActivityIndicator color="#bd1f22" size="small" />
+              <ActivityIndicator color="#f5a623" size="small" />
               <Text style={styles.loadingText}>
                 {language === 'de' ? 'Denke nach...' : 'Thinking...'}
               </Text>
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: '85%',
-    backgroundColor: '#121212',
+    backgroundColor: '#0d1526',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     overflow: 'hidden',
@@ -291,9 +291,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#162040',
     borderBottomWidth: 1,
-    borderBottomColor: '#2a2a2a',
+    borderBottomColor: '#1a2d5a',
   },
   headerLeft: {
     flexDirection: 'row',
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: '#1a2d5a',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -327,12 +327,12 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     padding: 8,
-    backgroundColor: '#bd1f22',
+    backgroundColor: '#f5a623',
     borderRadius: 20,
   },
   messagesContainer: {
     flex: 1,
-    backgroundColor: '#171717',
+    backgroundColor: '#111931',
   },
   messagesContent: {
     padding: 16,
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: '#1a2d5a',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 8,
@@ -365,11 +365,11 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
   },
   userContent: {
-    backgroundColor: '#bd1f22',
+    backgroundColor: '#f5a623',
     borderBottomRightRadius: 4,
   },
   botContent: {
-    backgroundColor: '#2a2a2a',
+    backgroundColor: '#1a2d5a',
     borderBottomLeftRadius: 4,
   },
   messageText: {
@@ -395,13 +395,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     padding: 12,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#162040',
     borderTopWidth: 1,
-    borderTopColor: '#2a2a2a',
+    borderTopColor: '#1a2d5a',
   },
   input: {
     flex: 1,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: '#1a2d5a',
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 10,
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#bd1f22',
+    backgroundColor: '#f5a623',
     justifyContent: 'center',
     alignItems: 'center',
   },

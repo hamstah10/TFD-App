@@ -59,7 +59,7 @@ export default function BlogDetailScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['bottom']}>
         <View style={styles.centerLoading}>
-          <ActivityIndicator color="#bd1f22" size="large" />
+          <ActivityIndicator color="#f5a623" size="large" />
         </View>
       </SafeAreaView>
     );
@@ -111,7 +111,7 @@ export default function BlogDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#171717',
+    backgroundColor: '#111931',
   },
   scrollView: {
     flex: 1,
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#162040',
     marginBottom: 20,
   },
   contentText: {
