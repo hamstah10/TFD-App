@@ -23,8 +23,8 @@ export default function LoginScreen() {
   const { language } = useLanguage();
   const router = useRouter();
   const isOpen = useIsOpen();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('andre@tuningfux.de');
+  const [password, setPassword] = useState('Test1234');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
