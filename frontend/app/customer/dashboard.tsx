@@ -4,7 +4,22 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useLanguage } from '../../src/contexts/LanguageContext';
 import { useAuth } from '../../src/contexts/AuthContext';
-import { getOrders, getTickets, Order, Ticket } from '../../src/services/api';
+import { getOrders, getTickets, getScans, Order, Ticket } from '../../src/services/api';
+
+interface DashboardScan {
+  id: string;
+  vehicleData: {
+    manufacturer?: string;
+    model?: string;
+    vin?: string;
+    firstRegistration?: string;
+    power?: string;
+    engineCode?: string;
+    fuelType?: string;
+  };
+  selectedStage?: string;
+  createdAt: string;
+}
 
 interface DashboardOrder {
   id: string;
@@ -113,6 +128,7 @@ export default function CustomerDashboard() {
   const { user, getAccessToken } = useAuth();
   const router = useRouter();
   const [orders, setOrders] = useState<DashboardOrder[]>([]);
+  const [scans, setScans] = useState<DashboardScan[]>([]);
   const [openTickets, setOpenTickets] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -124,10 +140,11 @@ export default function CustomerDashboard() {
     try {
       const token = await getAccessToken();
       if (token) {
-        // Load orders and tickets in parallel
-        const [apiOrders, apiTickets] = await Promise.all([
+        // Load orders, tickets and scans in parallel
+        const [apiOrders, apiTickets, apiScans] = await Promise.all([
           getOrders(token),
           getTickets(token),
+          getScans(token),
         ]);
         
         const mappedOrders: DashboardOrder[] = apiOrders.map((o: Order) => ({
@@ -142,6 +159,15 @@ export default function CustomerDashboard() {
         }));
         setOrders(mappedOrders);
         
+        // Map scans
+        const mappedScans: DashboardScan[] = (apiScans || []).map((s: any) => ({
+          id: s.id,
+          vehicleData: s.vehicleData || {},
+          selectedStage: s.selectedStage,
+          createdAt: s.createdAt ? new Date(s.createdAt).toLocaleDateString('de-DE') : '',
+        }));
+        setScans(mappedScans);
+        
         // Count open tickets
         const openCount = apiTickets.filter((t: Ticket) => t.status !== 'closed').length;
         setOpenTickets(openCount);
@@ -153,7 +179,7 @@ export default function CustomerDashboard() {
     }
   };
 
-  const activeOrders = orders.filter(order => order.status !== 'completed');
+  const activeOrders = orders.filter(order => order.status !== 'completed' && order.status !== 'abgeschlossen');
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -262,6 +288,98 @@ export default function CustomerDashboard() {
                 : 'No active orders'}
             </Text>
           </View>
+        )}
+      </View>
+
+      {/* Scanned Vehicle Documents Section */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>
+            {language === 'de' ? 'Gescannte Fahrzeugscheine' : 'Scanned Vehicle Documents'}
+          </Text>
+          <TouchableOpacity onPress={() => router.push('/customer/scanner')}>
+            <Text style={styles.viewAllText}>
+              {language === 'de' ? 'Scanner öffnen' : 'Open Scanner'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#bd1f22" />
+          </View>
+        ) : scans.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="document-text-outline" size={48} color="#444" />
+            <Text style={styles.emptyText}>
+              {language === 'de' ? 'Noch keine Fahrzeugscheine gescannt' : 'No vehicle documents scanned yet'}
+            </Text>
+            <TouchableOpacity 
+              style={styles.scanButton}
+              onPress={() => router.push('/customer/scanner')}
+            >
+              <Ionicons name="scan" size={18} color="#ffffff" />
+              <Text style={styles.scanButtonText}>
+                {language === 'de' ? 'Jetzt scannen' : 'Scan now'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          scans.slice(0, 3).map((scan, index) => (
+            <View key={scan.id || `scan-${index}`} style={styles.scanCard}>
+              <View style={styles.scanHeader}>
+                <View style={styles.scanIconContainer}>
+                  <Ionicons name="car" size={24} color="#bd1f22" />
+                </View>
+                <View style={styles.scanMainInfo}>
+                  <Text style={styles.scanVehicle}>
+                    {scan.vehicleData.manufacturer || 'Unbekannt'} {scan.vehicleData.model || ''}
+                  </Text>
+                  <Text style={styles.scanDate}>{scan.createdAt}</Text>
+                </View>
+              </View>
+              
+              <View style={styles.scanDetails}>
+                {scan.vehicleData.vin && (
+                  <View style={styles.scanDetailRow}>
+                    <Text style={styles.scanDetailLabel}>FIN:</Text>
+                    <Text style={styles.scanDetailValue}>{scan.vehicleData.vin}</Text>
+                  </View>
+                )}
+                {scan.vehicleData.firstRegistration && (
+                  <View style={styles.scanDetailRow}>
+                    <Text style={styles.scanDetailLabel}>Erstzulassung:</Text>
+                    <Text style={styles.scanDetailValue}>{scan.vehicleData.firstRegistration}</Text>
+                  </View>
+                )}
+                {scan.vehicleData.power && (
+                  <View style={styles.scanDetailRow}>
+                    <Text style={styles.scanDetailLabel}>Leistung:</Text>
+                    <Text style={styles.scanDetailValue}>{scan.vehicleData.power}</Text>
+                  </View>
+                )}
+                {scan.vehicleData.engineCode && (
+                  <View style={styles.scanDetailRow}>
+                    <Text style={styles.scanDetailLabel}>Motorcode:</Text>
+                    <Text style={styles.scanDetailValue}>{scan.vehicleData.engineCode}</Text>
+                  </View>
+                )}
+                {scan.vehicleData.fuelType && (
+                  <View style={styles.scanDetailRow}>
+                    <Text style={styles.scanDetailLabel}>Kraftstoff:</Text>
+                    <Text style={styles.scanDetailValue}>{scan.vehicleData.fuelType}</Text>
+                  </View>
+                )}
+              </View>
+              
+              {scan.selectedStage && (
+                <View style={styles.scanStage}>
+                  <Ionicons name="flash" size={16} color="#4caf50" />
+                  <Text style={styles.scanStageText}>{scan.selectedStage}</Text>
+                </View>
+              )}
+            </View>
+          ))
         )}
       </View>
 
@@ -414,6 +532,7 @@ const styles = StyleSheet.create({
     color: '#8b8b8b',
     fontSize: 16,
     marginTop: 12,
+    textAlign: 'center',
   },
   bottomSpacer: {
     height: 30,
@@ -425,5 +544,86 @@ const styles = StyleSheet.create({
   emptyContainer: {
     padding: 40,
     alignItems: 'center',
+  },
+  scanButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#bd1f22',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginTop: 16,
+    gap: 8,
+  },
+  scanButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  scanCard: {
+    backgroundColor: '#1e1e1e',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  scanHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  scanIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(189, 31, 34, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  scanMainInfo: {
+    flex: 1,
+  },
+  scanVehicle: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  scanDate: {
+    color: '#8b8b8b',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  scanDetails: {
+    backgroundColor: '#252525',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+  },
+  scanDetailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+  },
+  scanDetailLabel: {
+    color: '#8b8b8b',
+    fontSize: 13,
+  },
+  scanDetailValue: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  scanStage: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 4,
+  },
+  scanStageText: {
+    color: '#4caf50',
+    fontSize: 13,
+    fontWeight: '500',
   },
 });
