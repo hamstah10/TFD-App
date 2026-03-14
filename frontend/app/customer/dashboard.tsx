@@ -575,7 +575,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   scanButtonText: {
-    color: '#ffffff',
+    color: '#111931',
     fontSize: 14,
     fontWeight: '600',
   },

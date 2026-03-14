@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   newButtonText: {
-    color: '#ffffff',
+    color: '#111931',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   submitButtonText: {
-    color: '#ffffff',
+    color: '#111931',
     fontSize: 16,
     fontWeight: '600',
   },

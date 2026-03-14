@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   submitButtonText: {
-    color: '#ffffff',
+    color: '#111931',
     fontSize: 16,
     fontWeight: '700',
   },

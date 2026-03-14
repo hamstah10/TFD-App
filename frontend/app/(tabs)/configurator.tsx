@@ -881,7 +881,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   quoteButtonText: {
-    color: '#ffffff',
+    color: '#111931',
     fontSize: 16,
     fontWeight: '700',
   },

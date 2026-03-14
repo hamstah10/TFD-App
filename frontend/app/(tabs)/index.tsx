@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   ctaButtonText: {
-    color: '#ffffff',
+    color: '#111931',
     fontSize: 16,
     fontWeight: '700',
   },
